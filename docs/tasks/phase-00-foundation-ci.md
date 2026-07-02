@@ -1,6 +1,6 @@
 # Phase 0 — Foundation, Tooling & CI Skeleton
 
-> **Status**: 🔄 In Progress · **Progress**: 2 / 7 tasks · **Last updated**: 2026-07-01
+> **Status**: 🔄 In Progress · **Progress**: 3 / 7 tasks · **Last updated**: 2026-07-01
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P0
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -47,7 +47,7 @@ When P0 is done: `cargo build --locked`, `cargo fmt --all --check`, and `cargo c
 | --- | --- | --- | --- | --- | --- |
 | 0.1 | Cargo + pnpm dual workspace + toolchains | ✅ Done | P0 | M | — |
 | 0.2 | Rust lint/supply-chain + commit governance | ✅ Done | P0 | S | 0.1 |
-| 0.3 | Mandatory repo & community-health files | 📋 ToDo | P1 | S | 0.1 |
+| 0.3 | Mandatory repo & community-health files | ✅ Done | P1 | S | 0.1 |
 | 0.4 | GitHub config & Copilot review | 📋 ToDo | P0 | M | 0.1 |
 | 0.5 | Core CI workflow + audit-script stubs | 📋 ToDo | P0 | M | 0.1, 0.2 |
 | 0.6 | Security & supply-chain workflows | 📋 ToDo | P0 | M | 0.5 |
@@ -323,7 +323,7 @@ Completion Protocol (after you finish):
 
 ### Task 0.3 — Mandatory repo & community-health files
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: S
 - **Depends on**: 0.1
@@ -334,12 +334,12 @@ Author the public-repository governance and community-health documents — `LICE
 
 #### Acceptance criteria
 
-- [ ] `LICENSE` is MIT, copyright "Bymax One".
-- [ ] `README.md` has a badge header (CI, coverage, mutation, license, Rust edition, MSRV, Node, axum, Next, React, Tailwind), a one-line tagline, a nav row, an Overview, a Quick-start, an ASCII architecture diagram (api/web/Postgres/Redis/Mailpit), a Documentation table linking the `docs/*.md` set, and a License section.
-- [ ] `CHANGELOG.md` follows Keep-a-Changelog + SemVer with an `## [Unreleased]` section.
-- [ ] `SECURITY.md` routes vulnerability reports to email (not a public issue); `CONTRIBUTING.md` documents the gate set + Conventional Commits; `CODE_OF_CONDUCT.md` references Contributor Covenant 2.1 by link.
-- [ ] `CLAUDE.md` + `AGENTS.md` state the repo invariants for agents (dual workspace, `#![forbid(unsafe_code)]`, no `unwrap`/`expect`/`panic`, typed errors, 100% coverage + mutation ≥ 95, design-system verbatim, Conventional Commits / no co-author trailer) with NO phase/task references.
-- [ ] `markdown-link-check` is clean on `README.md`.
+- [x] `LICENSE` is MIT, copyright "Bymax One".
+- [x] `README.md` has a badge header (CI, coverage, mutation, license, Rust edition, MSRV, Node, axum, Next, React, Tailwind), a one-line tagline, a nav row, an Overview, a Quick-start, an ASCII architecture diagram (api/web/Postgres/Redis/Mailpit), a Documentation table linking the `docs/*.md` set, and a License section.
+- [x] `CHANGELOG.md` follows Keep-a-Changelog + SemVer with an `## [Unreleased]` section.
+- [x] `SECURITY.md` routes vulnerability reports to email (not a public issue); `CONTRIBUTING.md` documents the gate set + Conventional Commits; `CODE_OF_CONDUCT.md` references Contributor Covenant 2.1 by link.
+- [x] `CLAUDE.md` + `AGENTS.md` state the repo invariants for agents (dual workspace, `#![forbid(unsafe_code)]`, no `unwrap`/`expect`/`panic`, typed errors, 100% coverage + mutation ≥ 95, design-system verbatim, Conventional Commits / no co-author trailer) with NO phase/task references.
+- [x] `markdown-link-check` is clean on `README.md`.
 
 #### Files to create / modify
 
@@ -864,3 +864,4 @@ Run this only when the LAST task (0.7) is ✅:
 
 - 0.1 ✅ 2026-07-01 — Dual cargo + pnpm workspace, pinned toolchains, compiling `apps/api` stub, TS-strict base; `Cargo.lock` + `pnpm-lock.yaml` committed.
 - 0.2 ✅ 2026-07-01 — Rust lint/supply-chain policy (`rustfmt.toml`, `clippy.toml`, `deny.toml` + workspace deny-lints) and cross-stack commit governance (commitlint, husky hooks, lint-staged, ESLint flat, Prettier, editor/git dotfiles).
+- 0.3 ✅ 2026-07-01 — Mandatory governance + community-health files: MIT `LICENSE`, badge-header `README.md` with ASCII diagram + docs table, `CHANGELOG.md`, `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, and the `CLAUDE.md`/`AGENTS.md` invariants.
