@@ -127,7 +127,7 @@ jobs:
 
   lint:
     name: lint
-    needs: install
+    needs: [install, build-library]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -135,6 +135,10 @@ jobs:
         with:
           persist-credentials: false
       - uses: ./.github/actions/link-library
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: rust-auth-pkg
+          path: .sibling-rust-auth/packages/rust-auth
       - uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable (toolchain set via input)
         with:
           toolchain: 1.96.0
@@ -322,6 +326,35 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm -r --if-present run test:e2e
+
+  build-web:
+    name: build-web
+    needs: build-library
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/link-library
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: rust-auth-pkg
+          path: .sibling-rust-auth/packages/rust-auth
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        with:
+          version: 10.8.1
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build the Next.js console (production build)
+        run: pnpm -C apps/web build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8080
+          INTERNAL_API_URL: http://localhost:8080
+          AUTH_JWT_SECRET_FOR_PROXY: ci_build_only_placeholder_secret_min_32_chars
 
   export-usage-check:
     name: export-usage-check

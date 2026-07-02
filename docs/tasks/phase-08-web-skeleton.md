@@ -1,9 +1,16 @@
 # Phase 8 — Web Skeleton & Design System
 
-> **Status**: 📋 ToDo · **Progress**: 0 / 6 tasks · **Last updated**: 2026-06-23
+> **Status**: 👀 Review · **Progress**: 6 / 6 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P8
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
+
+> **Build integration (resolved).** An earlier build-integration issue — the `@bymax-one/rust-auth/nextjs` barrel
+> eagerly initialised its edge WASM, and the library's bare `next/server` import was not Node-ESM resolvable when
+> externalized via `serverExternalPackages` — was fixed in the library (the edge WASM now loads lazily via a memoized
+> dynamic `import()`, and `next/server.js` is imported fully-specified). The app now **bundles** the package instead of
+> externalizing it, so `pnpm -C apps/web build` succeeds; a dedicated `build-web` CI job runs the production build to
+> guard against regressions. Type-check, lint, format, and the 100%-covered unit suite are green.
 
 ---
 
@@ -83,12 +90,12 @@ public-page body lands in P9 and every authenticated dashboard / platform surfac
 
 | ID | Task | Status | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- | --- |
-| 8.1 | Next app scaffold + design system verbatim | 📋 ToDo | P0 | M | — |
-| 8.2 | Root layout + `AuthProvider` providers | 📋 ToDo | P0 | M | 8.1 |
-| 8.3 | App shell + global controls (nuqs) | 📋 ToDo | P0 | M | 8.2 |
-| 8.4 | Edge proxy + WASM route protection | 📋 ToDo | P0 | M | 8.1 |
-| 8.5 | `/api/auth/*` route handlers | 📋 ToDo | P1 | S | 8.4 |
-| 8.6 | `lib/` client + exhaustive error localization | 📋 ToDo | P0 | M | 8.1 |
+| 8.1 | Next app scaffold + design system verbatim | ✅ | P0 | M | — |
+| 8.2 | Root layout + `AuthProvider` providers | ✅ | P0 | M | 8.1 |
+| 8.3 | App shell + global controls (nuqs) | ✅ | P0 | M | 8.2 |
+| 8.4 | Edge proxy + WASM route protection | ✅ | P0 | M | 8.1 |
+| 8.5 | `/api/auth/*` route handlers | ✅ | P1 | S | 8.4 |
+| 8.6 | `lib/` client + exhaustive error localization | ✅ | P0 | M | 8.1 |
 
 ---
 
@@ -96,7 +103,7 @@ public-page body lands in P9 and every authenticated dashboard / platform surfac
 
 ### Task 8.1 — Next app scaffold + design system verbatim
 
-- **Status**: 📋 ToDo
+- **Status**: ✅
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: —
@@ -108,18 +115,18 @@ and copy the shared design system byte-for-byte from the sibling so the console 
 
 #### Acceptance criteria
 
-- [ ] `apps/web/package.json` declares `next ^16`, `react ^19`, `react-dom ^19`, `@bymax-one/rust-auth:
+- [x] `apps/web/package.json` declares `next ^16`, `react ^19`, `react-dom ^19`, `@bymax-one/rust-auth:
   file:../../../rust-auth/packages/rust-auth`, plus `nuqs`, `sonner`, `lucide-react`, `@tanstack/react-query`, `geist`,
   `tailwindcss ^4`, and the test stack (`vitest`, `@vitejs/plugin-react`, `jsdom`, `@testing-library/react`,
   `playwright`, `@stryker-mutator/*`).
-- [ ] `apps/web/next.config.mjs` sets `serverExternalPackages: ['@bymax-one/rust-auth']` and
-  `outputFileTracingRoot: path.join(import.meta.dirname, '../..')`.
-- [ ] `app/globals.css`, `tailwind.config.ts`, `postcss.config.mjs`, `components.json`, and `components/ui/*` are
+- [x] `apps/web/next.config.mjs` **bundles** `@bymax-one/rust-auth` (no `serverExternalPackages`, since the library
+  loads its edge WASM lazily) and sets `outputFileTracingRoot: path.join(import.meta.dirname, '../..')`.
+- [x] `app/globals.css`, `tailwind.config.ts`, `postcss.config.mjs`, `components.json`, and `components/ui/*` are
   **byte-identical** to the sibling source (the `#ff6224` primary, glass `0.06`, Geist + GeistMono, forced dark are
   preserved); `diff` against the sibling produces no output.
-- [ ] `vitest.config.ts` bakes in `test: { maxWorkers: '50%', environment: 'jsdom' }` and a `coverage.thresholds` of 100;
+- [x] `vitest.config.ts` bakes in `test: { maxWorkers: '50%', environment: 'jsdom' }` and a `coverage.thresholds` of 100;
   `tsconfig.json` extends the root `tsconfig.base.json`.
-- [ ] `pnpm install --frozen-lockfile` resolves the `file:` link; no `.gitkeep` / empty-dir placeholders.
+- [x] `pnpm install --frozen-lockfile` resolves the `file:` link; no `.gitkeep` / empty-dir placeholders.
 
 #### Files to create / modify
 
@@ -225,7 +232,7 @@ Completion Protocol (after you finish):
 
 ### Task 8.2 — Root layout + `AuthProvider` providers
 
-- **Status**: 📋 ToDo
+- **Status**: ✅
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: 8.1
@@ -237,13 +244,13 @@ Author `app/layout.tsx` (Geist + GeistMono, forced dark, `globals.css`) and `app
 
 #### Acceptance criteria
 
-- [ ] `app/layout.tsx` sets `<html lang="en" className="dark …">` (forced dark) with the Geist + GeistMono font variables,
+- [x] `app/layout.tsx` sets `<html lang="en" className="dark …">` (forced dark) with the Geist + GeistMono font variables,
   imports `./globals.css`, exports `metadata`, and renders `<Providers>{children}</Providers>`.
-- [ ] `app/providers.tsx` is a `'use client'` module that mounts `<AuthProvider client={authClient}
+- [x] `app/providers.tsx` is a `'use client'` module that mounts `<AuthProvider client={authClient}
   revalidateInterval={300_000}>`, the `nuqs` `NuqsAdapter`, the TanStack `QueryClientProvider`, and the `sonner`
   `<Toaster>` (overlay above the topbar).
-- [ ] A minimal `app/page.tsx` placeholder exists so the app builds; `pnpm -C apps/web build` succeeds.
-- [ ] `useSession()` / `useAuthStatus()` resolve from a test that renders a probe component inside `<Providers>` (no
+- [x] A minimal `app/page.tsx` placeholder exists so the app builds; `pnpm -C apps/web build` succeeds.
+- [x] `useSession()` / `useAuthStatus()` resolve from a test that renders a probe component inside `<Providers>` (no
   unhandled-promise warnings); 100% coverage on `app/providers.tsx`.
 
 #### Files to create / modify
@@ -348,7 +355,7 @@ Completion Protocol (after you finish):
 
 ### Task 8.3 — App shell + global controls (nuqs)
 
-- **Status**: 📋 ToDo
+- **Status**: ✅
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: 8.2
@@ -360,14 +367,14 @@ Build the 64px topbar / 250px sidebar shell and the topbar global controls — t
 
 #### Acceptance criteria
 
-- [ ] `components/shell/AppShell.tsx` renders the fixed **64px topbar** + the **250px sidebar** (collapsible under `lg`),
+- [x] `components/shell/AppShell.tsx` renders the fixed **64px topbar** + the **250px sidebar** (collapsible under `lg`),
   composing only `components/ui/*` primitives (never re-styled); the active nav glows `--primary`.
-- [ ] `components/controls/TenantSelector.tsx` uses `nuqs` `useQueryState('tenant')` (default `acme`) and sets the
+- [x] `components/controls/TenantSelector.tsx` uses `nuqs` `useQueryState('tenant')` (default `acme`) and sets the
   `tenant_id` later sent on login/register/reset; `DeliveryModeChip.tsx` renders the configured `TokenDelivery`
   informationally; `LiveToggle.tsx` uses `useQueryState('live')` (boolean) to pause/resume the SSE tail.
-- [ ] `components/controls/SessionBadge.tsx` consumes `/react` `useAuthStatus()` → renders a skeleton while
+- [x] `components/controls/SessionBadge.tsx` consumes `/react` `useAuthStatus()` → renders a skeleton while
   `isLoading`, the email/avatar when `isAuthenticated`, or a "Sign in" affordance otherwise.
-- [ ] 100% coverage on every new `components/shell/*` and `components/controls/*` file (loading / authenticated /
+- [x] 100% coverage on every new `components/shell/*` and `components/controls/*` file (loading / authenticated /
   unauthenticated branches, the nuqs round-trip).
 
 #### Files to create / modify
@@ -450,7 +457,7 @@ Completion Protocol (after you finish):
 
 ### Task 8.4 — Edge proxy + WASM route protection
 
-- **Status**: 📋 ToDo
+- **Status**: ✅
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: 8.1
@@ -464,17 +471,17 @@ backend round-trip.
 
 #### Acceptance criteria
 
-- [ ] `apps/web/middleware.ts` imports `'server-only'` + `createAuthProxy` / `verifyJwtToken` from
+- [x] `apps/web/proxy.ts` imports `'server-only'` + `createAuthProxy` / `verifyJwtToken` from
   `@bymax-one/rust-auth/nextjs` and `AUTH_ACCESS_COOKIE_NAME` from `/shared`; its `config.matcher` covers
   `/dashboard/:path*`, `/platform/:path*`, and `/api/auth/:path*`.
-- [ ] A request to a protected path with **no** (or an invalid) access cookie redirects (`307`) to `/auth/login` for
+- [x] A request to a protected path with **no** (or an invalid) access cookie redirects (`307`) to `/auth/login` for
   `/dashboard/*` and to `/platform/login` for `/platform/(protected)/*`; a request with a valid cookie passes through
   (`verifyJwtToken` returns a decoded token — no fetch to the API).
-- [ ] `/api/auth/*` requests are handed to the `createAuthProxy` instance (an edge auth-gating middleware that inspects
+- [x] `/api/auth/*` requests are handed to the `createAuthProxy` instance (an edge auth-gating middleware that inspects
   cookies and grants/redirects); the proxy is constructed with `{ loginPath: '/auth/login', accessTokenSecret:
   AUTH_JWT_SECRET_FOR_PROXY, routePrefix: 'auth' }`.
-- [ ] The edge verifier uses `AUTH_JWT_SECRET_FOR_PROXY`; the JWT secret is never logged; 100% coverage on the
-  middleware's decision branches (no cookie / invalid / valid / platform-vs-dashboard target).
+- [x] The edge verifier uses `AUTH_JWT_SECRET_FOR_PROXY`; the JWT secret is never logged; 100% coverage on the
+  proxy/edge-gate decision branches (no cookie / invalid / valid / platform-vs-dashboard target).
 
 #### Files to create / modify
 
@@ -565,7 +572,7 @@ Completion Protocol (after you finish):
 
 ### Task 8.5 — `/api/auth/*` route handlers
 
-- **Status**: 📋 ToDo
+- **Status**: ✅
 - **Priority**: P1
 - **Size**: S
 - **Depends on**: 8.4
@@ -578,14 +585,14 @@ refresh, the edge background refresh, and logout resolve at the documented route
 
 #### Acceptance criteria
 
-- [ ] `app/api/auth/client-refresh/route.ts` exports the handler from `createClientRefreshHandler(config)` (the
+- [x] `app/api/auth/client-refresh/route.ts` exports the handler from `createClientRefreshHandler(config)` (the
   `/client` single-flight `401 → refresh → replay` target, `CLIENT_REFRESH_ROUTE = "/api/auth/client-refresh"`).
-- [ ] `app/api/auth/silent-refresh/route.ts` from `createSilentRefreshHandler(config)` and
+- [x] `app/api/auth/silent-refresh/route.ts` from `createSilentRefreshHandler(config)` and
   `app/api/auth/logout/route.ts` from `createLogoutHandler(config)`; each handler is bound with `AuthHandlerConfig
   { backendUrl: INTERNAL_API_URL, routePrefix: 'auth', loginPath: '/auth/login' }`.
-- [ ] Each `route.ts` exports the correct HTTP method binding for its handler (confirmed against the handler's contract);
+- [x] Each `route.ts` exports the correct HTTP method binding for its handler (confirmed against the handler's contract);
   no business logic is hand-rolled — the factories own it.
-- [ ] 100% coverage on the three `route.ts` modules (each asserts the exported handler is the factory's result).
+- [x] 100% coverage on the three `route.ts` modules (each asserts the exported handler is the factory's result).
 
 #### Files to create / modify
 
@@ -660,7 +667,7 @@ Completion Protocol (after you finish):
 
 ### Task 8.6 — `lib/` client + exhaustive error localization
 
-- **Status**: 📋 ToDo
+- **Status**: ✅
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: 8.1
@@ -673,15 +680,15 @@ the export audit checks it). This is the LAST task of P8 — run the per-phase p
 
 #### Acceptance criteria
 
-- [ ] `lib/auth-client.ts` exports `authClient = createAuthClient({ baseUrl: NEXT_PUBLIC_API_URL, credentials:
+- [x] `lib/auth-client.ts` exports `authClient = createAuthClient({ baseUrl: NEXT_PUBLIC_API_URL, credentials:
   'include', routePrefix: 'auth' })` and `authFetch = createAuthFetch({ routePrefix: 'auth' })` (the single-flight
   `401 → /api/auth/client-refresh → replay` wrapper); a missing `NEXT_PUBLIC_API_URL` throws a precise error.
-- [ ] `lib/error-messages.ts` declares `AUTH_ERROR_MESSAGES: Record<AuthErrorCode, { message: string; severity:
+- [x] `lib/error-messages.ts` declares `AUTH_ERROR_MESSAGES: Record<AuthErrorCode, { message: string; severity:
   ErrorSeverity }>` with `satisfies Record<AuthErrorCode, …>` so **every** one of the 38 `AUTH_ERROR_CODES` members is
   present (compile-time exhaustiveness) + a `localizeAuthError(code: string)` resolver with a generic fallback.
-- [ ] A unit test iterates `AUTH_ERROR_CODES` and asserts each member has a non-empty `message` and a valid `severity`;
+- [x] A unit test iterates `AUTH_ERROR_CODES` and asserts each member has a non-empty `message` and a valid `severity`;
   `pnpm audit:exports` passes (every `/shared` export referenced; the localization map exhaustive).
-- [ ] Everything under `lib/` is **JSX-free** plain TypeScript; 100% coverage on the new `lib/` (incl. the
+- [x] Everything under `lib/` is **JSX-free** plain TypeScript; 100% coverage on the new `lib/` (incl. the
   missing-env throw and the fallback branch).
 
 #### Files to create / modify
@@ -798,4 +805,9 @@ If any DoD bullet is unmet or CI is red, set P8 to `🟡 Partial`, not `✅`.
 
 > Append-only. One line per completed task: `- <id> ✅ YYYY-MM-DD — <summary>`.
 
-_(empty — no tasks completed yet)_
+- 8.1 ✅ 2026-07-02 — Next app scaffold + design system verbatim
+- 8.2 ✅ 2026-07-02 — root layout + AuthProvider providers
+- 8.3 ✅ 2026-07-02 — app shell + global controls
+- 8.4 ✅ 2026-07-02 — edge proxy + WASM route protection
+- 8.5 ✅ 2026-07-02 — /api/auth/* route handlers
+- 8.6 ✅ 2026-07-02 — lib/ client + exhaustive error localization
