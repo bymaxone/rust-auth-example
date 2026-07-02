@@ -6,9 +6,13 @@ rust-version.workspace = true
 license.workspace = true
 publish = false
 
-# Path dependencies on the concrete `bymax-auth-*` crates are injected at the
-# checkout boundary; this package declares only the dependencies it uses directly.
+# The library under demonstration, consumed pre-publish across the checkout
+# boundary. The `bymax-auth` facade is a stub (no `pub use`), so depend on the
+# concrete crates directly; `-types`/`-crypto`/`-jwt` arrive transitively.
 [dependencies]
+bymax-auth-axum  = { path = "../../../rust-auth/crates/bymax-auth-axum",  version = "0.0.0", features = ["full"] }
+bymax-auth-core  = { path = "../../../rust-auth/crates/bymax-auth-core",  version = "0.0.0", features = ["full"] }
+bymax-auth-redis = { path = "../../../rust-auth/crates/bymax-auth-redis", version = "0.0.0", features = ["mfa", "oauth", "platform"] }
 base64 = "0.22"
 figment = { version = "0.10", features = ["env"] }
 serde = { version = "1", features = ["derive"] }

@@ -1,6 +1,6 @@
 # Phase 2 — Library Consumption & Export Audits
 
-> **Status**: 🔄 In Progress · **Progress**: 0 / 4 tasks · **Last updated**: 2026-07-02
+> **Status**: 🔄 In Progress · **Progress**: 1 / 4 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P2
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -47,7 +47,7 @@ When P2 is done, `cargo build --locked` links all three library crates into `app
 
 | ID | Task | Status | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- | --- |
-| 2.1 | Rust `path` deps + consumed-symbol probe | 📋 ToDo | P0 | M | — |
+| 2.1 | Rust `path` deps + consumed-symbol probe | ✅ Done | P0 | M | — |
 | 2.2 | npm package build + `file:` link | 📋 ToDo | P0 | M | — |
 | 2.3 | npm export-usage audit | 📋 ToDo | P1 | M | 2.2 |
 | 2.4 | `cargo public-api` audit | 📋 ToDo | P1 | M | 2.1 |
@@ -58,7 +58,7 @@ When P2 is done, `cargo build --locked` links all three library crates into `app
 
 ### Task 2.1 — Rust `path` deps + consumed-symbol probe
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: —
@@ -69,12 +69,12 @@ Add the three `path` dependencies on `bymax-auth-axum` / `bymax-auth-core` / `by
 
 #### Acceptance criteria
 
-- [ ] `apps/api/Cargo.toml` declares `bymax-auth-axum = { path = "../../../rust-auth/crates/bymax-auth-axum", features = ["full"] }`, `bymax-auth-core = { path = "../../../rust-auth/crates/bymax-auth-core", features = ["full"] }`, and `bymax-auth-redis = { path = "../../../rust-auth/crates/bymax-auth-redis", features = ["mfa", "oauth", "platform"] }`.
-- [ ] A probe module (`apps/api/src/probe.rs`) names `AuthEngine` (core), `AxumAuthConfig` (axum), and `RedisStores` (redis) so all three path deps link; it carries timeless rustdoc and is referenced from the crate root.
-- [ ] `cargo build --locked` succeeds and links the three crates; the updated `Cargo.lock` is committed.
-- [ ] `cargo +1.90 check` builds the crate on the MSRV floor with the new dependencies present.
-- [ ] `cargo fmt --all --check` is clean and `cargo clippy --workspace --all-targets -- -D warnings` is clean (no `unwrap`/`expect`/`panic` introduced).
-- [ ] No `.gitkeep` / empty-directory placeholders are created.
+- [x] `apps/api/Cargo.toml` declares `bymax-auth-axum = { path = "../../../rust-auth/crates/bymax-auth-axum", features = ["full"] }`, `bymax-auth-core = { path = "../../../rust-auth/crates/bymax-auth-core", features = ["full"] }`, and `bymax-auth-redis = { path = "../../../rust-auth/crates/bymax-auth-redis", features = ["mfa", "oauth", "platform"] }`.
+- [x] A probe module (`apps/api/src/probe.rs`) names `AuthEngine` (core), `AxumAuthConfig` (axum), and `RedisStores` (redis) so all three path deps link; it carries timeless rustdoc and is referenced from the crate root.
+- [x] `cargo build --locked` succeeds and links the three crates; the updated `Cargo.lock` is committed.
+- [x] `cargo +1.90 check` builds the crate on the MSRV floor with the new dependencies present.
+- [x] `cargo fmt --all --check` is clean and `cargo clippy --workspace --all-targets -- -D warnings` is clean (no `unwrap`/`expect`/`panic` introduced).
+- [x] No `.gitkeep` / empty-directory placeholders are created.
 
 #### Files to create / modify
 
@@ -515,4 +515,4 @@ Run this closeout when the LAST task (2.4) is ✅:
 
 > Append-only. One line per completed task: `- <id> ✅ YYYY-MM-DD — <summary>`.
 
-_(empty — no tasks completed yet)_
+- 2.1 ✅ 2026-07-02 — Added bymax-auth-axum/-core/-redis path deps (version 0.0.0) to apps/api/Cargo.toml; created probe.rs naming AuthEngine/AxumAuthConfig/RedisStores to link all three; updated deny.toml skip-tree for governor+tungstenite duplicates; cargo build --locked, +1.90 check, fmt, clippy all green.
