@@ -25,9 +25,8 @@ const MFA_TOTP_WINDOW: u8 = 1;
 /// Picks the `nest_compat_defaults` profile (or `secure_defaults` under the
 /// `argon2` feature), injects the HS256 secret, seals TOTP secrets with the
 /// configured AES-256-GCM key, sets the dashboard role hierarchy, and enables the
-/// `sessions` + `mfa` controller groups. OAuth is enabled from settings when Google
-/// is configured; the `invitations`/`platform` groups stay off until their seams are
-/// wired.
+/// `sessions` + `mfa` + `invitations` controller groups. OAuth is enabled from settings
+/// when Google is configured; the `platform` group stays off until its seam is wired.
 ///
 /// # Errors
 ///
@@ -73,13 +72,19 @@ pub fn build_auth_config(
     // added; enabling it here would auto-promote the platform controller group in `build`.
     config.platform.enabled = false;
 
-    // Enable the sessions and MFA controller groups; the invitations/platform route
-    // groups stay off until their seams are wired.
+    // Enable the sessions and MFA controller groups; the platform route group stays off
+    // until its seam is wired.
     config.controllers = ControllerToggles {
         sessions: true,
         mfa: true,
         ..config.controllers
     };
+
+    // Enable the team-invitation domain. Its `inv:` single-use store is satisfied by the
+    // shared `RedisStores` handle, and the controller group is turned on here (the builder
+    // also auto-promotes it from `invitations.enabled`).
+    config.invitations.enabled = true;
+    config.controllers.invitations = true;
 
     // Wire the OAuth surface from settings: when Google is configured, populate the
     // provider credentials, the operator-configured redirect targets, and the host
@@ -150,7 +155,8 @@ mod tests {
         assert!(config.controllers.sessions);
         assert!(config.controllers.mfa);
         assert!(!config.controllers.oauth);
-        assert!(!config.controllers.invitations);
+        assert!(config.controllers.invitations);
+        assert!(config.invitations.enabled);
         assert!(!config.controllers.platform);
         assert!(!config.platform.enabled);
         assert!(config.mfa.is_some());

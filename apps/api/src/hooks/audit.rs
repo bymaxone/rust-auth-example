@@ -5,8 +5,9 @@
 //! and a [`HookContext`]; only non-secret context is persisted (the event name, the
 //! actor id/email, the tenant, the IP, and the user-agent). The session hash carried
 //! by `on_new_session`/`on_session_evicted` is deliberately dropped, so an audit row
-//! can never be replayed. `on_oauth_login` and `before_register` keep their library
-//! defaults (the OAuth default is a secure DENY) until those policies are wired.
+//! can never be replayed. `on_oauth_login` implements the concrete Create/Link/Reject
+//! policy (recorded as a masked decision row); `before_register` keeps its permissive
+//! library default.
 
 use async_trait::async_trait;
 use sqlx::PgPool;

@@ -1,6 +1,6 @@
 # Phase 6 — OAuth & Invitations
 
-> **Status**: 🔄 In Progress · **Progress**: 3 / 5 tasks · **Last updated**: 2026-07-02
+> **Status**: 🔄 In Progress · **Progress**: 4 / 5 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P6
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -51,7 +51,7 @@ When P6 is done, `GET /auth/oauth/google` returns a `302` to Google carrying PKC
 | 6.1 | TLS `HttpClient` impl (`reqwest` + rustls/aws-lc-rs) | ✅ Done | P0 | M | — |
 | 6.2 | `GoogleOAuthProvider` wiring + mounted `/auth/oauth/*` verification | ✅ Done | P0 | M | 6.1 |
 | 6.3 | `on_oauth_login` Create/Link/Reject policy in `AuditAuthHooks` | ✅ Done | P0 | M | 6.2 |
-| 6.4 | Invitation create→email→accept flow verification | 📋 ToDo | P1 | M | — |
+| 6.4 | Invitation create→email→accept flow verification | ✅ Done | P1 | M | — |
 | 6.5 | OAuth + invitation e2e (mocks) + opt-in real-HTTPS | 📋 ToDo | P1 | M | 6.2, 6.3, 6.4 |
 
 ---
@@ -437,7 +437,7 @@ Completion Protocol (after you finish):
 
 ### Task 6.4 — Invitation create→email→accept flow verification
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: M
 - **Depends on**: —
@@ -448,12 +448,12 @@ Verify the mounted invitation flow end to end: `POST /auth/invitations` (guarded
 
 #### Acceptance criteria
 
-- [ ] The engine config has `invitations.enabled = true` and `controllers.invitations = true`; `InvitationStore` is satisfied by the `Arc<RedisStores>` handle (no hand-wired store).
-- [ ] An integration test: register→verify→login an admin, then `POST /auth/invitations` with `CreateInvitationDto { email, role, tenant_name? }` (NO `tenant_id` — tenant from the admin's claims) → `204`; the request without an `AuthUser` token → `401`.
-- [ ] A Mailpit test helper queries `http://localhost:8025/api/v1/messages`, finds the invitation email to the invitee, and extracts the `invite_token` from the link.
-- [ ] `POST /auth/invitations/accept` with `AcceptInvitationDto { token, name, password }` → `201` and a live session (cookies/`has_session` per the delivery mode); a second accept of the same token → an invitation error (single-use).
-- [ ] The `audit_log` records an `after_invitation_accepted` row for the new user that contains **no** `invite_token`.
-- [ ] 100% coverage on any new example-owned code (config branch + helper); the lettre `send_invitation` path from P5 is exercised.
+- [x] The engine config has `invitations.enabled = true` and `controllers.invitations = true`; `InvitationStore` is satisfied by the `Arc<RedisStores>` handle (no hand-wired store).
+- [x] An integration test: register→verify→login an admin, then `POST /auth/invitations` with `CreateInvitationDto { email, role, tenant_name? }` (NO `tenant_id` — tenant from the admin's claims) → `204`; the request without an `AuthUser` token → `401`.
+- [x] A Mailpit test helper queries `http://localhost:8025/api/v1/messages`, finds the invitation email to the invitee, and extracts the `invite_token` from the rendered body.
+- [x] `POST /auth/invitations/accept` with `AcceptInvitationDto { token, name, password }` → `201` and a live session; a second accept of the same token → an invitation error (single-use).
+- [x] The `audit_log` records an `after_invitation_accepted` row for the new user that contains **no** `invite_token`.
+- [x] 100% coverage on any new example-owned code (config branch + Mailpit helper); the lettre `send_invitation` path from P5 is exercised.
 
 #### Files to create / modify
 
@@ -645,3 +645,4 @@ When the LAST task (6.5) is ✅:
 - 6.1 ✅ 2026-07-02 — TLS `HttpClient` over reqwest + rustls/aws-lc-rs (webpki roots, HTTPS-only, 10 s timeout); pure request/response translation + opaque `HttpError` mapping; `ring`/`openssl` stay out of the graph.
 - 6.2 ✅ 2026-07-02 — `GoogleOAuthProvider` wired from `OAUTH_GOOGLE_*` settings over the injected `TlsHttpClient`, OAuth controller + `os:` state store enabled from the shared `RedisStores` handle; live-router e2e proves the initiate `302` (PKCE + S256 + state), unknown-provider and forged-state → `auth.oauth_failed`.
 - 6.3 ✅ 2026-07-02 — concrete `on_oauth_login` Create/Link/Reject policy in `AuditAuthHooks` (pure `decide_oauth_login` + a masked, best-effort audit row that never holds a token/`provider_id`); engine-driven e2e proves create/link/reject against the real audit log.
+- 6.4 ✅ 2026-07-02 — invitation domain enabled in the engine config; live-stack e2e proves guarded create (`204`, tenant from claims; `401` unguarded), Mailpit delivery + token extraction, single-use accept (`201` + session), and an `after_invitation_accepted` audit row free of the invite token.
