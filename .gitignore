@@ -10,6 +10,8 @@ dist/
 build/
 .next/
 *.tsbuildinfo
+# Next.js generated type declarations (regenerated on build)
+apps/web/next-env.d.ts
 
 # Coverage
 coverage/
@@ -45,3 +47,6 @@ Thumbs.db
 # Editors / agents
 .idea/
 .claude/settings.local.json
+
+# CI-only sibling library checkout (see .github/actions/link-library)
+.sibling-rust-auth/

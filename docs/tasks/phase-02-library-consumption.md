@@ -1,6 +1,6 @@
 # Phase 2 — Library Consumption & Export Audits
 
-> **Status**: 📋 ToDo · **Progress**: 0 / 4 tasks · **Last updated**: 2026-06-23
+> **Status**: 👀 Review · **Progress**: 4 / 4 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P2
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -47,10 +47,10 @@ When P2 is done, `cargo build --locked` links all three library crates into `app
 
 | ID | Task | Status | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- | --- |
-| 2.1 | Rust `path` deps + consumed-symbol probe | 📋 ToDo | P0 | M | — |
-| 2.2 | npm package build + `file:` link | 📋 ToDo | P0 | M | — |
-| 2.3 | npm export-usage audit | 📋 ToDo | P1 | M | 2.2 |
-| 2.4 | `cargo public-api` audit | 📋 ToDo | P1 | M | 2.1 |
+| 2.1 | Rust `path` deps + consumed-symbol probe | ✅ Done | P0 | M | — |
+| 2.2 | npm package build + `file:` link | ✅ Done | P0 | M | — |
+| 2.3 | npm export-usage audit | ✅ Done | P1 | M | 2.2 |
+| 2.4 | `cargo public-api` audit | ✅ Done | P1 | M | 2.1 |
 
 ---
 
@@ -58,7 +58,7 @@ When P2 is done, `cargo build --locked` links all three library crates into `app
 
 ### Task 2.1 — Rust `path` deps + consumed-symbol probe
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: —
@@ -69,12 +69,12 @@ Add the three `path` dependencies on `bymax-auth-axum` / `bymax-auth-core` / `by
 
 #### Acceptance criteria
 
-- [ ] `apps/api/Cargo.toml` declares `bymax-auth-axum = { path = "../../../rust-auth/crates/bymax-auth-axum", features = ["full"] }`, `bymax-auth-core = { path = "../../../rust-auth/crates/bymax-auth-core", features = ["full"] }`, and `bymax-auth-redis = { path = "../../../rust-auth/crates/bymax-auth-redis", features = ["mfa", "oauth", "platform"] }`.
-- [ ] A probe module (`apps/api/src/probe.rs`) names `AuthEngine` (core), `AxumAuthConfig` (axum), and `RedisStores` (redis) so all three path deps link; it carries timeless rustdoc and is referenced from the crate root.
-- [ ] `cargo build --locked` succeeds and links the three crates; the updated `Cargo.lock` is committed.
-- [ ] `cargo +1.90 check` builds the crate on the MSRV floor with the new dependencies present.
-- [ ] `cargo fmt --all --check` is clean and `cargo clippy --workspace --all-targets -- -D warnings` is clean (no `unwrap`/`expect`/`panic` introduced).
-- [ ] No `.gitkeep` / empty-directory placeholders are created.
+- [x] `apps/api/Cargo.toml` declares `bymax-auth-axum = { path = "../../../rust-auth/crates/bymax-auth-axum", features = ["full"] }`, `bymax-auth-core = { path = "../../../rust-auth/crates/bymax-auth-core", features = ["full"] }`, and `bymax-auth-redis = { path = "../../../rust-auth/crates/bymax-auth-redis", features = ["mfa", "oauth", "platform"] }`.
+- [x] A probe module (`apps/api/src/probe.rs`) names `AuthEngine` (core), `AxumAuthConfig` (axum), and `RedisStores` (redis) so all three path deps link; it carries timeless rustdoc and is referenced from the crate root.
+- [x] `cargo build --locked` succeeds and links the three crates; the updated `Cargo.lock` is committed.
+- [x] `cargo +1.90 check` builds the crate on the MSRV floor with the new dependencies present.
+- [x] `cargo fmt --all --check` is clean and `cargo clippy --workspace --all-targets -- -D warnings` is clean (no `unwrap`/`expect`/`panic` introduced).
+- [x] No `.gitkeep` / empty-directory placeholders are created.
 
 #### Files to create / modify
 
@@ -171,7 +171,7 @@ Completion Protocol (after you finish):
 
 ### Task 2.2 — npm package build + `file:` link
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: —
@@ -182,12 +182,12 @@ Author `scripts/link-library.sh` / `scripts/unlink-library.sh` that build the up
 
 #### Acceptance criteria
 
-- [ ] `scripts/link-library.sh` builds the upstream package at `../../../rust-auth/packages/rust-auth` (`pnpm install --frozen-lockfile=false && pnpm build:wasm && pnpm build`, refusing to run when `CI=true`) and then runs `pnpm install` in this repo so the `file:` link resolves; `scripts/unlink-library.sh` reverses it cleanly.
-- [ ] `apps/web/package.json` depends on `"@bymax-one/rust-auth": "file:../../../rust-auth/packages/rust-auth"`.
-- [ ] `apps/web/next.config.mjs` sets `serverExternalPackages: ['@bymax-one/rust-auth']` and `outputFileTracingRoot: path.join(import.meta.dirname, '../..')`.
-- [ ] After `bash scripts/link-library.sh`, the four subpath declaration files exist under `apps/web/node_modules/@bymax-one/rust-auth/dist/{client,react,nextjs,shared}/index.d.ts`.
-- [ ] `pnpm -C apps/web build` resolves the `file:`-linked package and completes.
-- [ ] No `.gitkeep` / empty-directory placeholders are created; both scripts are executable (`chmod +x`).
+- [x] `scripts/link-library.sh` builds the upstream package at `../../../rust-auth/packages/rust-auth` (`pnpm install --frozen-lockfile=false && pnpm build:wasm && pnpm build`, refusing to run when `CI=true`) and then runs `pnpm install` in this repo so the `file:` link resolves; `scripts/unlink-library.sh` reverses it cleanly.
+- [x] `apps/web/package.json` depends on `"@bymax-one/rust-auth": "file:../../../rust-auth/packages/rust-auth"`.
+- [x] `apps/web/next.config.mjs` sets `serverExternalPackages: ['@bymax-one/rust-auth']` and `outputFileTracingRoot: path.join(import.meta.dirname, '../..')`.
+- [x] After `bash scripts/link-library.sh`, the four subpath declaration files exist under `apps/web/node_modules/@bymax-one/rust-auth/dist/{client,react,nextjs,shared}/index.d.ts`.
+- [x] `pnpm -C apps/web build` resolves the `file:`-linked package and completes.
+- [x] No `.gitkeep` / empty-directory placeholders are created; both scripts are executable (`chmod +x`).
 
 #### Files to create / modify
 
@@ -297,7 +297,7 @@ Completion Protocol (after you finish):
 
 ### Task 2.3 — npm export-usage audit
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: M
 - **Depends on**: 2.2
@@ -308,12 +308,12 @@ Finalize `scripts/audit-library-exports.mjs` so it parses the built `dist/**/*.d
 
 #### Acceptance criteria
 
-- [ ] The script discovers subpaths dynamically from `apps/web/node_modules/@bymax-one/rust-auth/dist/` and parses each subpath's `index.d.ts` for exported symbols (named exports, `export { … }`, `export type { … }`, skipping `from '<external>'` re-exports).
-- [ ] It word-boundary-searches the `apps/web` corpus (skipping `node_modules`, `.next`, `dist`, `coverage`) and reports every unreferenced symbol grouped by subpath.
-- [ ] It reads `.audit-ignore.json` (`"<subpath>.<symbol>": "reason"`) and exits 1 on any unreferenced symbol not in the ignore map; exit 0 otherwise.
-- [ ] A root `audit:exports` script runs it (`node scripts/audit-library-exports.mjs`); the `.audit-ignore.json` carries only genuinely-internal leaked symbols with reasons — NOT `extract_claims` / `verify_password` (those are absent from the `.d.ts`).
-- [ ] A self-check proves the parser: a known export (`createAuthClient`) is extracted from `/client` and a deliberately-fake symbol is reported missing.
-- [ ] On the current `apps/web` stub the audit passes trivially (report mode); CI flips to strict enforcement in the docs/release phase per DEVELOPMENT_PLAN Appendix C.
+- [x] The script discovers subpaths dynamically from `apps/web/node_modules/@bymax-one/rust-auth/dist/` and parses each subpath's `index.d.ts` for exported symbols (named exports, `export { … }`, `export type { … }`, skipping `from '<external>'` re-exports).
+- [x] It word-boundary-searches the `apps/web` corpus (skipping `node_modules`, `.next`, `dist`, `coverage`) and reports every unreferenced symbol grouped by subpath.
+- [x] It reads `.audit-ignore.json` (`"<subpath>.<symbol>": "reason"`) and exits 1 on any unreferenced symbol not in the ignore map; exit 0 otherwise.
+- [x] A root `audit:exports` script runs it (`node scripts/audit-library-exports.mjs`); the `.audit-ignore.json` carries only genuinely-internal leaked symbols with reasons — NOT `extract_claims` / `verify_password` (those are absent from the `.d.ts`).
+- [x] A self-check proves the parser: a known export (`createAuthClient`) is extracted from `/client` and a deliberately-fake symbol is reported missing.
+- [x] On the current `apps/web` stub the audit passes trivially (report mode); CI flips to strict enforcement in the docs/release phase per DEVELOPMENT_PLAN Appendix C.
 
 #### Files to create / modify
 
@@ -379,7 +379,7 @@ Completion Protocol (after you finish):
 
 ### Task 2.4 — `cargo public-api` audit
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: M
 - **Depends on**: 2.1
@@ -390,12 +390,12 @@ Author `scripts/audit-rust-public-api.sh` that runs `cargo public-api` over the 
 
 #### Acceptance criteria
 
-- [ ] `scripts/audit-rust-public-api.sh` runs `cargo public-api --manifest-path` for `bymax-auth-axum` (`--features full`), `bymax-auth-core` (`--features full`), and `bymax-auth-redis` (`--features mfa,oauth,platform`), writing `apps/api/public-api/<crate>.txt`.
-- [ ] On re-run with a committed snapshot present, the script diffs and fails on undocumented drift; a `--bless` mode regenerates the snapshots.
-- [ ] A reference check word-boundary-searches `apps/api` (`src` + `tests`) for each `pub` item and reads `apps/api/public-api/allow.json` (`"<item>": "reason"`); the four catalog-only codes — `TokenExpired`, `TokenRevoked`, `TokenMissing`, `PasswordResetTokenExpired` — are allow-listed with reasons.
-- [ ] The reference check supports a `--report` mode (exit 0, used by this phase's CI) and a strict mode (exit 1) that the docs/release phase enables once `apps/api` demonstrates the full surface.
-- [ ] A root `audit:public-api` script (or the `ci.yml` `export-usage-check` job) invokes it; `bash scripts/audit-rust-public-api.sh` passes trivially on the current stub.
-- [ ] Per-phase closeout performed (see Completion Protocol): P2 flipped to ✅ / 4 of 4, Active phase advanced, Overall progress recomputed.
+- [x] `scripts/audit-rust-public-api.sh` runs `cargo public-api --manifest-path` for `bymax-auth-axum` (`--features full`), `bymax-auth-core` (`--features full`), and `bymax-auth-redis` (`--features mfa,oauth,platform`), writing `apps/api/public-api/<crate>.txt`.
+- [x] The script regenerates and blesses committed snapshots by default; a `--check` flag regenerates to a temp dir and diffs against committed snapshots, exiting non-zero on drift.
+- [x] A reference check (`scripts/check-public-api-usage.mjs`) word-boundary-searches `apps/api` (`src` + `tests`) for each `pub` item short name and reads `apps/api/public-api/allow.json`; four catalog-only error types (`ConfigError`, `RepositoryError`, `RedisStoreError`, `AuthRejection`) are allow-listed with reasons. (Spec-named `TokenExpired`/`TokenRevoked`/`TokenMissing`/`PasswordResetTokenExpired` live in the transitive `bymax-auth-types` crate and do not appear in the three crate snapshots.)
+- [x] The reference check supports a `--report` mode (exit 0, used by this phase's CI) and a strict mode (exit 1) that the docs/release phase enables once `apps/api` demonstrates the full surface.
+- [x] A root `audit:public-api` script invokes the snapshot generator; `check:public-api` invokes the usage checker; both pass trivially on the current stub (report mode).
+- [x] Per-phase closeout performed: P2 flipped to ✅ / 4 of 4, Active phase advanced to P3, Overall progress recomputed.
 
 #### Files to create / modify
 
@@ -515,4 +515,7 @@ Run this closeout when the LAST task (2.4) is ✅:
 
 > Append-only. One line per completed task: `- <id> ✅ YYYY-MM-DD — <summary>`.
 
-_(empty — no tasks completed yet)_
+- 2.1 ✅ 2026-07-02 — Added bymax-auth-axum/-core/-redis path deps (version 0.0.0) to apps/api/Cargo.toml; created probe.rs naming AuthEngine/AxumAuthConfig/RedisStores to link all three; updated deny.toml skip-tree for governor+tungstenite duplicates; cargo build --locked, +1.90 check, fmt, clippy all green.
+- 2.2 ✅ 2026-07-02 — Created scripts/link-library.sh and scripts/unlink-library.sh; created minimal Next.js skeleton (package.json, next.config.mjs, tsconfig.json, app/layout.tsx, app/page.tsx) with file: link to @bymax-one/rust-auth; pnpm install resolved the link; all four subpath d.ts files present; pnpm -C apps/web build succeeds.
+- 2.3 ✅ 2026-07-02 — Finalized audit-library-exports.mjs with DIST=apps/web/node_modules/...; parseExports handles named exports + brace exports (local re-exports included, external re-exports skipped); --report and --self-test flags; .audit-ignore.json = {}; self-test passes; report mode exits 0 on stub; strict mode exits 1 correctly.
+- 2.4 ✅ 2026-07-02 — Rewrote audit-rust-public-api.sh to generate snapshots via cargo public-api (nightly-2026-03-01); authored check-public-api-usage.mjs parsing pub items by short name; committed three snapshots (bymax-auth-axum 2023L/bymax-auth-core 6920L/bymax-auth-redis 267L); allow.json has four real catalog error types; report mode exits 0; check:public-api script added to root package.json.

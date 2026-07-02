@@ -67,6 +67,7 @@ jobs:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           persist-credentials: false
+      - uses: ./.github/actions/link-library
       - uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable (toolchain set via input)
         with:
           toolchain: 1.96.0
@@ -84,6 +85,15 @@ jobs:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           persist-credentials: false
+      - uses: ./.github/actions/link-library
+      - uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable (toolchain set via input)
+        with:
+          toolchain: 1.96.0
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+      - uses: taiki-e/install-action@16b05812d776ae1dfaabc8277e421fb6d2506419 # v2
+        with:
+          tool: wasm-pack
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
         with:
           version: 10.8.1
@@ -91,6 +101,12 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
+      - name: Build the sibling @bymax-one/rust-auth browser package
+        working-directory: .sibling-rust-auth/packages/rust-auth
+        run: |
+          pnpm install --no-frozen-lockfile --ignore-workspace
+          pnpm build:wasm
+          pnpm build
       - run: pnpm install --frozen-lockfile
       - name: Mutation testing (web)
         run: echo "mutation-web — Stryker gate for apps/web."

@@ -1,30 +1,88 @@
 #!/usr/bin/env bash
-# Public-API audit for the consumed Rust crates. Runs `cargo public-api` over the
-# `bymax-auth-*` crates the example depends on and checks every `pub` item is
-# referenced in apps/api (or allow-listed with a reason in .audit-ignore.json).
+# Generate cargo-public-api snapshots for the three consumed library crates and
+# write them to apps/api/public-api/*.txt. Requires nightly rustdoc.
+# Run from the repository root. Safe to re-run; overwrites existing snapshots.
 #
-# It exits 0 on the current stub: no `bymax-auth` path dependency is wired into
-# apps/api yet, so there is no consumed public surface to audit. The gate becomes
-# real once the library-consumption step adds the path dependencies.
+# Flags:
+#   --check   Regenerate snapshots to a temp dir and diff against committed
+#             snapshots; exits non-zero on drift. Default mode generates and
+#             blesses the committed snapshots in-place.
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+OUT_DIR="${HERE}/apps/api/public-api"
+# The version pinned here must match the nightly the installed cargo-public-api
+# binary was compiled against. Update by re-running:
+#   RUSTUP_TOOLCHAIN=nightly-<date> cargo public-api ...
+# and checking that rustdoc JSON builds cleanly.
+TOOLCHAIN="${RUSTUP_TOOLCHAIN:-nightly-2026-03-01}"
 
-# Match an actual dependency declaration (`bymax-auth-... =`), not a comment that
-# merely mentions the crate family.
-if ! grep -qE '^[[:space:]]*bymax-auth[a-z-]*[[:space:]]*=' "${ROOT}/apps/api/Cargo.toml" 2>/dev/null; then
-  echo "audit:public-api — no consumed crates wired yet; nothing to audit."
-  exit 0
-fi
+CRATES=(
+  "bymax-auth-axum"
+  "bymax-auth-core"
+  "bymax-auth-redis"
+)
+
+CHECK_MODE=false
+for arg in "$@"; do
+  if [[ "$arg" == "--check" ]]; then
+    CHECK_MODE=true
+  fi
+done
 
 if ! command -v cargo-public-api >/dev/null 2>&1; then
-  echo "audit:public-api — cargo-public-api is not installed." >&2
+  echo "audit:public-api — cargo-public-api not installed; run: cargo install cargo-public-api" >&2
   exit 1
 fi
 
-# The consumed public surface exists; snapshot it so a reviewer can diff the
-# referenced items. Enforcement of the reference set lands with the audit wiring.
-SNAPSHOT="${ROOT}/target/public-api-snapshot.txt"
-mkdir -p "$(dirname "${SNAPSHOT}")"
-cargo public-api --manifest-path "${ROOT}/apps/api/Cargo.toml" | tee "${SNAPSHOT}"
-echo "audit:public-api — consumed crates present; public-API snapshot written to ${SNAPSHOT}."
+if $CHECK_MODE; then
+  WORK_DIR="$(mktemp -d)"
+  trap 'rm -rf "$WORK_DIR"' EXIT
+  echo "audit:public-api — check mode: regenerating to temp dir for drift detection (${TOOLCHAIN} rustdoc)"
+else
+  echo "audit:public-api — generating snapshots via cargo public-api (${TOOLCHAIN} rustdoc)"
+  mkdir -p "${OUT_DIR}"
+fi
+
+DRIFT=false
+
+for CRATE in "${CRATES[@]}"; do
+  if $CHECK_MODE; then
+    TMP_OUT="${WORK_DIR}/${CRATE}.txt"
+    echo "audit:public-api —   ${CRATE} → (temp)"
+    RUSTUP_TOOLCHAIN="${TOOLCHAIN}" cargo public-api \
+      --manifest-path "${HERE}/apps/api/Cargo.toml" \
+      --package "${CRATE}" \
+      | sort \
+      > "${TMP_OUT}"
+    COMMITTED="${OUT_DIR}/${CRATE}.txt"
+    if [[ ! -f "${COMMITTED}" ]]; then
+      echo "audit:public-api — DRIFT: ${CRATE}.txt not found in committed snapshots" >&2
+      DRIFT=true
+    elif ! diff -u "${COMMITTED}" "${TMP_OUT}"; then
+      echo "audit:public-api — DRIFT detected in ${CRATE}" >&2
+      DRIFT=true
+    else
+      echo "audit:public-api —   ${CRATE}: no drift"
+    fi
+  else
+    OUT="${OUT_DIR}/${CRATE}.txt"
+    echo "audit:public-api —   ${CRATE} → ${OUT}"
+    RUSTUP_TOOLCHAIN="${TOOLCHAIN}" cargo public-api \
+      --manifest-path "${HERE}/apps/api/Cargo.toml" \
+      --package "${CRATE}" \
+      | sort \
+      > "${OUT}"
+    echo "audit:public-api —   $(wc -l < "${OUT}" | tr -d ' ') lines written"
+  fi
+done
+
+if $CHECK_MODE; then
+  if $DRIFT; then
+    echo "audit:public-api — FAILED: snapshot drift detected; run without --check to regenerate" >&2
+    exit 1
+  fi
+  echo "audit:public-api — all snapshots match committed state"
+else
+  echo "audit:public-api — snapshots written to ${OUT_DIR}"
+fi

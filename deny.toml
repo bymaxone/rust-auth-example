@@ -46,7 +46,14 @@ deny = [
     { crate = "ring", reason = "ring breaks the wasm32 edge build; RustCrypto is the crypto policy." },
 ]
 skip = []
-skip-tree = []
+# The rate-limiter and WebSocket transport bring their own `rand`/`getrandom`/
+# `hashbrown` majors and pull `thiserror 1`; skipping their subtrees keeps the
+# duplicate count from those leaves out of the gate without masking a duplicate
+# anywhere on the first-party crypto path.
+skip-tree = [
+    { crate = "governor@0.10", reason = "GCRA rate limiter behind tower_governor; pulls rand 0.9 / getrandom 0.3 / dashmap+hashbrown 0.14, all server-only." },
+    { crate = "tungstenite@0.29", reason = "axum `ws` WebSocket transport; pulls rand 0.9 for the masking key, server-only and never on the crypto/edge path." },
+]
 
 [sources]
 # crates.io only — no git dependencies, no vendored or unknown registries.

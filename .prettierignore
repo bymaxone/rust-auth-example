@@ -12,3 +12,6 @@ Cargo.lock
 # Planning blueprints and the shared design-system reference are maintained by
 # the project workflow and copied verbatim; they are not reformatted by Prettier.
 docs
+
+# CI-only sibling library checkout (see .github/actions/link-library)
+.sibling-rust-auth

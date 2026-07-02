@@ -31,8 +31,9 @@
     "infra:down": "docker compose down -v",
     "infra:test:up": "docker compose -f docker-compose.test.yml up -d --wait",
     "infra:test:down": "docker compose -f docker-compose.test.yml down -v",
-    "audit:exports": "node scripts/audit-library-exports.mjs",
-    "audit:public-api": "bash scripts/audit-rust-public-api.sh"
+    "audit:exports": "node scripts/audit-library-exports.mjs --report",
+    "audit:public-api": "bash scripts/audit-rust-public-api.sh",
+    "check:public-api": "node scripts/check-public-api-usage.mjs --report"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.5.0",

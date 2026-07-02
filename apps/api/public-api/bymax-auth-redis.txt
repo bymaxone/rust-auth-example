@@ -1,0 +1,267 @@
+impl !core::panic::unwind_safe::RefUnwindSafe for bymax_auth_redis::RedisStoreError
+impl !core::panic::unwind_safe::RefUnwindSafe for bymax_auth_redis::RedisStores
+impl !core::panic::unwind_safe::UnwindSafe for bymax_auth_redis::RedisStoreError
+impl !core::panic::unwind_safe::UnwindSafe for bymax_auth_redis::RedisStores
+impl bymax_auth_core::traits::store::BruteForceStore for bymax_auth_redis::RedisStores
+impl bymax_auth_core::traits::store::InvitationStore for bymax_auth_redis::RedisStores
+impl bymax_auth_core::traits::store::MfaStore for bymax_auth_redis::RedisStores
+impl bymax_auth_core::traits::store::OAuthStateStore for bymax_auth_redis::RedisStores
+impl bymax_auth_core::traits::store::OtpStore for bymax_auth_redis::RedisStores
+impl bymax_auth_core::traits::store::PasswordResetStore for bymax_auth_redis::RedisStores
+impl bymax_auth_core::traits::store::SessionStore for bymax_auth_redis::RedisStores
+impl bymax_auth_core::traits::store::WsTicketStore for bymax_auth_redis::RedisStores
+impl bymax_auth_redis::NamespacedRedis
+impl bymax_auth_redis::Prefix
+impl bymax_auth_redis::RedisStores
+impl core::clone::Clone for bymax_auth_redis::NamespacedRedis
+impl core::clone::Clone for bymax_auth_redis::Prefix
+impl core::cmp::Eq for bymax_auth_redis::Prefix
+impl core::cmp::PartialEq for bymax_auth_redis::Prefix
+impl core::convert::From<bymax_auth_redis::RedisStoreError> for bymax_auth_types::error::AuthError
+impl core::convert::From<deadpool::managed::config::CreatePoolError<deadpool_redis::config::ConfigError>> for bymax_auth_redis::RedisStoreError
+impl core::convert::From<deadpool::managed::errors::PoolError<redis::errors::redis_error::RedisError>> for bymax_auth_redis::RedisStoreError
+impl core::convert::From<redis::errors::redis_error::RedisError> for bymax_auth_redis::RedisStoreError
+impl core::convert::From<serde_json::error::Error> for bymax_auth_redis::RedisStoreError
+impl core::error::Error for bymax_auth_redis::RedisStoreError
+impl core::fmt::Debug for bymax_auth_redis::NamespacedRedis
+impl core::fmt::Debug for bymax_auth_redis::Prefix
+impl core::fmt::Debug for bymax_auth_redis::RedisStoreError
+impl core::fmt::Display for bymax_auth_redis::RedisStoreError
+impl core::marker::Copy for bymax_auth_redis::Prefix
+impl core::marker::Freeze for bymax_auth_redis::NamespacedRedis
+impl core::marker::Freeze for bymax_auth_redis::Prefix
+impl core::marker::Freeze for bymax_auth_redis::RedisStoreError
+impl core::marker::Freeze for bymax_auth_redis::RedisStores
+impl core::marker::Send for bymax_auth_redis::NamespacedRedis
+impl core::marker::Send for bymax_auth_redis::Prefix
+impl core::marker::Send for bymax_auth_redis::RedisStoreError
+impl core::marker::Send for bymax_auth_redis::RedisStores
+impl core::marker::StructuralPartialEq for bymax_auth_redis::Prefix
+impl core::marker::Sync for bymax_auth_redis::NamespacedRedis
+impl core::marker::Sync for bymax_auth_redis::Prefix
+impl core::marker::Sync for bymax_auth_redis::RedisStoreError
+impl core::marker::Sync for bymax_auth_redis::RedisStores
+impl core::marker::Unpin for bymax_auth_redis::NamespacedRedis
+impl core::marker::Unpin for bymax_auth_redis::Prefix
+impl core::marker::Unpin for bymax_auth_redis::RedisStoreError
+impl core::marker::Unpin for bymax_auth_redis::RedisStores
+impl core::marker::UnsafeUnpin for bymax_auth_redis::NamespacedRedis
+impl core::marker::UnsafeUnpin for bymax_auth_redis::Prefix
+impl core::marker::UnsafeUnpin for bymax_auth_redis::RedisStoreError
+impl core::marker::UnsafeUnpin for bymax_auth_redis::RedisStores
+impl core::panic::unwind_safe::RefUnwindSafe for bymax_auth_redis::NamespacedRedis
+impl core::panic::unwind_safe::RefUnwindSafe for bymax_auth_redis::Prefix
+impl core::panic::unwind_safe::UnwindSafe for bymax_auth_redis::NamespacedRedis
+impl core::panic::unwind_safe::UnwindSafe for bymax_auth_redis::Prefix
+impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_redis::NamespacedRedis where B: http_body::Body
+impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_redis::Prefix where B: http_body::Body
+impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_redis::RedisStoreError where B: http_body::Body
+impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_redis::RedisStores where B: http_body::Body
+impl<ST, DT> zerocopy::pointer::invariant::CastableFrom<ST, zerocopy::pointer::invariant::Initialized, zerocopy::pointer::invariant::Initialized> for bymax_auth_redis::NamespacedRedis where ST: ?core::marker::Sized, DT: ?core::marker::Sized
+impl<ST, DT> zerocopy::pointer::invariant::CastableFrom<ST, zerocopy::pointer::invariant::Initialized, zerocopy::pointer::invariant::Initialized> for bymax_auth_redis::Prefix where ST: ?core::marker::Sized, DT: ?core::marker::Sized
+impl<ST, DT> zerocopy::pointer::invariant::CastableFrom<ST, zerocopy::pointer::invariant::Initialized, zerocopy::pointer::invariant::Initialized> for bymax_auth_redis::RedisStoreError where ST: ?core::marker::Sized, DT: ?core::marker::Sized
+impl<ST, DT> zerocopy::pointer::invariant::CastableFrom<ST, zerocopy::pointer::invariant::Initialized, zerocopy::pointer::invariant::Initialized> for bymax_auth_redis::RedisStores where ST: ?core::marker::Sized, DT: ?core::marker::Sized
+impl<ST, DT> zerocopy::pointer::invariant::CastableFrom<ST, zerocopy::pointer::invariant::Uninit, zerocopy::pointer::invariant::Uninit> for bymax_auth_redis::NamespacedRedis where ST: ?core::marker::Sized, DT: ?core::marker::Sized
+impl<ST, DT> zerocopy::pointer::invariant::CastableFrom<ST, zerocopy::pointer::invariant::Uninit, zerocopy::pointer::invariant::Uninit> for bymax_auth_redis::Prefix where ST: ?core::marker::Sized, DT: ?core::marker::Sized
+impl<ST, DT> zerocopy::pointer::invariant::CastableFrom<ST, zerocopy::pointer::invariant::Uninit, zerocopy::pointer::invariant::Uninit> for bymax_auth_redis::RedisStoreError where ST: ?core::marker::Sized, DT: ?core::marker::Sized
+impl<ST, DT> zerocopy::pointer::invariant::CastableFrom<ST, zerocopy::pointer::invariant::Uninit, zerocopy::pointer::invariant::Uninit> for bymax_auth_redis::RedisStores where ST: ?core::marker::Sized, DT: ?core::marker::Sized
+impl<T, U> core::convert::Into<U> for bymax_auth_redis::NamespacedRedis where U: core::convert::From<T>
+impl<T, U> core::convert::Into<U> for bymax_auth_redis::Prefix where U: core::convert::From<T>
+impl<T, U> core::convert::Into<U> for bymax_auth_redis::RedisStoreError where U: core::convert::From<T>
+impl<T, U> core::convert::Into<U> for bymax_auth_redis::RedisStores where U: core::convert::From<T>
+impl<T, U> core::convert::TryFrom<U> for bymax_auth_redis::NamespacedRedis where U: core::convert::Into<T>
+impl<T, U> core::convert::TryFrom<U> for bymax_auth_redis::Prefix where U: core::convert::Into<T>
+impl<T, U> core::convert::TryFrom<U> for bymax_auth_redis::RedisStoreError where U: core::convert::Into<T>
+impl<T, U> core::convert::TryFrom<U> for bymax_auth_redis::RedisStores where U: core::convert::Into<T>
+impl<T, U> core::convert::TryInto<U> for bymax_auth_redis::NamespacedRedis where U: core::convert::TryFrom<T>
+impl<T, U> core::convert::TryInto<U> for bymax_auth_redis::Prefix where U: core::convert::TryFrom<T>
+impl<T, U> core::convert::TryInto<U> for bymax_auth_redis::RedisStoreError where U: core::convert::TryFrom<T>
+impl<T, U> core::convert::TryInto<U> for bymax_auth_redis::RedisStores where U: core::convert::TryFrom<T>
+impl<T> alloc::borrow::ToOwned for bymax_auth_redis::NamespacedRedis where T: core::clone::Clone
+impl<T> alloc::borrow::ToOwned for bymax_auth_redis::Prefix where T: core::clone::Clone
+impl<T> alloc::string::ToString for bymax_auth_redis::RedisStoreError where T: core::fmt::Display + ?core::marker::Sized
+impl<T> core::any::Any for bymax_auth_redis::NamespacedRedis where T: 'static + ?core::marker::Sized
+impl<T> core::any::Any for bymax_auth_redis::Prefix where T: 'static + ?core::marker::Sized
+impl<T> core::any::Any for bymax_auth_redis::RedisStoreError where T: 'static + ?core::marker::Sized
+impl<T> core::any::Any for bymax_auth_redis::RedisStores where T: 'static + ?core::marker::Sized
+impl<T> core::borrow::Borrow<T> for bymax_auth_redis::NamespacedRedis where T: ?core::marker::Sized
+impl<T> core::borrow::Borrow<T> for bymax_auth_redis::Prefix where T: ?core::marker::Sized
+impl<T> core::borrow::Borrow<T> for bymax_auth_redis::RedisStoreError where T: ?core::marker::Sized
+impl<T> core::borrow::Borrow<T> for bymax_auth_redis::RedisStores where T: ?core::marker::Sized
+impl<T> core::borrow::BorrowMut<T> for bymax_auth_redis::NamespacedRedis where T: ?core::marker::Sized
+impl<T> core::borrow::BorrowMut<T> for bymax_auth_redis::Prefix where T: ?core::marker::Sized
+impl<T> core::borrow::BorrowMut<T> for bymax_auth_redis::RedisStoreError where T: ?core::marker::Sized
+impl<T> core::borrow::BorrowMut<T> for bymax_auth_redis::RedisStores where T: ?core::marker::Sized
+impl<T> core::clone::CloneToUninit for bymax_auth_redis::NamespacedRedis where T: core::clone::Clone
+impl<T> core::clone::CloneToUninit for bymax_auth_redis::Prefix where T: core::clone::Clone
+impl<T> core::convert::From<T> for bymax_auth_redis::NamespacedRedis
+impl<T> core::convert::From<T> for bymax_auth_redis::Prefix
+impl<T> core::convert::From<T> for bymax_auth_redis::RedisStoreError
+impl<T> core::convert::From<T> for bymax_auth_redis::RedisStores
+impl<T> tower_http::follow_redirect::policy::PolicyExt for bymax_auth_redis::NamespacedRedis where T: ?core::marker::Sized
+impl<T> tower_http::follow_redirect::policy::PolicyExt for bymax_auth_redis::Prefix where T: ?core::marker::Sized
+impl<T> tower_http::follow_redirect::policy::PolicyExt for bymax_auth_redis::RedisStoreError where T: ?core::marker::Sized
+impl<T> tower_http::follow_redirect::policy::PolicyExt for bymax_auth_redis::RedisStores where T: ?core::marker::Sized
+impl<T> tracing::instrument::Instrument for bymax_auth_redis::NamespacedRedis
+impl<T> tracing::instrument::Instrument for bymax_auth_redis::Prefix
+impl<T> tracing::instrument::Instrument for bymax_auth_redis::RedisStoreError
+impl<T> tracing::instrument::Instrument for bymax_auth_redis::RedisStores
+impl<T> tracing::instrument::WithSubscriber for bymax_auth_redis::NamespacedRedis
+impl<T> tracing::instrument::WithSubscriber for bymax_auth_redis::Prefix
+impl<T> tracing::instrument::WithSubscriber for bymax_auth_redis::RedisStoreError
+impl<T> tracing::instrument::WithSubscriber for bymax_auth_redis::RedisStores
+impl<T> typenum::type_operators::Same for bymax_auth_redis::NamespacedRedis
+impl<T> typenum::type_operators::Same for bymax_auth_redis::Prefix
+impl<T> typenum::type_operators::Same for bymax_auth_redis::RedisStoreError
+impl<T> typenum::type_operators::Same for bymax_auth_redis::RedisStores
+impl<T> zerocopy::pointer::invariant::Read<zerocopy::pointer::invariant::Exclusive, zerocopy::pointer::invariant::BecauseExclusive> for bymax_auth_redis::NamespacedRedis where T: ?core::marker::Sized
+impl<T> zerocopy::pointer::invariant::Read<zerocopy::pointer::invariant::Exclusive, zerocopy::pointer::invariant::BecauseExclusive> for bymax_auth_redis::Prefix where T: ?core::marker::Sized
+impl<T> zerocopy::pointer::invariant::Read<zerocopy::pointer::invariant::Exclusive, zerocopy::pointer::invariant::BecauseExclusive> for bymax_auth_redis::RedisStoreError where T: ?core::marker::Sized
+impl<T> zerocopy::pointer::invariant::Read<zerocopy::pointer::invariant::Exclusive, zerocopy::pointer::invariant::BecauseExclusive> for bymax_auth_redis::RedisStores where T: ?core::marker::Sized
+impl<V, T> ppv_lite86::types::VZip<V> for bymax_auth_redis::NamespacedRedis where V: ppv_lite86::types::MultiLane<T>
+impl<V, T> ppv_lite86::types::VZip<V> for bymax_auth_redis::Prefix where V: ppv_lite86::types::MultiLane<T>
+impl<V, T> ppv_lite86::types::VZip<V> for bymax_auth_redis::RedisStoreError where V: ppv_lite86::types::MultiLane<T>
+impl<V, T> ppv_lite86::types::VZip<V> for bymax_auth_redis::RedisStores where V: ppv_lite86::types::MultiLane<T>
+pub bymax_auth_redis::Prefix::Inv
+pub bymax_auth_redis::Prefix::Lf
+pub bymax_auth_redis::Prefix::Mfa
+pub bymax_auth_redis::Prefix::MfaSetup
+pub bymax_auth_redis::Prefix::Os
+pub bymax_auth_redis::Prefix::Otp
+pub bymax_auth_redis::Prefix::Pr
+pub bymax_auth_redis::Prefix::Prp
+pub bymax_auth_redis::Prefix::Prt
+pub bymax_auth_redis::Prefix::Prv
+pub bymax_auth_redis::Prefix::Psd
+pub bymax_auth_redis::Prefix::Psess
+pub bymax_auth_redis::Prefix::Resend
+pub bymax_auth_redis::Prefix::Rp
+pub bymax_auth_redis::Prefix::Rt
+pub bymax_auth_redis::Prefix::Rv
+pub bymax_auth_redis::Prefix::Sd
+pub bymax_auth_redis::Prefix::Sess
+pub bymax_auth_redis::Prefix::Tu
+pub bymax_auth_redis::Prefix::Wst
+pub bymax_auth_redis::RedisStoreError::Build(deadpool_redis::CreatePoolError)
+pub bymax_auth_redis::RedisStoreError::Command(redis::errors::redis_error::RedisError)
+pub bymax_auth_redis::RedisStoreError::Decode(serde_json::error::Error)
+pub bymax_auth_redis::RedisStoreError::Pool(deadpool_redis::PoolError)
+pub enum bymax_auth_redis::Prefix
+pub enum bymax_auth_redis::RedisStoreError
+pub fn bymax_auth_redis::NamespacedRedis::and<P, B, E>(self, P) -> tower_http::follow_redirect::policy::and::And<T, P> where T: tower_http::follow_redirect::policy::Policy<B, E>, P: tower_http::follow_redirect::policy::Policy<B, E>
+pub fn bymax_auth_redis::NamespacedRedis::borrow(&self) -> &T
+pub fn bymax_auth_redis::NamespacedRedis::borrow_mut(&mut self) -> &mut T
+pub fn bymax_auth_redis::NamespacedRedis::clone(&self) -> bymax_auth_redis::NamespacedRedis
+pub fn bymax_auth_redis::NamespacedRedis::clone_into(&self, &mut T)
+pub fn bymax_auth_redis::NamespacedRedis::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+pub fn bymax_auth_redis::NamespacedRedis::from(T) -> T
+pub fn bymax_auth_redis::NamespacedRedis::into(self) -> U
+pub fn bymax_auth_redis::NamespacedRedis::key(&self, bymax_auth_redis::Prefix, &str) -> alloc::string::String
+pub fn bymax_auth_redis::NamespacedRedis::namespace(&self) -> &str
+pub fn bymax_auth_redis::NamespacedRedis::new(impl core::convert::Into<alloc::boxed::Box<str>>) -> Self
+pub fn bymax_auth_redis::NamespacedRedis::or<P, B, E>(self, P) -> tower_http::follow_redirect::policy::or::Or<T, P> where T: tower_http::follow_redirect::policy::Policy<B, E>, P: tower_http::follow_redirect::policy::Policy<B, E>
+pub fn bymax_auth_redis::NamespacedRedis::to_owned(&self) -> T
+pub fn bymax_auth_redis::NamespacedRedis::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub fn bymax_auth_redis::NamespacedRedis::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+pub fn bymax_auth_redis::NamespacedRedis::type_id(&self) -> core::any::TypeId
+pub fn bymax_auth_redis::NamespacedRedis::vzip(self) -> V
+pub fn bymax_auth_redis::Prefix::and<P, B, E>(self, P) -> tower_http::follow_redirect::policy::and::And<T, P> where T: tower_http::follow_redirect::policy::Policy<B, E>, P: tower_http::follow_redirect::policy::Policy<B, E>
+pub fn bymax_auth_redis::Prefix::as_str(self) -> &'static str
+pub fn bymax_auth_redis::Prefix::borrow(&self) -> &T
+pub fn bymax_auth_redis::Prefix::borrow_mut(&mut self) -> &mut T
+pub fn bymax_auth_redis::Prefix::clone(&self) -> bymax_auth_redis::Prefix
+pub fn bymax_auth_redis::Prefix::clone_into(&self, &mut T)
+pub fn bymax_auth_redis::Prefix::eq(&self, &bymax_auth_redis::Prefix) -> bool
+pub fn bymax_auth_redis::Prefix::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+pub fn bymax_auth_redis::Prefix::from(T) -> T
+pub fn bymax_auth_redis::Prefix::into(self) -> U
+pub fn bymax_auth_redis::Prefix::or<P, B, E>(self, P) -> tower_http::follow_redirect::policy::or::Or<T, P> where T: tower_http::follow_redirect::policy::Policy<B, E>, P: tower_http::follow_redirect::policy::Policy<B, E>
+pub fn bymax_auth_redis::Prefix::to_owned(&self) -> T
+pub fn bymax_auth_redis::Prefix::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub fn bymax_auth_redis::Prefix::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+pub fn bymax_auth_redis::Prefix::type_id(&self) -> core::any::TypeId
+pub fn bymax_auth_redis::Prefix::vzip(self) -> V
+pub fn bymax_auth_redis::RedisStoreError::and<P, B, E>(self, P) -> tower_http::follow_redirect::policy::and::And<T, P> where T: tower_http::follow_redirect::policy::Policy<B, E>, P: tower_http::follow_redirect::policy::Policy<B, E>
+pub fn bymax_auth_redis::RedisStoreError::borrow(&self) -> &T
+pub fn bymax_auth_redis::RedisStoreError::borrow_mut(&mut self) -> &mut T
+pub fn bymax_auth_redis::RedisStoreError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+pub fn bymax_auth_redis::RedisStoreError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+pub fn bymax_auth_redis::RedisStoreError::from(T) -> T
+pub fn bymax_auth_redis::RedisStoreError::from(deadpool_redis::CreatePoolError) -> Self
+pub fn bymax_auth_redis::RedisStoreError::from(deadpool_redis::PoolError) -> Self
+pub fn bymax_auth_redis::RedisStoreError::from(redis::errors::redis_error::RedisError) -> Self
+pub fn bymax_auth_redis::RedisStoreError::from(serde_json::error::Error) -> Self
+pub fn bymax_auth_redis::RedisStoreError::into(self) -> U
+pub fn bymax_auth_redis::RedisStoreError::or<P, B, E>(self, P) -> tower_http::follow_redirect::policy::or::Or<T, P> where T: tower_http::follow_redirect::policy::Policy<B, E>, P: tower_http::follow_redirect::policy::Policy<B, E>
+pub fn bymax_auth_redis::RedisStoreError::source(&self) -> core::option::Option<&(dyn core::error::Error + 'static)>
+pub fn bymax_auth_redis::RedisStoreError::to_string(&self) -> alloc::string::String
+pub fn bymax_auth_redis::RedisStoreError::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub fn bymax_auth_redis::RedisStoreError::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+pub fn bymax_auth_redis::RedisStoreError::type_id(&self) -> core::any::TypeId
+pub fn bymax_auth_redis::RedisStoreError::vzip(self) -> V
+pub fn bymax_auth_redis::RedisStores::and<P, B, E>(self, P) -> tower_http::follow_redirect::policy::and::And<T, P> where T: tower_http::follow_redirect::policy::Policy<B, E>, P: tower_http::follow_redirect::policy::Policy<B, E>
+pub fn bymax_auth_redis::RedisStores::blacklist_access<'life0, 'life1, 'async_trait>(&'life0 self, &'life1 str, u64) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<(), bymax_auth_types::error::AuthError>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait, 'life1: 'async_trait
+pub fn bymax_auth_redis::RedisStores::borrow(&self) -> &T
+pub fn bymax_auth_redis::RedisStores::borrow_mut(&mut self) -> &mut T
+pub fn bymax_auth_redis::RedisStores::challenge_consume<'life0, 'life1, 'life2, 'async_trait>(&'life0 self, &'life1 str, &'life2 str, u64) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<bool, bymax_auth_types::error::AuthError>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait, 'life1: 'async_trait, 'life2: 'async_trait
+pub fn bymax_auth_redis::RedisStores::connect(&str, impl core::convert::Into<alloc::boxed::Box<str>>) -> core::result::Result<Self, bymax_auth_redis::RedisStoreError>
+pub fn bymax_auth_redis::RedisStores::consume_invitation<'life0, 'life1, 'async_trait>(&'life0 self, &'life1 str) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<core::option::Option<bymax_auth_core::traits::store::StoredInvitation>, bymax_auth_types::error::AuthError>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait, 'life1: 'async_trait
+pub fn bymax_auth_redis::RedisStores::consume_token<'life0, 'life1, 'async_trait>(&'life0 self, &'life1 str) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<core::option::Option<bymax_auth_core::traits::store::ResetContext>, bymax_auth_types::error::AuthError>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait, 'life1: 'async_trait
+pub fn bymax_auth_redis::RedisStores::consume_verified<'life0, 'life1, 'async_trait>(&'life0 self, &'life1 str) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<core::option::Option<bymax_auth_core::traits::store::ResetContext>, bymax_auth_types::error::AuthError>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait, 'life1: 'async_trait
+pub fn bymax_auth_redis::RedisStores::create_session<'life0, 'life1, 'life2, 'async_trait>(&'life0 self, bymax_auth_core::traits::store::SessionKind, &'life1 str, &'life2 bymax_auth_core::traits::store::SessionRecord, u64) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<(), bymax_auth_types::error::AuthError>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait, 'life1: 'async_trait, 'life2: 'async_trait
+pub fn bymax_auth_redis::RedisStores::del_temp<'life0, 'life1, 'async_trait>(&'life0 self, &'life1 str) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<(), bymax_auth_types::error::AuthError>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait, 'life1: 'async_trait
+pub fn bymax_auth_redis::RedisStores::delete_grace_pointer<'life0, 'life1, 'async_trait>(&'life0 self, bymax_auth_core::traits::store::SessionKind, &'life1 str) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<(), bymax_auth_types::error::AuthError>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait, 'life1: 'async_trait
+pub fn bymax_auth_redis::RedisStores::delete_token<'life0, 'life1, 'async_trait>(&'life0 self, &'life1 str) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<(), bymax_auth_types::error::AuthError>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait, 'life1: 'async_trait
+pub fn bymax_auth_redis::RedisStores::find_session<'life0, 'life1, 'async_trait>(&'life0 self, bymax_auth_core::traits::store::SessionKind, &'life1 str) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<core::option::Option<bymax_auth_core::traits::store::SessionRecord>, bymax_auth_types::error::AuthError>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait, 'life1: 'async_trait
+pub fn bymax_auth_redis::RedisStores::from(T) -> T
+pub fn bymax_auth_redis::RedisStores::get_setup<'life0, 'life1, 'async_trait>(&'life0 self, &'life1 str) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<core::option::Option<alloc::string::String>, bymax_auth_types::error::AuthError>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait, 'life1: 'async_trait
+pub fn bymax_auth_redis::RedisStores::get_temp<'life0, 'life1, 'async_trait>(&'life0 self, &'life1 str) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<core::option::Option<alloc::string::String>, bymax_auth_types::error::AuthError>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait, 'life1: 'async_trait
+pub fn bymax_auth_redis::RedisStores::into(self) -> U
+pub fn bymax_auth_redis::RedisStores::is_blacklisted<'life0, 'life1, 'async_trait>(&'life0 self, &'life1 str) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<bool, bymax_auth_types::error::AuthError>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait, 'life1: 'async_trait
+pub fn bymax_auth_redis::RedisStores::is_locked<'life0, 'life1, 'async_trait>(&'life0 self, &'life1 str, u32) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<bool, bymax_auth_types::error::AuthError>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait, 'life1: 'async_trait
+pub fn bymax_auth_redis::RedisStores::list_sessions<'life0, 'life1, 'async_trait>(&'life0 self, bymax_auth_core::traits::store::SessionKind, &'life1 str) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<alloc::vec::Vec<bymax_auth_core::traits::store::SessionDetail>, bymax_auth_types::error::AuthError>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait, 'life1: 'async_trait
+pub fn bymax_auth_redis::RedisStores::mark_totp_used<'life0, 'life1, 'async_trait>(&'life0 self, &'life1 str, u64) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<bool, bymax_auth_types::error::AuthError>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait, 'life1: 'async_trait
+pub fn bymax_auth_redis::RedisStores::mint<'life0, 'life1, 'async_trait>(&'life0 self, &'life1 bymax_auth_core::traits::store::WsTicketSnapshot, u64) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<alloc::string::String, bymax_auth_types::error::AuthError>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait, 'life1: 'async_trait
+pub fn bymax_auth_redis::RedisStores::or<P, B, E>(self, P) -> tower_http::follow_redirect::policy::or::Or<T, P> where T: tower_http::follow_redirect::policy::Policy<B, E>, P: tower_http::follow_redirect::policy::Policy<B, E>
+pub fn bymax_auth_redis::RedisStores::put<'life0, 'life1, 'life2, 'async_trait>(&'life0 self, bymax_auth_core::traits::store::OtpPurpose, &'life1 str, &'life2 str, u64) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<(), bymax_auth_types::error::AuthError>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait, 'life1: 'async_trait, 'life2: 'async_trait
+pub fn bymax_auth_redis::RedisStores::put_invitation<'life0, 'life1, 'life2, 'async_trait>(&'life0 self, &'life1 str, &'life2 bymax_auth_core::traits::store::StoredInvitation, u64) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<(), bymax_auth_types::error::AuthError>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait, 'life1: 'async_trait, 'life2: 'async_trait
+pub fn bymax_auth_redis::RedisStores::put_setup_nx<'life0, 'life1, 'life2, 'async_trait>(&'life0 self, &'life1 str, &'life2 str, u64) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<bool, bymax_auth_types::error::AuthError>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait, 'life1: 'async_trait, 'life2: 'async_trait
+pub fn bymax_auth_redis::RedisStores::put_state<'life0, 'life1, 'life2, 'async_trait>(&'life0 self, &'life1 str, &'life2 str, u64) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<(), bymax_auth_types::error::AuthError>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait, 'life1: 'async_trait, 'life2: 'async_trait
+pub fn bymax_auth_redis::RedisStores::put_temp<'life0, 'life1, 'life2, 'async_trait>(&'life0 self, &'life1 str, &'life2 str, u64) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<(), bymax_auth_types::error::AuthError>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait, 'life1: 'async_trait, 'life2: 'async_trait
+pub fn bymax_auth_redis::RedisStores::put_token<'life0, 'life1, 'life2, 'async_trait>(&'life0 self, &'life1 str, &'life2 bymax_auth_core::traits::store::ResetContext, u64) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<(), bymax_auth_types::error::AuthError>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait, 'life1: 'async_trait, 'life2: 'async_trait
+pub fn bymax_auth_redis::RedisStores::put_verified<'life0, 'life1, 'life2, 'async_trait>(&'life0 self, &'life1 str, &'life2 bymax_auth_core::traits::store::ResetContext, u64) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<(), bymax_auth_types::error::AuthError>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait, 'life1: 'async_trait, 'life2: 'async_trait
+pub fn bymax_auth_redis::RedisStores::record_failure<'life0, 'life1, 'async_trait>(&'life0 self, &'life1 str, u64) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<i64, bymax_auth_types::error::AuthError>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait, 'life1: 'async_trait
+pub fn bymax_auth_redis::RedisStores::redeem<'life0, 'life1, 'async_trait>(&'life0 self, &'life1 str) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<core::option::Option<bymax_auth_core::traits::store::WsTicketSnapshot>, bymax_auth_types::error::AuthError>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait, 'life1: 'async_trait
+pub fn bymax_auth_redis::RedisStores::remaining_lockout_secs<'life0, 'life1, 'async_trait>(&'life0 self, &'life1 str) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<u64, bymax_auth_types::error::AuthError>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait, 'life1: 'async_trait
+pub fn bymax_auth_redis::RedisStores::reset<'life0, 'life1, 'async_trait>(&'life0 self, &'life1 str) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<(), bymax_auth_types::error::AuthError>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait, 'life1: 'async_trait
+pub fn bymax_auth_redis::RedisStores::revoke_all<'life0, 'life1, 'async_trait>(&'life0 self, bymax_auth_core::traits::store::SessionKind, &'life1 str) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<(), bymax_auth_types::error::AuthError>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait, 'life1: 'async_trait
+pub fn bymax_auth_redis::RedisStores::revoke_session<'life0, 'life1, 'life2, 'async_trait>(&'life0 self, bymax_auth_core::traits::store::SessionKind, &'life1 str, &'life2 str) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<(), bymax_auth_types::error::AuthError>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait, 'life1: 'async_trait, 'life2: 'async_trait
+pub fn bymax_auth_redis::RedisStores::rotate<'life0, 'life1, 'async_trait>(&'life0 self, bymax_auth_core::traits::store::SessionKind, &'life1 bymax_auth_core::traits::store::SessionRotation) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<bymax_auth_core::traits::store::RotateOutcome, bymax_auth_types::error::AuthError>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait, 'life1: 'async_trait
+pub fn bymax_auth_redis::RedisStores::take_setup<'life0, 'life1, 'async_trait>(&'life0 self, &'life1 str) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<core::option::Option<alloc::string::String>, bymax_auth_types::error::AuthError>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait, 'life1: 'async_trait
+pub fn bymax_auth_redis::RedisStores::take_state<'life0, 'life1, 'async_trait>(&'life0 self, &'life1 str) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<core::option::Option<alloc::string::String>, bymax_auth_types::error::AuthError>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait, 'life1: 'async_trait
+pub fn bymax_auth_redis::RedisStores::try_begin_resend<'life0, 'life1, 'async_trait>(&'life0 self, bymax_auth_core::traits::store::OtpPurpose, &'life1 str, u64) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<bool, bymax_auth_types::error::AuthError>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait, 'life1: 'async_trait
+pub fn bymax_auth_redis::RedisStores::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub fn bymax_auth_redis::RedisStores::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+pub fn bymax_auth_redis::RedisStores::type_id(&self) -> core::any::TypeId
+pub fn bymax_auth_redis::RedisStores::verify<'life0, 'life1, 'life2, 'async_trait>(&'life0 self, bymax_auth_core::traits::store::OtpPurpose, &'life1 str, &'life2 str, u32) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<(), bymax_auth_types::error::AuthError>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait, 'life1: 'async_trait, 'life2: 'async_trait
+pub fn bymax_auth_redis::RedisStores::vzip(self) -> V
+pub fn bymax_auth_types::error::AuthError::from(bymax_auth_redis::RedisStoreError) -> Self
+pub mod bymax_auth_redis
+pub struct bymax_auth_redis::NamespacedRedis
+pub struct bymax_auth_redis::RedisStores
+pub type bymax_auth_redis::NamespacedRedis::Error = <U as core::convert::TryFrom<T>>::Error
+pub type bymax_auth_redis::NamespacedRedis::Error = core::convert::Infallible
+pub type bymax_auth_redis::NamespacedRedis::Output = T
+pub type bymax_auth_redis::NamespacedRedis::Owned = T
+pub type bymax_auth_redis::Prefix::Error = <U as core::convert::TryFrom<T>>::Error
+pub type bymax_auth_redis::Prefix::Error = core::convert::Infallible
+pub type bymax_auth_redis::Prefix::Output = T
+pub type bymax_auth_redis::Prefix::Owned = T
+pub type bymax_auth_redis::RedisStoreError::Error = <U as core::convert::TryFrom<T>>::Error
+pub type bymax_auth_redis::RedisStoreError::Error = core::convert::Infallible
+pub type bymax_auth_redis::RedisStoreError::Output = T
+pub type bymax_auth_redis::RedisStores::Error = <U as core::convert::TryFrom<T>>::Error
+pub type bymax_auth_redis::RedisStores::Error = core::convert::Infallible
+pub type bymax_auth_redis::RedisStores::Output = T
+pub unsafe fn bymax_auth_redis::NamespacedRedis::clone_to_uninit(&self, *mut u8)
+pub unsafe fn bymax_auth_redis::Prefix::clone_to_uninit(&self, *mut u8)
