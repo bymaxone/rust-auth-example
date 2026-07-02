@@ -1,0 +1,19 @@
+name: link-library
+description: >
+  Checks out bymaxone/rust-auth into .sibling-rust-auth, then symlinks it to
+  $(dirname GITHUB_WORKSPACE)/rust-auth so that path deps such as
+  apps/api/../../../rust-auth/crates/* and the file: entry in apps/web resolve.
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      with:
+        repository: bymaxone/rust-auth
+        ref: main
+        persist-credentials: false
+        path: .sibling-rust-auth
+
+    - name: Expose sibling library one level above the workspace
+      shell: bash
+      run: ln -sfn "$GITHUB_WORKSPACE/.sibling-rust-auth" "$(dirname "$GITHUB_WORKSPACE")/rust-auth"

@@ -44,12 +44,7 @@ jobs:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           persist-credentials: false
-          path: rust-auth-example
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
-        with:
-          repository: bymaxone/rust-auth
-          persist-credentials: false
-          path: rust-auth
+      - uses: ./.github/actions/link-library
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
         with:
           version: 10.8.1
@@ -57,14 +52,13 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
       - name: Build the @bymax-one/rust-auth browser package
-        working-directory: rust-auth/packages/rust-auth
+        working-directory: .sibling-rust-auth/packages/rust-auth
         run: |
           pnpm install --no-frozen-lockfile
+          pnpm build:wasm
           pnpm build
       - name: Install workspace (resolves the file-link)
-        working-directory: rust-auth-example
         run: pnpm install --frozen-lockfile
 
   install:
@@ -76,6 +70,7 @@ jobs:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           persist-credentials: false
+      - uses: ./.github/actions/link-library
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
         with:
           version: 10.8.1
@@ -94,19 +89,12 @@ jobs:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           persist-credentials: false
-          path: rust-auth-example
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
-        with:
-          repository: bymaxone/rust-auth
-          persist-credentials: false
-          path: rust-auth
+      - uses: ./.github/actions/link-library
       - uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable (toolchain set via input)
         with:
           toolchain: 1.96.0
           components: rustfmt
       - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
-        with:
-          workspaces: rust-auth-example
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
         with:
           version: 10.8.1
@@ -115,11 +103,8 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-        working-directory: rust-auth-example
       - run: cargo fmt --all --check
-        working-directory: rust-auth-example
       - run: pnpm format:check
-        working-directory: rust-auth-example
 
   lint:
     name: lint
@@ -130,19 +115,12 @@ jobs:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           persist-credentials: false
-          path: rust-auth-example
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
-        with:
-          repository: bymaxone/rust-auth
-          persist-credentials: false
-          path: rust-auth
+      - uses: ./.github/actions/link-library
       - uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable (toolchain set via input)
         with:
           toolchain: 1.96.0
           components: clippy
       - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
-        with:
-          workspaces: rust-auth-example
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
         with:
           version: 10.8.1
@@ -151,11 +129,8 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-        working-directory: rust-auth-example
       - run: cargo clippy --workspace --all-targets -- -D warnings
-        working-directory: rust-auth-example
       - run: pnpm lint
-        working-directory: rust-auth-example
 
   typecheck:
     name: typecheck
@@ -166,18 +141,11 @@ jobs:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           persist-credentials: false
-          path: rust-auth-example
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
-        with:
-          repository: bymaxone/rust-auth
-          persist-credentials: false
-          path: rust-auth
+      - uses: ./.github/actions/link-library
       - uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable (toolchain set via input)
         with:
           toolchain: 1.96.0
       - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
-        with:
-          workspaces: rust-auth-example
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
         with:
           version: 10.8.1
@@ -186,11 +154,8 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-        working-directory: rust-auth-example
       - run: cargo check --workspace
-        working-directory: rust-auth-example
       - run: pnpm typecheck
-        working-directory: rust-auth-example
 
   msrv:
     name: msrv
@@ -201,22 +166,14 @@ jobs:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           persist-credentials: false
-          path: rust-auth-example
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
-        with:
-          repository: bymaxone/rust-auth
-          persist-credentials: false
-          path: rust-auth
+      - uses: ./.github/actions/link-library
       - uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable (toolchain set via input)
         with:
           toolchain: 1.90.0
       - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
-        with:
-          workspaces: rust-auth-example
       # The `+toolchain` override bypasses rust-toolchain.toml so the MSRV floor
       # is what actually compiles here.
       - run: cargo +1.90.0 check --workspace
-        working-directory: rust-auth-example
 
   unit:
     name: unit
@@ -227,19 +184,12 @@ jobs:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           persist-credentials: false
-          path: rust-auth-example
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
-        with:
-          repository: bymaxone/rust-auth
-          persist-credentials: false
-          path: rust-auth
+      - uses: ./.github/actions/link-library
       - uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable (toolchain set via input)
         with:
           toolchain: 1.96.0
           components: llvm-tools-preview
       - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
-        with:
-          workspaces: rust-auth-example
       - uses: taiki-e/install-action@16b05812d776ae1dfaabc8277e421fb6d2506419 # v2
         with:
           tool: cargo-nextest,cargo-llvm-cov
@@ -251,12 +201,9 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-        working-directory: rust-auth-example
       - name: API unit coverage
-        working-directory: rust-auth-example
         run: cargo llvm-cov nextest --no-tests=pass --lcov --output-path lcov.info
       - name: Web unit coverage
-        working-directory: rust-auth-example
         run: pnpm -r --if-present run test:cov
       - name: Upload API coverage
         if: always()
@@ -276,25 +223,17 @@ jobs:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           persist-credentials: false
-          path: rust-auth-example
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
-        with:
-          repository: bymaxone/rust-auth
-          persist-credentials: false
-          path: rust-auth
+      - uses: ./.github/actions/link-library
       - uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable (toolchain set via input)
         with:
           toolchain: 1.96.0
       - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
-        with:
-          workspaces: rust-auth-example
       - uses: taiki-e/install-action@16b05812d776ae1dfaabc8277e421fb6d2506419 # v2
         with:
           tool: cargo-nextest
       # Integration tests run against the high-port test stack; with no
       # integration tests present the suite passes with nothing to run.
       - run: cargo nextest run --no-tests=pass
-        working-directory: rust-auth-example
 
   e2e-web:
     name: e2e-web
@@ -305,6 +244,7 @@ jobs:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           persist-credentials: false
+      - uses: ./.github/actions/link-library
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
         with:
           version: 10.8.1
@@ -324,12 +264,7 @@ jobs:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           persist-credentials: false
-          path: rust-auth-example
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
-        with:
-          repository: bymaxone/rust-auth
-          persist-credentials: false
-          path: rust-auth
+      - uses: ./.github/actions/link-library
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
         with:
           version: 10.8.1
@@ -338,11 +273,8 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-        working-directory: rust-auth-example
       - run: pnpm audit:exports -- --report
-        working-directory: rust-auth-example
       - run: pnpm check:public-api -- --report
-        working-directory: rust-auth-example
 
   supply-chain:
     name: supply-chain
@@ -353,25 +285,16 @@ jobs:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           persist-credentials: false
-          path: rust-auth-example
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
-        with:
-          repository: bymaxone/rust-auth
-          persist-credentials: false
-          path: rust-auth
+      - uses: ./.github/actions/link-library
       - uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable (toolchain set via input)
         with:
           toolchain: 1.96.0
       - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
-        with:
-          workspaces: rust-auth-example
       - uses: taiki-e/install-action@16b05812d776ae1dfaabc8277e421fb6d2506419 # v2
         with:
           tool: cargo-deny,cargo-audit
       - run: cargo deny check
-        working-directory: rust-auth-example
       - run: cargo audit
-        working-directory: rust-auth-example
 
   dependency-review:
     name: dependency-review
