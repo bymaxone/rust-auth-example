@@ -1,6 +1,6 @@
 # Phase 0 — Foundation, Tooling & CI Skeleton
 
-> **Status**: 🔄 In Progress · **Progress**: 1 / 7 tasks · **Last updated**: 2026-07-01
+> **Status**: 🔄 In Progress · **Progress**: 2 / 7 tasks · **Last updated**: 2026-07-01
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P0
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -46,7 +46,7 @@ When P0 is done: `cargo build --locked`, `cargo fmt --all --check`, and `cargo c
 | ID | Task | Status | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- | --- |
 | 0.1 | Cargo + pnpm dual workspace + toolchains | ✅ Done | P0 | M | — |
-| 0.2 | Rust lint/supply-chain + commit governance | 📋 ToDo | P0 | S | 0.1 |
+| 0.2 | Rust lint/supply-chain + commit governance | ✅ Done | P0 | S | 0.1 |
 | 0.3 | Mandatory repo & community-health files | 📋 ToDo | P1 | S | 0.1 |
 | 0.4 | GitHub config & Copilot review | 📋 ToDo | P0 | M | 0.1 |
 | 0.5 | Core CI workflow + audit-script stubs | 📋 ToDo | P0 | M | 0.1, 0.2 |
@@ -206,7 +206,7 @@ Completion Protocol (after you finish):
 
 ### Task 0.2 — Rust lint/supply-chain + commit governance
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: S
 - **Depends on**: 0.1
@@ -217,11 +217,11 @@ Add the Rust format/lint/supply-chain policy (`rustfmt.toml`, `clippy.toml`, `de
 
 #### Acceptance criteria
 
-- [ ] `rustfmt.toml` (stable-only options: `edition = "2024"`, `max_width = 100`) and `clippy.toml` exist; `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` stay clean.
-- [ ] `deny.toml` denies vulnerable/unmaintained/yanked advisories, sets a permissive license allow-list (copyleft denied by omission), bans `ring`/`openssl`/`openssl-sys`, denies `multiple-versions` + `wildcards`, and restricts sources to crates.io; `cargo deny check` passes.
-- [ ] `commitlint.config.mjs` extends `@commitlint/config-conventional`; `.husky/commit-msg` runs commitlint and `.husky/pre-commit` runs `lint-staged`; `lint-staged.config.mjs` runs `cargo fmt`/`cargo clippy` on staged `*.rs` and `prettier`/`eslint --fix` on staged `*.ts`/`*.tsx`.
-- [ ] `.gitmessage`, `.editorconfig`, `.npmrc` (`frozen-lockfile=true`), `.nvmrc` (`24`), `.gitignore`, `.gitattributes`, `.markdown-link-check.json`, `eslint.config.mjs` (flat, `--max-warnings 0`), `.prettierrc.mjs`, `.prettierignore` all exist.
-- [ ] A non-Conventional commit message is rejected by the `commit-msg` hook.
+- [x] `rustfmt.toml` (stable-only options: `edition = "2024"`, `max_width = 100`) and `clippy.toml` exist; `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` stay clean.
+- [x] `deny.toml` denies vulnerable/unmaintained/yanked advisories, sets a permissive license allow-list (copyleft denied by omission), bans `ring`/`openssl`/`openssl-sys`, denies `multiple-versions` + `wildcards`, and restricts sources to crates.io; `cargo deny check` passes.
+- [x] `commitlint.config.mjs` extends `@commitlint/config-conventional`; `.husky/commit-msg` runs commitlint and `.husky/pre-commit` runs `lint-staged`; `lint-staged.config.mjs` runs `cargo fmt`/`cargo clippy` on staged `*.rs` and `prettier`/`eslint --fix` on staged `*.ts`/`*.tsx`.
+- [x] `.gitmessage`, `.editorconfig`, `.npmrc` (`frozen-lockfile=true`), `.nvmrc` (`24`), `.gitignore`, `.gitattributes`, `.markdown-link-check.json`, `eslint.config.mjs` (flat, `--max-warnings 0`), `.prettierrc.mjs`, `.prettierignore` all exist.
+- [x] A non-Conventional commit message is rejected by the `commit-msg` hook.
 
 #### Files to create / modify
 
@@ -863,3 +863,4 @@ Run this only when the LAST task (0.7) is ✅:
 > Append-only. One line per completed task: `- <id> ✅ YYYY-MM-DD — <summary>`.
 
 - 0.1 ✅ 2026-07-01 — Dual cargo + pnpm workspace, pinned toolchains, compiling `apps/api` stub, TS-strict base; `Cargo.lock` + `pnpm-lock.yaml` committed.
+- 0.2 ✅ 2026-07-01 — Rust lint/supply-chain policy (`rustfmt.toml`, `clippy.toml`, `deny.toml` + workspace deny-lints) and cross-stack commit governance (commitlint, husky hooks, lint-staged, ESLint flat, Prettier, editor/git dotfiles).

@@ -10,3 +10,6 @@ publish = false
 # boundary in a later library-consumption step; the binary stays dependency-free
 # until then so the workspace compiles on its own.
 [dependencies]
+
+[lints]
+workspace = true

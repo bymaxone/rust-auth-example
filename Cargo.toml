@@ -11,3 +11,21 @@ rust-version = "1.90"
 license = "MIT"
 repository = "https://github.com/bymaxone/rust-auth-example"
 authors = ["Bymax One"]
+
+# Shared lint posture, inherited by every crate via `[lints] workspace = true`.
+# The unsafe-code policy is intentionally NOT set here: it lives as a per-crate
+# file header (`#![forbid(unsafe_code)]`), which a `forbid` inheriting crate
+# cannot relax — keeping it out of the shared table avoids collisions.
+[workspace.lints.rust]
+missing_docs = "deny"
+
+[workspace.lints.clippy]
+# A lint *group* must sit at a lower priority than the individual lints so they
+# can override it on overlap (clippy's `lint_groups_priority` enforces this).
+all = { level = "deny", priority = -1 }
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"
+unreachable = "deny"
