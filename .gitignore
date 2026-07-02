@@ -47,3 +47,6 @@ Thumbs.db
 # Editors / agents
 .idea/
 .claude/settings.local.json
+
+# CI-only sibling library checkout (see .github/actions/link-library)
+.sibling-rust-auth/

@@ -12,6 +12,8 @@ export default tseslint.config(
       '**/coverage',
       '**/node_modules',
       '**/target',
+      '**/.sibling-rust-auth',
+      '**/.sibling-rust-auth/**',
       '**/*.d.ts',
       '**/.stryker-tmp',
       '**/reports/mutation',
