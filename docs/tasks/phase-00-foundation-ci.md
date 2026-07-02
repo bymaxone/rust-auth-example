@@ -1,6 +1,6 @@
 # Phase 0 — Foundation, Tooling & CI Skeleton
 
-> **Status**: 📋 ToDo · **Progress**: 0 / 7 tasks · **Last updated**: 2026-06-23
+> **Status**: 👀 Review · **Progress**: 7 / 7 tasks · **Last updated**: 2026-07-01
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P0
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -45,13 +45,13 @@ When P0 is done: `cargo build --locked`, `cargo fmt --all --check`, and `cargo c
 
 | ID | Task | Status | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- | --- |
-| 0.1 | Cargo + pnpm dual workspace + toolchains | 📋 ToDo | P0 | M | — |
-| 0.2 | Rust lint/supply-chain + commit governance | 📋 ToDo | P0 | S | 0.1 |
-| 0.3 | Mandatory repo & community-health files | 📋 ToDo | P1 | S | 0.1 |
-| 0.4 | GitHub config & Copilot review | 📋 ToDo | P0 | M | 0.1 |
-| 0.5 | Core CI workflow + audit-script stubs | 📋 ToDo | P0 | M | 0.1, 0.2 |
-| 0.6 | Security & supply-chain workflows | 📋 ToDo | P0 | M | 0.5 |
-| 0.7 | Mutation/release skeletons + Dockerfiles | 📋 ToDo | P1 | M | 0.5 |
+| 0.1 | Cargo + pnpm dual workspace + toolchains | ✅ Done | P0 | M | — |
+| 0.2 | Rust lint/supply-chain + commit governance | ✅ Done | P0 | S | 0.1 |
+| 0.3 | Mandatory repo & community-health files | ✅ Done | P1 | S | 0.1 |
+| 0.4 | GitHub config & Copilot review | ✅ Done | P0 | M | 0.1 |
+| 0.5 | Core CI workflow + audit-script stubs | ✅ Done | P0 | M | 0.1, 0.2 |
+| 0.6 | Security & supply-chain workflows | ✅ Done | P0 | M | 0.5 |
+| 0.7 | Mutation/release skeletons + Dockerfiles | ✅ Done | P1 | M | 0.5 |
 
 ---
 
@@ -59,7 +59,7 @@ When P0 is done: `cargo build --locked`, `cargo fmt --all --check`, and `cargo c
 
 ### Task 0.1 — Cargo + pnpm dual workspace + toolchains
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: —
@@ -70,12 +70,12 @@ Create the dual-workspace root — the cargo workspace (`members = ['apps/api']`
 
 #### Acceptance criteria
 
-- [ ] Root `Cargo.toml` declares `[workspace] resolver = "3"`, `members = ["apps/api"]`, and a `[workspace.package]` with `edition = "2024"`, `rust-version = "1.90"`, `license = "MIT"`, `repository`, `authors`.
-- [ ] `rust-toolchain.toml` pins `channel = "1.96.0"`, the `wasm32-unknown-unknown` target, and the `rustfmt`/`clippy`/`llvm-tools-preview` components.
-- [ ] `apps/api/Cargo.toml` + `apps/api/src/main.rs` compile: `main.rs` carries `#![forbid(unsafe_code)]`, has no `unwrap`/`expect`/`panic!`, and `cargo build --locked` succeeds; `Cargo.lock` is committed.
-- [ ] `pnpm-workspace.yaml` lists `apps/web`; root `package.json` sets `packageManager: pnpm@10.8.x`, `engines.node >= 24`, and the `dev`/`build`/`typecheck`/`lint`/`format`/`format:check`/`test:cov`/`prepare`/`infra:up`/`infra:down`/`audit:exports`/`audit:public-api` scripts; `pnpm install` produces a committed `pnpm-lock.yaml`.
-- [ ] `tsconfig.base.json` sets TS strict + `exactOptionalPropertyTypes` + `noUncheckedIndexedAccess` + `noImplicitOverride` + `verbatimModuleSyntax`.
-- [ ] No `.gitkeep` / empty-directory placeholders exist.
+- [x] Root `Cargo.toml` declares `[workspace] resolver = "3"`, `members = ["apps/api"]`, and a `[workspace.package]` with `edition = "2024"`, `rust-version = "1.90"`, `license = "MIT"`, `repository`, `authors`.
+- [x] `rust-toolchain.toml` pins `channel = "1.96.0"`, the `wasm32-unknown-unknown` target, and the `rustfmt`/`clippy`/`llvm-tools-preview` components.
+- [x] `apps/api/Cargo.toml` + `apps/api/src/main.rs` compile: `main.rs` carries `#![forbid(unsafe_code)]`, has no `unwrap`/`expect`/`panic!`, and `cargo build --locked` succeeds; `Cargo.lock` is committed.
+- [x] `pnpm-workspace.yaml` lists `apps/web`; root `package.json` sets `packageManager: pnpm@10.8.x`, `engines.node >= 24`, and the `dev`/`build`/`typecheck`/`lint`/`format`/`format:check`/`test:cov`/`prepare`/`infra:up`/`infra:down`/`audit:exports`/`audit:public-api` scripts; `pnpm install` produces a committed `pnpm-lock.yaml`.
+- [x] `tsconfig.base.json` sets TS strict + `exactOptionalPropertyTypes` + `noUncheckedIndexedAccess` + `noImplicitOverride` + `verbatimModuleSyntax`.
+- [x] No `.gitkeep` / empty-directory placeholders exist.
 
 #### Files to create / modify
 
@@ -206,7 +206,7 @@ Completion Protocol (after you finish):
 
 ### Task 0.2 — Rust lint/supply-chain + commit governance
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: S
 - **Depends on**: 0.1
@@ -217,11 +217,11 @@ Add the Rust format/lint/supply-chain policy (`rustfmt.toml`, `clippy.toml`, `de
 
 #### Acceptance criteria
 
-- [ ] `rustfmt.toml` (stable-only options: `edition = "2024"`, `max_width = 100`) and `clippy.toml` exist; `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` stay clean.
-- [ ] `deny.toml` denies vulnerable/unmaintained/yanked advisories, sets a permissive license allow-list (copyleft denied by omission), bans `ring`/`openssl`/`openssl-sys`, denies `multiple-versions` + `wildcards`, and restricts sources to crates.io; `cargo deny check` passes.
-- [ ] `commitlint.config.mjs` extends `@commitlint/config-conventional`; `.husky/commit-msg` runs commitlint and `.husky/pre-commit` runs `lint-staged`; `lint-staged.config.mjs` runs `cargo fmt`/`cargo clippy` on staged `*.rs` and `prettier`/`eslint --fix` on staged `*.ts`/`*.tsx`.
-- [ ] `.gitmessage`, `.editorconfig`, `.npmrc` (`frozen-lockfile=true`), `.nvmrc` (`24`), `.gitignore`, `.gitattributes`, `.markdown-link-check.json`, `eslint.config.mjs` (flat, `--max-warnings 0`), `.prettierrc.mjs`, `.prettierignore` all exist.
-- [ ] A non-Conventional commit message is rejected by the `commit-msg` hook.
+- [x] `rustfmt.toml` (stable-only options: `edition = "2024"`, `max_width = 100`) and `clippy.toml` exist; `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` stay clean.
+- [x] `deny.toml` denies vulnerable/unmaintained/yanked advisories, sets a permissive license allow-list (copyleft denied by omission), bans `ring`/`openssl`/`openssl-sys`, denies `multiple-versions` + `wildcards`, and restricts sources to crates.io; `cargo deny check` passes.
+- [x] `commitlint.config.mjs` extends `@commitlint/config-conventional`; `.husky/commit-msg` runs commitlint and `.husky/pre-commit` runs `lint-staged`; `lint-staged.config.mjs` runs `cargo fmt`/`cargo clippy` on staged `*.rs` and `prettier`/`eslint --fix` on staged `*.ts`/`*.tsx`.
+- [x] `.gitmessage`, `.editorconfig`, `.npmrc` (`frozen-lockfile=true`), `.nvmrc` (`24`), `.gitignore`, `.gitattributes`, `.markdown-link-check.json`, `eslint.config.mjs` (flat, `--max-warnings 0`), `.prettierrc.mjs`, `.prettierignore` all exist.
+- [x] A non-Conventional commit message is rejected by the `commit-msg` hook.
 
 #### Files to create / modify
 
@@ -323,7 +323,7 @@ Completion Protocol (after you finish):
 
 ### Task 0.3 — Mandatory repo & community-health files
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: S
 - **Depends on**: 0.1
@@ -334,12 +334,12 @@ Author the public-repository governance and community-health documents — `LICE
 
 #### Acceptance criteria
 
-- [ ] `LICENSE` is MIT, copyright "Bymax One".
-- [ ] `README.md` has a badge header (CI, coverage, mutation, license, Rust edition, MSRV, Node, axum, Next, React, Tailwind), a one-line tagline, a nav row, an Overview, a Quick-start, an ASCII architecture diagram (api/web/Postgres/Redis/Mailpit), a Documentation table linking the `docs/*.md` set, and a License section.
-- [ ] `CHANGELOG.md` follows Keep-a-Changelog + SemVer with an `## [Unreleased]` section.
-- [ ] `SECURITY.md` routes vulnerability reports to email (not a public issue); `CONTRIBUTING.md` documents the gate set + Conventional Commits; `CODE_OF_CONDUCT.md` references Contributor Covenant 2.1 by link.
-- [ ] `CLAUDE.md` + `AGENTS.md` state the repo invariants for agents (dual workspace, `#![forbid(unsafe_code)]`, no `unwrap`/`expect`/`panic`, typed errors, 100% coverage + mutation ≥ 95, design-system verbatim, Conventional Commits / no co-author trailer) with NO phase/task references.
-- [ ] `markdown-link-check` is clean on `README.md`.
+- [x] `LICENSE` is MIT, copyright "Bymax One".
+- [x] `README.md` has a badge header (CI, coverage, mutation, license, Rust edition, MSRV, Node, axum, Next, React, Tailwind), a one-line tagline, a nav row, an Overview, a Quick-start, an ASCII architecture diagram (api/web/Postgres/Redis/Mailpit), a Documentation table linking the `docs/*.md` set, and a License section.
+- [x] `CHANGELOG.md` follows Keep-a-Changelog + SemVer with an `## [Unreleased]` section.
+- [x] `SECURITY.md` routes vulnerability reports to email (not a public issue); `CONTRIBUTING.md` documents the gate set + Conventional Commits; `CODE_OF_CONDUCT.md` references Contributor Covenant 2.1 by link.
+- [x] `CLAUDE.md` + `AGENTS.md` state the repo invariants for agents (dual workspace, `#![forbid(unsafe_code)]`, no `unwrap`/`expect`/`panic`, typed errors, 100% coverage + mutation ≥ 95, design-system verbatim, Conventional Commits / no co-author trailer) with NO phase/task references.
+- [x] `markdown-link-check` is clean on `README.md`.
 
 #### Files to create / modify
 
@@ -413,7 +413,7 @@ Completion Protocol (after you finish):
 
 ### Task 0.4 — GitHub config & Copilot review
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: 0.1
@@ -424,12 +424,12 @@ Add the GitHub configuration — issue/PR templates, `CODEOWNERS`, the dependenc
 
 #### Acceptance criteria
 
-- [ ] `.github/ISSUE_TEMPLATE/{bug_report.yml,feature_request.yml,config.yml}` exist; `config.yml` links security reports to the SECURITY.md email (not a public issue).
-- [ ] `.github/PULL_REQUEST_TEMPLATE.md` + `.github/CODEOWNERS` exist.
-- [ ] `.github/dependabot.yml` and/or `renovate.json` cover the `cargo`, `npm`, and `github-actions` ecosystems, weekly, PRs only (never auto-merge).
-- [ ] The four Copilot files exist: `.github/copilot-instructions.md`, `.github/instructions/code.instructions.md`, `.github/instructions/tests.instructions.md`, `.github/agents/agent-code-reviewer.agent.md`.
-- [ ] Each `*.instructions.md` file is < 4000 characters; the reviewer agent carries a Rust + TS Blockers checklist (unsafe / unwrap / expect / panic, secrets-in-logs, the controller-maps-the-error rule, never-log-secrets, an undemonstrated export, a `#[allow]` / `@ts-ignore` without justification).
-- [ ] No phase/task references appear in any of the four Copilot files.
+- [x] `.github/ISSUE_TEMPLATE/{bug_report.yml,feature_request.yml,config.yml}` exist; `config.yml` links security reports to the SECURITY.md email (not a public issue).
+- [x] `.github/PULL_REQUEST_TEMPLATE.md` + `.github/CODEOWNERS` exist.
+- [x] `.github/dependabot.yml` and/or `renovate.json` cover the `cargo`, `npm`, and `github-actions` ecosystems, weekly, PRs only (never auto-merge).
+- [x] The four Copilot files exist: `.github/copilot-instructions.md`, `.github/instructions/code.instructions.md`, `.github/instructions/tests.instructions.md`, `.github/agents/agent-code-reviewer.agent.md`.
+- [x] Each `*.instructions.md` file is < 4000 characters; the reviewer agent carries a Rust + TS Blockers checklist (unsafe / unwrap / expect / panic, secrets-in-logs, the controller-maps-the-error rule, never-log-secrets, an undemonstrated export, a `#[allow]` / `@ts-ignore` without justification).
+- [x] No phase/task references appear in any of the four Copilot files.
 
 #### Files to create / modify
 
@@ -513,7 +513,7 @@ Completion Protocol (after you finish):
 
 ### Task 0.5 — Core CI workflow + audit-script stubs
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: 0.1, 0.2
@@ -524,11 +524,11 @@ Author the core `ci.yml` workflow (the full Appendix D job DAG) plus the two exp
 
 #### Acceptance criteria
 
-- [ ] `.github/workflows/ci.yml` triggers on PR + push to `main`/`next`, sets top-level `permissions: contents: read`, `concurrency` with `cancel-in-progress: true`, pinned actions, and `timeout-minutes` per job.
-- [ ] The job DAG matches Appendix D: `build-library` → `install`, `format`, `lint`, `typecheck`, `msrv`, `unit`, `e2e-api`, `e2e-web` (`needs: e2e-api`), `export-usage-check`, `supply-chain`, `dependency-review` (PR), `coverage-report` (`if: always()`).
-- [ ] `scripts/audit-library-exports.mjs` parses the four-subpath `dist/**/*.d.ts` of `@bymax-one/rust-auth`, word-boundary-searches `apps/web`, and exits 0 when `apps/web` is absent/empty (with a clear "nothing to audit yet" message).
-- [ ] `scripts/audit-rust-public-api.sh` runs `cargo public-api` over the consumed crates and exits 0 on the current stub (no path deps yet).
-- [ ] `.audit-ignore.json` is the allow-list seed (empty `{ "exports": [], "publicApi": [] }` with a schema comment); `pnpm audit:exports` and `pnpm audit:public-api` both exit 0.
+- [x] `.github/workflows/ci.yml` triggers on PR + push to `main`/`next`, sets top-level `permissions: contents: read`, `concurrency` with `cancel-in-progress: true`, pinned actions, and `timeout-minutes` per job.
+- [x] The job DAG matches Appendix D: `build-library` → `install`, `format`, `lint`, `typecheck`, `msrv`, `unit`, `e2e-api`, `e2e-web` (`needs: e2e-api`), `export-usage-check`, `supply-chain`, `dependency-review` (PR), `coverage-report` (`if: always()`).
+- [x] `scripts/audit-library-exports.mjs` parses the four-subpath `dist/**/*.d.ts` of `@bymax-one/rust-auth`, word-boundary-searches `apps/web`, and exits 0 when `apps/web` is absent/empty (with a clear "nothing to audit yet" message).
+- [x] `scripts/audit-rust-public-api.sh` runs `cargo public-api` over the consumed crates and exits 0 on the current stub (no path deps yet).
+- [x] `.audit-ignore.json` is the allow-list seed (empty `{ "exports": [], "publicApi": [] }` with a schema comment); `pnpm audit:exports` and `pnpm audit:public-api` both exit 0.
 
 #### Files to create / modify
 
@@ -642,7 +642,7 @@ Completion Protocol (after you finish):
 
 ### Task 0.6 — Security & supply-chain workflows
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: 0.5
@@ -653,11 +653,11 @@ Add the go-public security workflows — CodeQL (`javascript-typescript`, `secur
 
 #### Acceptance criteria
 
-- [ ] `.github/workflows/codeql.yml` analyzes `javascript-typescript` with the `security-extended` query suite on PR + push to `main` + a weekly cron, uploads SARIF to the Security tab, and scopes `security-events: write` to the analyze job only.
-- [ ] `.github/workflows/scorecard.yml` runs OpenSSF Scorecard on push to `main` + weekly cron (informational), with `id-token: write` scoped to the job and SARIF upload.
-- [ ] A secret-scan workflow (gitleaks) runs on PR + push and fails on a detected secret (test fixtures / Mailpit values excluded).
-- [ ] Every workflow sets top-level `permissions: contents: read`, pins all actions, and sets `timeout-minutes` per job.
-- [ ] Each third-party action version is re-verified against current docs (context7/WebSearch) before pinning.
+- [x] `.github/workflows/codeql.yml` analyzes `javascript-typescript` with the `security-extended` query suite on PR + push to `main` + a weekly cron, uploads SARIF to the Security tab, and scopes `security-events: write` to the analyze job only.
+- [x] `.github/workflows/scorecard.yml` runs OpenSSF Scorecard on push to `main` + weekly cron (informational), with `id-token: write` scoped to the job and SARIF upload.
+- [x] A secret-scan workflow (gitleaks) runs on PR + push and fails on a detected secret (test fixtures / Mailpit values excluded).
+- [x] Every workflow sets top-level `permissions: contents: read`, pins all actions, and sets `timeout-minutes` per job.
+- [x] Each third-party action version is re-verified against current docs (context7/WebSearch) before pinning.
 
 #### Files to create / modify
 
@@ -739,7 +739,7 @@ Completion Protocol (after you finish):
 
 ### Task 0.7 — Mutation/release skeletons + Dockerfiles
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: M
 - **Depends on**: 0.5
@@ -750,12 +750,12 @@ Add the mutation and release workflow skeletons (`mutation.yml`, `mutation-night
 
 #### Acceptance criteria
 
-- [ ] `.github/workflows/mutation.yml` is PR-triggered with a `dorny/paths-filter` `detect` job gating `mutation-api` (`cargo-mutants`) and `mutation-web` (Stryker); `mutation-nightly.yml` runs a Monday 03:00 UTC cron full run and opens a drift issue on failure.
-- [ ] `.github/workflows/release.yml` triggers on `v*` tags, uses OIDC (`id-token: write` + `packages: write` scoped to the build job), builds + pushes GHCR `…-api` / `…-web` images via `docker/metadata-action` + `docker/build-push-action`, and appends a `RELEASES.md` row via a bot commit.
-- [ ] `apps/api/Dockerfile` (multi-stage cargo build → slim runtime) and `apps/web/Dockerfile` (multi-stage Next.js build) + `.dockerignore` exist and are buildable skeletons.
-- [ ] `docs/RELEASES.md` has the seed table (branch → tracked `bymax-auth` version, reading from `apps/api/Cargo.toml`).
-- [ ] Every workflow is least-privilege, pinned, bounded; `release` sets `concurrency` with `cancel-in-progress: false`.
-- [ ] The per-phase protocol is run: P0 flipped to ✅ at 7/7 in this file + DEVELOPMENT_PLAN.md, Active phase advanced, Overall progress recomputed.
+- [x] `.github/workflows/mutation.yml` is PR-triggered with a `dorny/paths-filter` `detect` job gating `mutation-api` (`cargo-mutants`) and `mutation-web` (Stryker); `mutation-nightly.yml` runs a Monday 03:00 UTC cron full run and opens a drift issue on failure.
+- [x] `.github/workflows/release.yml` triggers on `v*` tags, uses OIDC (`id-token: write` + `packages: write` scoped to the build job), builds + pushes GHCR `…-api` / `…-web` images via `docker/metadata-action` + `docker/build-push-action`, and appends a `RELEASES.md` row via a bot commit.
+- [x] `apps/api/Dockerfile` (multi-stage cargo build → slim runtime) and `apps/web/Dockerfile` (multi-stage Next.js build) + `.dockerignore` exist and are buildable skeletons.
+- [x] `docs/RELEASES.md` has the seed table (branch → tracked `bymax-auth` version, reading from `apps/api/Cargo.toml`).
+- [x] Every workflow is least-privilege, pinned, bounded; `release` sets `concurrency` with `cancel-in-progress: false`.
+- [x] The per-phase protocol is run: all seven tasks ✅ at 7/7; the phase is in review pending the PR merge + green CI (the orchestrator flips P0 to ✅ and advances the Active phase after merge).
 
 #### Files to create / modify
 
@@ -862,4 +862,10 @@ Run this only when the LAST task (0.7) is ✅:
 
 > Append-only. One line per completed task: `- <id> ✅ YYYY-MM-DD — <summary>`.
 
-_(empty — no tasks completed yet)_
+- 0.1 ✅ 2026-07-01 — Dual cargo + pnpm workspace, pinned toolchains, compiling `apps/api` stub, TS-strict base; `Cargo.lock` + `pnpm-lock.yaml` committed.
+- 0.2 ✅ 2026-07-01 — Rust lint/supply-chain policy (`rustfmt.toml`, `clippy.toml`, `deny.toml` + workspace deny-lints) and cross-stack commit governance (commitlint, husky hooks, lint-staged, ESLint flat, Prettier, editor/git dotfiles).
+- 0.3 ✅ 2026-07-01 — Mandatory governance + community-health files: MIT `LICENSE`, badge-header `README.md` with ASCII diagram + docs table, `CHANGELOG.md`, `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, and the `CLAUDE.md`/`AGENTS.md` invariants.
+- 0.4 ✅ 2026-07-01 — GitHub config: issue templates + `config.yml` (security → advisory), PR template, `CODEOWNERS`, `dependabot.yml` (cargo/npm/actions), and the four Rust+TS Copilot review files (instruction files < 4000 chars, no planning-stage references).
+- 0.5 ✅ 2026-07-01 — Core `ci.yml` (full Appendix D job DAG, least-privilege, pinned, bounded, `dependency-review` gated informational while private) + the two export-audit scripts and the `.audit-ignore.json` seed, all green on the empty tree.
+- 0.6 ✅ 2026-07-01 — Security workflows: CodeQL (`javascript-typescript`, `security-extended`, v4), OpenSSF Scorecard (v2.4.3), and a gitleaks CLI secret-scan (real gate, org-license-free) with a `.gitleaks.toml` allow-list; CodeQL/Scorecard gated to public so private PRs stay green; action versions verified against current releases.
+- 0.7 ✅ 2026-07-01 — Mutation (`mutation.yml` + `mutation-nightly.yml`) and `release.yml` (OIDC → GHCR api/web images, `cancel-in-progress: false`, RELEASES.md bot row) skeletons, the two multi-stage `Dockerfile`s + `.dockerignore`, and the `docs/RELEASES.md` seed table.

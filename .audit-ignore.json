@@ -1,0 +1,5 @@
+{
+  "_comment": "Allow-list for intentionally-undemonstrated library surface. Each `exports` entry is { \"symbol\": \"<subpath>.<Name>\", \"reason\": \"...\" } (e.g. \"shared.PasswordResetTokenExpired\"); each `publicApi` entry is { \"symbol\": \"<crate>::<path>::<Item>\", \"reason\": \"...\" }. Only genuinely-internal leaked symbols may be listed — never a demonstrable export.",
+  "exports": [],
+  "publicApi": []
+}

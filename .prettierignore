@@ -1,0 +1,14 @@
+node_modules
+dist
+build
+.next
+coverage
+target
+.husky/_
+pnpm-lock.yaml
+Cargo.lock
+**/*.d.ts
+.claude
+# Planning blueprints and the shared design-system reference are maintained by
+# the project workflow and copied verbatim; they are not reformatted by Prettier.
+docs

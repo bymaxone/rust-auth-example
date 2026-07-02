@@ -1,0 +1,36 @@
+# Shared exclusions for every Docker build using the repo root as context
+# (both apps/api/Dockerfile and apps/web/Dockerfile).
+
+# VCS / CI metadata
+.git
+.github
+.husky
+
+# Rust build output (rebuilt inside the image)
+target
+**/target
+
+# Node dependencies and build output (rebuilt inside the image)
+node_modules
+**/node_modules
+**/.next
+**/dist
+**/*.tsbuildinfo
+
+# Environment / secrets — never bake into an image
+.env
+.env.*
+**/.env
+**/.env.*
+
+# Tests, coverage, and local tooling state
+**/coverage
+**/reports
+**/test-results
+**/playwright-report
+**/.stryker-tmp
+
+# Local dev infrastructure and documentation
+docker-compose*.yml
+docs
+*.md

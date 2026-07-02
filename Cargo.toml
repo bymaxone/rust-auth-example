@@ -1,0 +1,29 @@
+[workspace]
+resolver = "3"
+members = ["apps/api"]
+
+[workspace.package]
+edition = "2024"
+# MSRV floor: the lowest stable the workspace must still compile on. The pinned
+# toolchain (`rust-toolchain.toml`, 1.96.0) is deliberately higher and is proven
+# against this floor by a dedicated `msrv` CI job.
+rust-version = "1.90"
+license = "MIT"
+repository = "https://github.com/bymaxone/rust-auth-example"
+authors = ["Bymax One"]
+
+# Shared clippy lint posture, inherited by every crate via `[lints] workspace = true`.
+# The `unsafe_code` and `missing_docs` policies are per-crate file headers instead
+# (`#![forbid(unsafe_code)]`, `#![deny(missing_docs)]`): a `forbid` cannot be
+# relaxed by an inheriting crate, and keeping both as headers makes each crate's
+# posture explicit at its top.
+[workspace.lints.clippy]
+# A lint *group* must sit at a lower priority than the individual lints so they
+# can override it on overlap (clippy's `lint_groups_priority` enforces this).
+all = { level = "deny", priority = -1 }
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"
+unreachable = "deny"

@@ -1,0 +1,49 @@
+# CodeQL static analysis for the TypeScript/JavaScript surface (the browser
+# package consumer and tooling). `security-extended` is appropriate for an app
+# handling tokens and sessions. Runs on PR, push to main, and a weekly schedule.
+#
+# SARIF upload to code scanning needs a public repository (or GitHub Advanced
+# Security). While the repository is private the analyze job is skipped so it
+# never blocks a PR; it becomes an active gate once the repository is public.
+#
+# Actions are pinned to a commit SHA with the version in a trailing comment.
+
+name: codeql
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 6 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: analyze
+    if: github.event.repository.visibility == 'public'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          persist-credentials: false
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4
+        with:
+          languages: javascript-typescript
+          queries: security-extended
+      - name: Analyze
+        uses: github/codeql-action/analyze@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4
+        with:
+          category: '/language:javascript-typescript'

@@ -1,0 +1,32 @@
+name: Feature request
+description: Propose a new capability or an improvement to the example.
+labels: ['enhancement']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the idea. This repository demonstrates the shipped
+        `bymax-auth` / `@bymax-one/rust-auth` surface; capabilities the library
+        does not ship are shown honestly as host-app responsibilities rather than
+        faked here.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What problem would this solve? What can you not do or learn today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the behavior you would like and how it fits the existing surface.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Any workarounds you currently use or other designs you weighed.
+    validations:
+      required: false

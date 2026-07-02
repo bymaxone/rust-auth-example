@@ -1,0 +1,171 @@
+# Release workflow — on a v* tag, builds and pushes the API and web images to
+# GHCR and records the release in docs/RELEASES.md via a bot commit. Both images
+# are checked independently so a partial failure can be retried without
+# overwriting the image that already published. This is the only workflow with
+# cancel-in-progress: false — a release run must never be cancelled mid-flight.
+#
+# Actions are pinned to a commit SHA with the version in a trailing comment.
+
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-push:
+    name: build-and-push
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      packages: write
+      # Reserved for OIDC-based build provenance/attestation on publish; scoped to
+      # this job only so no other job can mint an OIDC token.
+      id-token: write
+    env:
+      TAG_NAME: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          persist-credentials: false
+
+      # The web image is only built once the apps/web workspace exists; until then
+      # the release skeleton publishes the API image alone and stays runnable.
+      - name: Detect web workspace
+        id: detect-web
+        run: |
+          if [ -f apps/web/package.json ]; then
+            echo "present=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "present=false" >> "${GITHUB_OUTPUT}"
+          fi
+
+      # Log in first so the existence checks below can query the private registry.
+      - name: Log in to GHCR
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # The published image tag is the semver without the leading `v`: the git tag
+      # is `v1.2.3`, but docker/metadata-action publishes `1.2.3`. Query the same
+      # tag that gets pushed so the idempotency check actually matches.
+      - name: Check if API image already exists
+        id: api-exists
+        run: |
+          VERSION="${TAG_NAME#v}"
+          if docker manifest inspect "ghcr.io/bymaxone/rust-auth-example-api:${VERSION}" > /dev/null 2>&1; then
+            echo "exists=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "exists=false" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Check if web image already exists
+        id: web-exists
+        if: steps.detect-web.outputs.present == 'true'
+        run: |
+          VERSION="${TAG_NAME#v}"
+          if docker manifest inspect "ghcr.io/bymaxone/rust-auth-example-web:${VERSION}" > /dev/null 2>&1; then
+            echo "exists=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "exists=false" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Generate API image metadata
+        id: api-meta
+        if: steps.api-exists.outputs.exists != 'true'
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
+        with:
+          images: ghcr.io/bymaxone/rust-auth-example-api
+          flavor: latest=auto
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - name: Build and push API image
+        if: steps.api-exists.outputs.exists != 'true'
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: true
+          tags: ${{ steps.api-meta.outputs.tags }}
+          labels: ${{ steps.api-meta.outputs.labels }}
+
+      - name: Generate web image metadata
+        id: web-meta
+        if: steps.detect-web.outputs.present == 'true' && steps.web-exists.outputs.exists != 'true'
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
+        with:
+          images: ghcr.io/bymaxone/rust-auth-example-web
+          flavor: latest=auto
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - name: Build and push web image
+        if: steps.detect-web.outputs.present == 'true' && steps.web-exists.outputs.exists != 'true'
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          push: true
+          tags: ${{ steps.web-meta.outputs.tags }}
+          labels: ${{ steps.web-meta.outputs.labels }}
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL || 'https://example.com/api' }}
+            NEXT_PUBLIC_OAUTH_GOOGLE_ENABLED=${{ vars.NEXT_PUBLIC_OAUTH_GOOGLE_ENABLED || 'false' }}
+
+  update-releases-doc:
+    name: update-releases-doc
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      TAG_NAME: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Append row to RELEASES.md
+        run: |
+          if grep -qF "| \`${TAG_NAME}\`" docs/RELEASES.md; then
+            echo "Tag ${TAG_NAME} already recorded — skipping."
+            exit 0
+          fi
+          VERSION="${TAG_NAME#v}"
+          LIB_VERSION="$(grep -oE 'bymax-auth-core.*version *= *"=?[0-9.]+"' apps/api/Cargo.toml | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)"
+          LIB_VERSION="${LIB_VERSION:-0.0.0 (path)}"
+          DATE="$(date -u +%Y-%m-%d)"
+          # Only claim a web image tag when the web workspace exists on the release
+          # tree; otherwise the release publishes the API image alone.
+          if [ -f apps/web/package.json ]; then
+            IMAGES="ghcr.io/bymaxone/rust-auth-example-{api,web}:${VERSION}"
+          else
+            IMAGES="ghcr.io/bymaxone/rust-auth-example-api:${VERSION}"
+          fi
+          ROW="| \`${TAG_NAME}\` | ${LIB_VERSION} | ${DATE} | ${IMAGES} |"
+          awk -v row="${ROW}" '{ print } /<!-- releases:insert -->/ { print row }' docs/RELEASES.md > docs/RELEASES.md.tmp
+          mv docs/RELEASES.md.tmp docs/RELEASES.md
+
+      - name: Push bot commit
+        uses: stefanzweifel/git-auto-commit-action@b863ae1933cb653a53c021fe36dbb774e1fb9403 # v5
+        with:
+          commit_message: 'chore(release): record ${{ github.ref_name }} in RELEASES.md [skip ci]'
+          commit_user_name: github-actions[bot]
+          commit_user_email: github-actions[bot]@users.noreply.github.com
+          file_pattern: docs/RELEASES.md

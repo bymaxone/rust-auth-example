@@ -1,0 +1,96 @@
+# Mutation testing — pull-request gate. A paths-filter detects which workspace
+# changed, then the matching mutation job runs. The API job runs cargo-mutants
+# (capped --jobs for memory safety) and gates on caught / (caught + missed) >=
+# 0.95; the web job runs Stryker incrementally with break >= 95. The stub run
+# steps validate the pipeline shape and are replaced with the real tools when the
+# corresponding test suites exist.
+#
+# Actions are pinned to a commit SHA with the version in a trailing comment.
+
+name: mutation
+
+on:
+  pull_request:
+    paths:
+      - 'apps/api/src/**'
+      - 'apps/web/app/**'
+      - 'apps/web/lib/**'
+      - 'apps/web/components/**'
+      - '**/Cargo.toml'
+      - '**/Cargo.lock'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/mutation.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mutation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  detect:
+    name: detect
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      api: ${{ steps.filter.outputs.api }}
+      web: ${{ steps.filter.outputs.web }}
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          persist-credentials: false
+      - uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3
+        id: filter
+        with:
+          filters: |
+            api:
+              - 'apps/api/src/**'
+              - '**/Cargo.toml'
+              - '**/Cargo.lock'
+            web:
+              - 'apps/web/app/**'
+              - 'apps/web/lib/**'
+              - 'apps/web/components/**'
+              - 'pnpm-lock.yaml'
+
+  mutation-api:
+    name: mutation-api
+    needs: detect
+    if: needs.detect.outputs.api == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable (toolchain set via input)
+        with:
+          toolchain: 1.96.0
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+      - name: Mutation testing (api)
+        run: echo "mutation-api — cargo-mutants gate for apps/api."
+
+  mutation-web:
+    name: mutation-web
+    needs: detect
+    if: needs.detect.outputs.web == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        with:
+          version: 10.8.1
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Mutation testing (web)
+        run: echo "mutation-web — Stryker gate for apps/web."

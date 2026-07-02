@@ -1,0 +1,8 @@
+# Clippy tuning. The deny-level lints (`unwrap_used`, `expect_used`, `panic`,
+# `todo`, `unimplemented`, `unreachable`, and `clippy::all`) are declared in the
+# workspace `[lints]` table in `Cargo.toml` and reinforced on the CLI with
+# `-D warnings`; this file only holds configuration values, not lint levels.
+#
+# This is an application workspace, not a published library, so breaking an
+# "exported" API surface carries no external contract to preserve.
+avoid-breaking-exported-api = false

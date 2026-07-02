@@ -1,0 +1,21 @@
+# gitleaks configuration for rust-auth-example.
+#
+# Extends the default rule set and allow-lists locations that intentionally carry
+# illustrative, non-secret values: the Markdown planning blueprints under docs/
+# and the committed .env.example files. The scope is deliberately narrow — only
+# `docs/**/*.md` and `*.env.example`, not the whole docs/ tree — so a real secret
+# committed to any other path (including a non-Markdown docs file) is still caught.
+# Real credentials are never committed anywhere; only local/dev/test placeholders
+# (Mailpit, dev fixtures) appear in these files.
+
+title = "rust-auth-example gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Illustrative dev/example values in Markdown blueprints and env examples are not real secrets."
+paths = [
+  '''(^|/)docs/.*\.md$''',
+  '''(^|/)[^/]*\.env\.example$''',
+]
