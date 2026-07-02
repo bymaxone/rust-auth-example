@@ -42,8 +42,9 @@ pub enum EmailProviderKind {
 /// Constructed exclusively by [`Settings::load`]; do not build this struct
 /// directly in production code.
 ///
-/// Deliberately does **not** derive [`Serialize`]: a serializer would bypass the
-/// redacting [`Debug`] impl and emit the secret fields in plaintext.
+/// Deliberately does **not** derive [`Serialize`]: the redacting [`Debug`] impl
+/// only guards debug/log output, so a `Serialize` derive would make it easy to
+/// accidentally emit the secret fields in plaintext through some other sink.
 #[derive(Clone, Deserialize)]
 pub struct Settings {
     /// TCP port the axum server binds (`API_PORT`, default `4000`).
@@ -77,8 +78,8 @@ pub struct Settings {
 /// exist and are the correct type; only the value is suppressed.
 impl fmt::Debug for Settings {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        // Each redacted field is accessed via len() to prove it is non-empty in
-        // the debug output without revealing the value.
+        // For the two connection strings, emit only a byte-length hint instead of
+        // the value, so the debug output stays useful without revealing secrets.
         let db_hint = format!("[REDACTED {} bytes]", self.database_url.len());
         let redis_hint = format!("[REDACTED {} bytes]", self.redis_url.len());
         f.debug_struct("Settings")
