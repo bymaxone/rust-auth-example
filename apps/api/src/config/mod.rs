@@ -198,6 +198,9 @@ pub enum ConfigError {
     /// `MFA_ENCRYPTION_KEY` is not valid base64 or does not decode to exactly 32 bytes.
     #[error("MFA_ENCRYPTION_KEY must be base64-encoded 32 bytes (AES-256-GCM key)")]
     MfaKeyInvalid,
+    /// `EMAIL_PROVIDER` is `resend` but `RESEND_API_KEY` is absent.
+    #[error("`EMAIL_PROVIDER` is `resend` but `RESEND_API_KEY` is not configured")]
+    ResendKeyMissing,
 }
 
 impl From<figment::Error> for ConfigError {
@@ -261,6 +264,9 @@ impl Settings {
             .map_err(|_| ConfigError::MfaKeyInvalid)?;
         if decoded.len() != Self::MFA_KEY_LEN {
             return Err(ConfigError::MfaKeyInvalid);
+        }
+        if self.email_provider == EmailProviderKind::Resend && self.resend_api_key.is_none() {
+            return Err(ConfigError::ResendKeyMissing);
         }
         Ok(())
     }
@@ -366,8 +372,23 @@ mod tests {
         figment::Jail::expect_with(|jail| {
             seed(jail);
             jail.set_env("EMAIL_PROVIDER", "resend");
-            let settings = Settings::load().expect("resend provider must load");
+            jail.set_env("RESEND_API_KEY", "re_test_key");
+            let settings = Settings::load().expect("resend provider with key must load");
             assert_eq!(settings.email_provider, EmailProviderKind::Resend);
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn rejects_resend_provider_without_key() {
+        figment::Jail::expect_with(|jail| {
+            seed(jail);
+            jail.set_env("EMAIL_PROVIDER", "resend");
+            // No RESEND_API_KEY set — must refuse to boot.
+            let err = Settings::load().expect_err("resend without key must be rejected");
+            assert!(matches!(err, ConfigError::ResendKeyMissing));
+            let msg = err.to_string();
+            assert!(msg.contains("RESEND_API_KEY"));
             Ok(())
         });
     }
