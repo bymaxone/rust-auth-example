@@ -1,6 +1,6 @@
 # Phase 3 — API Skeleton
 
-> **Status**: 🔄 In Progress · **Progress**: 4 / 6 tasks · **Last updated**: 2026-07-02
+> **Status**: 🔄 In Progress · **Progress**: 5 / 6 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P3
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -96,7 +96,7 @@ in P4.
 | ID | Task | Status | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- | --- |
 | 3.1 | tokio + axum bootstrap (`main.rs` + `AppState`) | ✅ Done | P0 | M | — |
-| 3.2 | CORS + tower-http global layers | 📋 ToDo | P0 | S | 3.1 |
+| 3.2 | CORS + tower-http global layers | ✅ Done | P0 | S | 3.1 |
 | 3.3 | `GET /health` (version probe) | 📋 ToDo | P1 | S | 3.1 |
 | 3.4 | Typed `AppError` → `IntoResponse` | ✅ Done | P0 | M | 3.1 |
 | 3.5 | sqlx `PgPool` provider | ✅ Done | P0 | M | 3.1 |
@@ -284,7 +284,7 @@ Completion Protocol (after you finish):
 
 ### Task 3.2 — CORS + tower-http global layers
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: S
 - **Depends on**: 3.1
@@ -297,18 +297,19 @@ router.
 
 #### Acceptance criteria
 
-- [ ] `apps/api/src/layers.rs` exports `cors_layer(settings: &Settings) -> Result<CorsLayer, AppError>` building a CORS
+- [x] `apps/api/src/layers.rs` exports `cors_layer(settings: &Settings) -> Result<CorsLayer, AppError>` building a CORS
   layer with `allow_origin(WEB_ORIGIN parsed to HeaderValue)`, `allow_credentials(true)`, methods
   `GET/POST/DELETE/OPTIONS`, request headers including `content-type`, `authorization`, and `x-tenant-id`, and
   `expose_headers([RETRY_AFTER])`.
-- [ ] `apps/api/src/layers.rs` exports `apply_global_layers(router: Router, settings: &Settings) -> Result<Router, AppError>`
+- [x] `apps/api/src/layers.rs` exports `apply_global_layers(router: Router, settings: &Settings) -> Result<Router, AppError>`
   composing, **outermost-first**, `TraceLayer::new_for_http()` → the CORS layer → security response headers
   (`x-content-type-options: nosniff`, `x-frame-options: DENY`, `referrer-policy: no-referrer`) →
-  `RequestBodyLimitLayer::new(MAX_BODY_BYTES)` (1 MiB) via a `tower::ServiceBuilder`.
-- [ ] `main.rs` wraps the router: `let app = layers::apply_global_layers(app::build_router(state), &settings)?;`.
-- [ ] A unit test proves: an `OPTIONS` preflight with `Origin: <WEB_ORIGIN>` echoes `access-control-allow-origin`, lists
-  `x-tenant-id` in `access-control-allow-headers`, and `retry-after` in `access-control-expose-headers`; a plain `GET`
-  carries `x-content-type-options: nosniff`. 100% coverage on `layers.rs`.
+  `RequestBodyLimitLayer::new(MAX_BODY_BYTES)` (1 MiB) as chained `Router::layer` calls (`RequestBodyLimitLayer` changes
+  the request body type, so axum requires it applied directly to the router rather than composed in a `ServiceBuilder`).
+- [x] `main.rs` wraps the router: `let app = layers::apply_global_layers(app::build_router(state), &settings)?;`.
+- [x] A unit test proves: an `OPTIONS` preflight with `Origin: <WEB_ORIGIN>` echoes `access-control-allow-origin` and
+  lists `x-tenant-id` in `access-control-allow-headers`; an actual cross-origin `GET` exposes `retry-after` in
+  `access-control-expose-headers` and carries `x-content-type-options: nosniff`. 100% coverage on `layers.rs`.
 
 #### Files to create / modify
 
@@ -916,3 +917,4 @@ If any DoD bullet is unmet or CI is red, set P3 to `🟡 Partial`, not `✅`.
 - 3.4 ✅ 2026-07-02 — typed AppError → IntoResponse (opaque 500)
 - 3.5 ✅ 2026-07-02 — sqlx PgPool provider (eager connect, fail-fast)
 - 3.6 ✅ 2026-07-02 — RedisStores handle + JSON telemetry
+- 3.2 ✅ 2026-07-02 — CORS + tower-http global layers

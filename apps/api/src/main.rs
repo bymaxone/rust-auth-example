@@ -9,7 +9,7 @@
 
 use std::net::SocketAddr;
 
-use api::{app, config, db, stores, telemetry};
+use api::{app, config, db, layers, stores, telemetry};
 use tokio::signal;
 
 /// Maximum size of the shared Postgres connection pool.
@@ -23,7 +23,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let pool = db::connect_pool(&settings.database_url, MAX_DB_CONNECTIONS).await?;
     let stores = stores::connect_stores(&settings.redis_url, settings.redis_namespace.clone())?;
     let state = app::AppState::new(pool, stores);
-    let router = app::build_router(state);
+    let app = layers::apply_global_layers(app::build_router(state), &settings)?;
 
     let addr = SocketAddr::from(([127, 0, 0, 1], settings.api_port));
     let listener = tokio::net::TcpListener::bind(addr).await?;
@@ -31,7 +31,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     axum::serve(
         listener,
-        router.into_make_service_with_connect_info::<SocketAddr>(),
+        app.into_make_service_with_connect_info::<SocketAddr>(),
     )
     .with_graceful_shutdown(shutdown_signal())
     .await?;
