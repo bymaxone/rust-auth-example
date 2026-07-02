@@ -18,6 +18,7 @@ pub mod engine;
 pub mod error;
 pub mod hooks;
 pub mod layers;
+pub mod oauth;
 pub mod repository;
 pub mod routes;
 pub mod stores;

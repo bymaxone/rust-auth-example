@@ -40,11 +40,20 @@ futures-core = "0.3"
 reqwest = { version = "0.12", default-features = false, features = [
     "json",
     "rustls-tls-webpki-roots-no-provider",
+    # The OAuth transport builds its own rustls `ClientConfig` (aws-lc-rs provider,
+    # webpki roots) and installs it with `use_preconfigured_tls`; this variant enables
+    # that manual path without pulling a crypto provider or `ring` into the graph.
+    "rustls-tls-manual-roots-no-provider",
+    "http2",
+    "charset",
 ] }
 # Installs the `aws-lc-rs` rustls crypto provider as the process default so the
 # `-no-provider` reqwest TLS backend has a ring-free provider to build its config from.
 # The same rustls version is already resolved by the sqlx TLS stack.
 rustls = { version = "0.23", default-features = false, features = ["aws_lc_rs"] }
+# Mozilla's trusted CA root bundle for the OAuth TLS client's rustls root store.
+# Server-only, never on the wasm edge path; already resolved by the reqwest TLS stack.
+webpki-roots = "1"
 # Wraps the HS256 signing secret / MFA key / Resend API key as redacting, zeroizing
 # `SecretString`s, matching the library's `JwtConfig::secret`/`MfaConfig::encryption_key`
 # types. The `serde` feature lets figment deserialize the secrets straight into the

@@ -1,6 +1,6 @@
 # Phase 6 — OAuth & Invitations
 
-> **Status**: 🔄 In Progress · **Progress**: 0 / 5 tasks · **Last updated**: 2026-07-02
+> **Status**: 🔄 In Progress · **Progress**: 1 / 5 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P6
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -48,7 +48,7 @@ When P6 is done, `GET /auth/oauth/google` returns a `302` to Google carrying PKC
 
 | ID | Task | Status | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- | --- |
-| 6.1 | TLS `HttpClient` impl (`reqwest` + rustls/aws-lc-rs) | 📋 ToDo | P0 | M | — |
+| 6.1 | TLS `HttpClient` impl (`reqwest` + rustls/aws-lc-rs) | ✅ Done | P0 | M | — |
 | 6.2 | `GoogleOAuthProvider` wiring + mounted `/auth/oauth/*` verification | 📋 ToDo | P0 | M | 6.1 |
 | 6.3 | `on_oauth_login` Create/Link/Reject policy in `AuditAuthHooks` | 📋 ToDo | P0 | M | 6.2 |
 | 6.4 | Invitation create→email→accept flow verification | 📋 ToDo | P1 | M | — |
@@ -60,7 +60,7 @@ When P6 is done, `GET /auth/oauth/google` returns a `302` to Google carrying PKC
 
 ### Task 6.1 — TLS `HttpClient` impl (`reqwest` + rustls/aws-lc-rs)
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: —
@@ -71,12 +71,12 @@ Implement `TlsHttpClient` in `apps/api/src/oauth/` — a `bymax_auth_core::trait
 
 #### Acceptance criteria
 
-- [ ] `TlsHttpClient` implements `HttpClient::send(&self, req: HttpRequest) -> Result<HttpResponse, HttpError>` over a `reqwest::Client` built with a manually-provided rustls `ClientConfig` using `rustls::crypto::aws_lc_rs`, `https_only(true)`, and a 10 s per-request timeout.
-- [ ] The core-owned `HttpRequest`/`HttpResponse` are translated to/from `reqwest` by pure free functions (`to_reqwest_request`, `from_reqwest_response`) so they unit-test to 100% without a network; `HttpMethod::{Get, Post}`, headers, and the optional body all round-trip.
-- [ ] Error mapping: a timeout → `HttpError::Timeout`; a connect/DNS failure → `HttpError::Connect(_)`; any other transport/body failure → `HttpError::Transport(_)` — **no `reqwest` type crosses the trait boundary**.
-- [ ] `cargo tree -p api -i ring` returns nothing and `cargo deny check` passes — `ring`/`openssl` never enter the dependency graph.
-- [ ] The translation + error-mapping functions are covered to 100% by hermetic unit tests; the network `send` orchestration is exercised by the 6.5 opt-in HTTPS test (its success path is gated, the failure paths are covered by sending to an unreachable loopback host).
-- [ ] `#![forbid(unsafe_code)]`; no `unwrap`/`expect`/`panic!` on the construct/send path; a typed `thiserror` `TlsHttpClientError` for construction failures.
+- [x] `TlsHttpClient` implements `HttpClient::send(&self, req: HttpRequest) -> Result<HttpResponse, HttpError>` over a `reqwest::Client` built with a manually-provided rustls `ClientConfig` using `rustls::crypto::aws_lc_rs`, `https_only(true)`, and a 10 s per-request timeout.
+- [x] The core-owned `HttpRequest`/`HttpResponse` are translated to/from `reqwest` by pure free functions (`to_reqwest_request`, `from_reqwest_response`) so they unit-test to 100% without a network; `HttpMethod::{Get, Post}`, headers, and the optional body all round-trip.
+- [x] Error mapping: a timeout → `HttpError::Timeout`; a connect/DNS failure → `HttpError::Connect(_)`; any other transport/body failure → `HttpError::Transport(_)` — **no `reqwest` type crosses the trait boundary**.
+- [x] `cargo tree -p api -i ring` returns nothing and `cargo deny check` passes — `ring`/`openssl` never enter the dependency graph.
+- [x] The translation + error-mapping functions are covered to 100% by hermetic unit tests; the network `send` orchestration is exercised by the 6.5 opt-in HTTPS test (its success path is gated, the failure paths are covered by sending to an unreachable loopback host).
+- [x] `#![forbid(unsafe_code)]`; no `unwrap`/`expect`/`panic!` on the construct/send path; a typed `thiserror` `TlsHttpClientError` for construction failures.
 
 #### Files to create / modify
 
@@ -642,4 +642,4 @@ When the LAST task (6.5) is ✅:
 
 > Append-only. One line per completed task: `- <id> ✅ YYYY-MM-DD — <summary>`.
 
-_(empty — no tasks completed yet)_
+- 6.1 ✅ 2026-07-02 — TLS `HttpClient` over reqwest + rustls/aws-lc-rs (webpki roots, HTTPS-only, 10 s timeout); pure request/response translation + opaque `HttpError` mapping; `ring`/`openssl` stay out of the graph.
