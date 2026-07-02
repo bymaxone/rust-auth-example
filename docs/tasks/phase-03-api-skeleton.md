@@ -1,6 +1,6 @@
 # Phase 3 — API Skeleton
 
-> **Status**: 🔄 In Progress · **Progress**: 0 / 6 tasks · **Last updated**: 2026-07-02
+> **Status**: 🔄 In Progress · **Progress**: 1 / 6 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P3
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -95,7 +95,7 @@ in P4.
 
 | ID | Task | Status | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- | --- |
-| 3.1 | tokio + axum bootstrap (`main.rs` + `AppState`) | 📋 ToDo | P0 | M | — |
+| 3.1 | tokio + axum bootstrap (`main.rs` + `AppState`) | ✅ Done | P0 | M | — |
 | 3.2 | CORS + tower-http global layers | 📋 ToDo | P0 | S | 3.1 |
 | 3.3 | `GET /health` (version probe) | 📋 ToDo | P1 | S | 3.1 |
 | 3.4 | Typed `AppError` → `IntoResponse` | 📋 ToDo | P0 | M | 3.1 |
@@ -108,7 +108,7 @@ in P4.
 
 ### Task 3.1 — tokio + axum bootstrap (`main.rs` + `AppState`)
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: —
@@ -121,18 +121,18 @@ beyond a fallback yet.
 
 #### Acceptance criteria
 
-- [ ] `apps/api/src/main.rs` exists with `#[tokio::main] async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>>`
+- [x] `apps/api/src/main.rs` exists with `#[tokio::main] async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>>`
   that loads `config::Settings`, builds `AppState`, builds the router, binds `127.0.0.1:{settings.api_port}`, and serves
   via `router.into_make_service_with_connect_info::<SocketAddr>()` with `.with_graceful_shutdown(shutdown_signal())`.
-- [ ] `shutdown_signal()` resolves on Ctrl-C **or** (on Unix) SIGTERM, using no `unwrap`/`expect` (the non-Unix arm and
+- [x] `shutdown_signal()` resolves on Ctrl-C **or** (on Unix) SIGTERM, using no `unwrap`/`expect` (the non-Unix arm and
   the signal-install-failure arm fall back to `std::future::pending()`).
-- [ ] `apps/api/src/app.rs` exports a `#[derive(Clone)] AppState` (with `Default`) and `pub fn build_router(state: AppState) -> Router`
+- [x] `apps/api/src/app.rs` exports a `#[derive(Clone)] AppState` (with `Default`) and `pub fn build_router(state: AppState) -> Router`
   returning a `Router` with `.with_state(state)`; the struct carries `version: &'static str = env!("CARGO_PKG_VERSION")`
   and a rustdoc note that the database pool, the Redis store handle, and the wired `AuthEngine` are attached here as those
   layers are introduced.
-- [ ] A unit test proves `build_router(AppState::default())` produces a service that answers (e.g. a fallback `404`) via
+- [x] A unit test proves `build_router(AppState::default())` produces a service that answers (e.g. a fallback `404`) via
   `tower::ServiceExt::oneshot` — no live port bound in the test.
-- [ ] `cargo build --locked` succeeds; `cargo run -p api` binds the port and shuts down cleanly on Ctrl-C.
+- [x] `cargo build --locked` succeeds; `cargo run -p api` binds the port and shuts down cleanly on Ctrl-C.
 
 #### Files to create / modify
 
@@ -912,4 +912,4 @@ If any DoD bullet is unmet or CI is red, set P3 to `🟡 Partial`, not `✅`.
 
 > Append-only. One line per completed task: `- <id> ✅ YYYY-MM-DD — <summary>`.
 
-_(empty — no tasks completed yet)_
+- 3.1 ✅ 2026-07-02 — tokio + axum bootstrap (main.rs + AppState)
