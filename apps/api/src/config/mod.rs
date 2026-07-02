@@ -153,10 +153,25 @@ impl Settings {
         // NOTE: Env::raw() is intentionally unscoped (no prefix) so it reads the
         // documented .env variable names verbatim; a matching ambient variable
         // therefore overrides the corresponding default.
-        let settings: Self = Figment::new()
-            .merge(Serialized::defaults(Defaults::default()))
-            .merge(Env::raw())
-            .extract()?;
+        Self::from_figment(
+            Figment::new()
+                .merge(Serialized::defaults(Defaults::default()))
+                .merge(Env::raw()),
+        )
+    }
+
+    /// Extract and validate [`Settings`] from an already-assembled figment.
+    ///
+    /// Separated from [`load`](Self::load) so tests can supply a figment that is
+    /// hermetic with respect to the process environment (the CI runner populates
+    /// ambient variables such as `DATABASE_URL` that would otherwise leak in).
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ConfigError`] when a required key is missing, a value fails to
+    /// parse, or a hard guard is violated.
+    fn from_figment(figment: Figment) -> Result<Self, ConfigError> {
+        let settings: Self = figment.extract()?;
         settings.validate()?;
         Ok(settings)
     }
@@ -236,14 +251,19 @@ mod tests {
 
     #[test]
     fn rejects_missing_required_field() {
-        figment::Jail::expect_with(|jail| {
-            // DATABASE_URL is required with no default; omitting it must fail extraction.
-            jail.set_env("REDIS_URL", "redis://localhost:6379");
-            jail.set_env("JWT_SECRET", TEST_JWT);
-            jail.set_env("MFA_ENCRYPTION_KEY", TEST_MFA_KEY);
-            assert!(matches!(Settings::load(), Err(ConfigError::Extract(_))));
-            Ok(())
-        });
+        // Build the figment directly (no process `Env`) so the check is hermetic:
+        // the CI runner sets an ambient `DATABASE_URL`, which would otherwise
+        // satisfy the "required" field and mask the failure. `database_url` is
+        // required with no default, so omitting it here must fail extraction.
+        let figment = Figment::new()
+            .merge(Serialized::defaults(Defaults::default()))
+            .merge(Serialized::default("redis_url", "redis://localhost:6379"))
+            .merge(Serialized::default("jwt_secret", TEST_JWT))
+            .merge(Serialized::default("mfa_encryption_key", TEST_MFA_KEY));
+        assert!(matches!(
+            Settings::from_figment(figment),
+            Err(ConfigError::Extract(_))
+        ));
     }
 
     #[test]
