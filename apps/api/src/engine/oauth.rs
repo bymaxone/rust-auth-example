@@ -31,7 +31,7 @@ const ERROR_PATH: &str = "/auth/oauth/error";
 /// hosts, so the production redirect-safety checks have an allow-list to enforce.
 #[must_use]
 pub fn oauth_config(settings: &Settings) -> OAuthConfig {
-    let Some(google) = settings.google_oauth() else {
+    let Some(google) = google_oauth_config(settings) else {
         return OAuthConfig::default();
     };
     let origin = settings.web_origin.trim_end_matches('/');
@@ -39,13 +39,8 @@ pub fn oauth_config(settings: &Settings) -> OAuthConfig {
         success_redirect_url: Some(format!("{origin}{SUCCESS_PATH}")),
         mfa_redirect_url: Some(format!("{origin}{MFA_PATH}")),
         error_redirect_url: Some(format!("{origin}{ERROR_PATH}")),
-        redirect_allowlist: redirect_allowlist(&settings.web_origin, google.callback_url),
-        google: Some(GoogleOAuthConfig {
-            client_id: google.client_id.to_owned(),
-            client_secret: google.client_secret.clone(),
-            callback_url: google.callback_url.to_owned(),
-            ..GoogleOAuthConfig::default()
-        }),
+        redirect_allowlist: redirect_allowlist(&settings.web_origin, &google.callback_url),
+        google: Some(google),
     }
 }
 
@@ -58,11 +53,24 @@ pub fn oauth_config(settings: &Settings) -> OAuthConfig {
 pub fn google_provider(
     settings: &Settings,
 ) -> Result<Option<Arc<dyn OAuthProvider>>, TlsHttpClientError> {
-    let Some(google) = oauth_config(settings).google else {
+    let Some(google) = google_oauth_config(settings) else {
         return Ok(None);
     };
     let http = Arc::new(TlsHttpClient::new()?);
     Ok(Some(Arc::new(GoogleOAuthProvider::new(google, http))))
+}
+
+/// Map the settings' Google credentials onto a library [`GoogleOAuthConfig`], or `None`
+/// when Google is not configured. Shared by [`oauth_config`] and [`google_provider`] so the
+/// credential mapping lives in exactly one place.
+fn google_oauth_config(settings: &Settings) -> Option<GoogleOAuthConfig> {
+    let google = settings.google_oauth()?;
+    Some(GoogleOAuthConfig {
+        client_id: google.client_id.to_owned(),
+        client_secret: google.client_secret.clone(),
+        callback_url: google.callback_url.to_owned(),
+        ..GoogleOAuthConfig::default()
+    })
 }
 
 /// The host allow-list for the OAuth redirects: the web-origin host and the callback
@@ -181,6 +189,29 @@ mod tests {
             config.redirect_allowlist,
             vec!["app.example.com".to_owned(), "api.example.com".to_owned()]
         );
+    }
+
+    #[test]
+    fn production_config_validates_the_derived_allowlist() {
+        // The derived allow-list must satisfy the library's production redirect-host check
+        // for every candidate URL (the three redirects + the Google callback). Building and
+        // validating the full config under `Production` exercises the library's own host
+        // matcher against our `host_of` output, so any divergence surfaces here as a
+        // validation failure rather than a silently broken redirect in production.
+        let settings = oauth_settings(
+            "https://app.example.com",
+            "https://app.example.com/api/auth/oauth/google/callback",
+        );
+        let config = crate::engine::config::build_auth_config(
+            &settings,
+            bymax_auth_core::config::Environment::Production,
+        )
+        .expect("the production OAuth config validates against the library allow-list");
+        assert_eq!(
+            config.oauth.redirect_allowlist,
+            vec!["app.example.com".to_owned()]
+        );
+        assert!(config.controllers.oauth);
     }
 
     #[test]

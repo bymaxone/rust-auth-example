@@ -22,6 +22,7 @@ const REQUEST_TIMEOUT: Duration = Duration::from_secs(10);
 /// HTTPS-capable [`HttpClient`] for OAuth providers, backed by `reqwest` over rustls
 /// with the aws-lc-rs crypto provider. `ring`/`openssl` are banned, so the transport is
 /// pinned to rustls + aws-lc-rs explicitly and never negotiates a native TLS stack.
+#[derive(Debug, Clone)]
 pub struct TlsHttpClient {
     client: reqwest::Client,
 }
