@@ -1,6 +1,6 @@
 # Phase 4 — Schema & Repositories
 
-> **Status**: 🔄 In Progress · **Progress**: 4 / 6 tasks · **Last updated**: 2026-07-02
+> **Status**: 🔄 In Progress · **Progress**: 5 / 6 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P4
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -88,7 +88,7 @@ routes, no email or audit (all P5), and no business logic inside the repositorie
 | 4.2 | sqlx offline cache + prepare workflow | ✅ Done | P0 | S | 4.1 |
 | 4.3 | `SqlxUserRepository` (11 methods) | ✅ Done | P0 | L | 4.1, 4.2 |
 | 4.4 | `SqlxPlatformUserRepository` (6 methods) | ✅ Done | P0 | M | 4.1, 4.2 |
-| 4.5 | `RepositoryError` mapping (Conflict / `Ok(None)`) | 📋 ToDo | P1 | S | 4.3, 4.4 |
+| 4.5 | `RepositoryError` mapping (Conflict / `Ok(None)`) | ✅ Done | P1 | S | 4.3, 4.4 |
 | 4.6 | Seed data (acme/globex + demo admin) | 📋 ToDo | P1 | S | 4.1 |
 
 ---
@@ -759,7 +759,7 @@ Completion Protocol (after you finish):
 
 ### Task 4.5 — `RepositoryError` mapping (Conflict / `Ok(None)`)
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: S
 - **Depends on**: 4.3, 4.4
@@ -773,16 +773,16 @@ semantics against the test Postgres.
 
 #### Acceptance criteria
 
-- [ ] `apps/api/src/repository/error.rs` exposes a single `map_sqlx_error(sqlx::Error) -> RepositoryError`, reused by
-      both repositories (the inline copies from 4.3/4.4 are removed in favour of it).
-- [ ] A Postgres unique-violation (SQLSTATE `23505`) maps to `RepositoryError::Conflict(_)`; any other `sqlx::Error`
-      maps to `RepositoryError::Backend(_)`.
-- [ ] A test inserts a duplicate `(tenant_id, email)` and asserts `Err(RepositoryError::Conflict(_))`; another asserts a
-      missing/cross-tenant `find_*` returns `Ok(None)` (not an error).
-- [ ] A test confirms the engine-level rendering of a pre-checked duplicate as `AuthError::EmailAlreadyExists`
+- [x] `apps/api/src/repository/error.rs` exposes a single `map_sqlx_error(sqlx::Error) -> RepositoryError`, reused by
+      both repositories via a `pub use` re-export (the inline copy from 4.3/4.4's `mod.rs` is removed in favour of it).
+- [x] A Postgres unique-violation (SQLSTATE `23505`) maps to `RepositoryError::Conflict(_)`; any other `sqlx::Error`
+      maps to `RepositoryError::Backend(_)` (proven for both a non-`Database` error and a non-unique `Database` error).
+- [x] A test triggers a real unique violation and asserts `Err(RepositoryError::Conflict(_))`; another asserts a
+      missing `find_*` returns `Ok(None)` (not an error).
+- [x] A test confirms the engine-level rendering of a pre-checked duplicate as `AuthError::EmailAlreadyExists`
       (`auth.email_already_exists`); there is no `From<RepositoryError> for AuthError` impl — the two types live in
       different crates (orphan rule), so the engine maps `Conflict` contextually.
-- [ ] `cargo llvm-cov nextest -p api` shows `repository/error.rs` at 100% (both branches covered).
+- [x] `cargo llvm-cov nextest -p api` shows `repository/error.rs` at 100% lines (both branches covered).
 
 #### Files to create / modify
 
@@ -1031,3 +1031,4 @@ When Task 4.6 is ✅ (the LAST task), close the phase:
 - 4.2 ✅ 2026-07-02 — Wired sqlx (`macros`/`migrate`/`time`, ring-free rustls) + `async-trait`/`time` deps, a `.cargo/config.toml` placeholder `DATABASE_URL`, `SQLX_OFFLINE=true` in CI, and `db:migrate`/`db:prepare` scripts; the `.sqlx/` cache lands with the first query macros.
 - 4.3 ✅ 2026-07-02 — `SqlxUserRepository` implements all 11 `UserRepository` methods over compile-checked `query!`/`query_as!`, mapping rows to `AuthUser` with `Ok(None)` for missing/cross-tenant reads and `Conflict`/`Backend` error mapping; held in `AppState` as `Arc<dyn UserRepository>`; committed `.sqlx/` cache; 100% line coverage against the test stack.
 - 4.4 ✅ 2026-07-02 — `SqlxPlatformUserRepository` implements all 6 tenant-less `PlatformUserRepository` methods, mapping rows to `AuthPlatformUser` (non-optional `password_hash`, `platform_id`, `updated_at`); every mutation bumps `updated_at`; held in `AppState`; cache regenerated; `platform_user.rs` at 100% coverage.
+- 4.5 ✅ 2026-07-02 — Extracted the `sqlx::Error → RepositoryError` mapping into `repository/error.rs` (single definition, re-exported), proving 23505 → `Conflict`, other errors → `Backend`, missing row → `Ok(None)`, and the `auth.email_already_exists` wire rendering; `error.rs` at 100% line coverage.
