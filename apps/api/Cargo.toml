@@ -85,10 +85,11 @@ bymax-auth-core = { path = "../../../rust-auth/crates/bymax-auth-core", version 
 figment = { version = "0.10", features = ["env", "test"] }
 http-body-util = "0.1"
 tower = { version = "0.5", default-features = false, features = ["util"] }
-# A real WebSocket client for the example `/ws/example` upgrade test. Plaintext `ws://`
-# only (`default-features = false` keeps every TLS backend — and the banned `openssl`/`ring`
-# — off the graph); the local test app is loopback.
-tokio-tungstenite = { version = "0.24", default-features = false, features = ["connect", "handshake"] }
+# A real WebSocket client for the example `/ws/example` upgrade test. Pinned to the same
+# version axum's WebSocket support already resolves, so the graph carries a single
+# `tokio-tungstenite`. Plaintext `ws://` only (`default-features = false` keeps every TLS
+# backend — and the banned `openssl`/`ring` — off the graph); the local test app is loopback.
+tokio-tungstenite = { version = "0.29", default-features = false, features = ["connect", "handshake"] }
 
 [features]
 # Switch the password hasher to Argon2id (the hardened `secure_defaults` profile)

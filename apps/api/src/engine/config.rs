@@ -20,6 +20,9 @@ const MFA_RECOVERY_CODE_COUNT: u8 = 8;
 const MFA_TOTP_WINDOW: u8 = 1;
 /// The platform-admin role granted to the seeded demo administrator.
 const PLATFORM_ADMIN_ROLE: &str = "admin";
+/// A lesser platform role used to demonstrate the platform role hierarchy: it satisfies only
+/// itself, so a `support` token does NOT satisfy the `admin`-gated platform route.
+const PLATFORM_SUPPORT_ROLE: &str = "support";
 
 /// Assembles the example's [`AuthConfig`] from validated [`Settings`] and rejects
 /// it fail-fast for the target [`Environment`].
@@ -79,10 +82,21 @@ pub fn build_auth_config(
     // The platform role hierarchy is fully denormalized (each role lists every role it
     // transitively includes) so a satisfaction check is a single-level lookup. It is a
     // distinct namespace from the dashboard hierarchy: platform tokens never cross over.
-    config.roles.platform_hierarchy = Some(HashMap::from([(
-        PLATFORM_ADMIN_ROLE.to_owned(),
-        vec![PLATFORM_ADMIN_ROLE.to_owned()],
-    )]));
+    // `admin` outranks the lesser `support` role, while `support` satisfies only itself — so
+    // a `support` token is refused by the `admin`-gated platform route.
+    config.roles.platform_hierarchy = Some(HashMap::from([
+        (
+            PLATFORM_ADMIN_ROLE.to_owned(),
+            vec![
+                PLATFORM_ADMIN_ROLE.to_owned(),
+                PLATFORM_SUPPORT_ROLE.to_owned(),
+            ],
+        ),
+        (
+            PLATFORM_SUPPORT_ROLE.to_owned(),
+            vec![PLATFORM_SUPPORT_ROLE.to_owned()],
+        ),
+    ]));
 
     // Enable the sessions, MFA, and platform controller groups. The combined platform-MFA
     // group mounts automatically from `platform && mfa`.
@@ -179,7 +193,8 @@ mod tests {
                 .roles
                 .platform_hierarchy
                 .as_ref()
-                .is_some_and(|hierarchy| hierarchy.contains_key("admin"))
+                .is_some_and(|hierarchy| hierarchy.contains_key("admin")
+                    && hierarchy.contains_key("support"))
         );
     }
 

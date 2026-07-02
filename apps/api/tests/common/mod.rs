@@ -364,27 +364,36 @@ pub const PLATFORM_ADMIN_PASSWORD: &str = "AdminPass!Demo123";
 /// The password used for dashboard users provisioned by the integration tests.
 pub const DASHBOARD_PASSWORD: &str = "Sup3rSecret!pw";
 
-/// Provision a fresh, active platform admin with a process-unique email and the shared
-/// [`PLATFORM_ADMIN_PASSWORD`], hashed with the library's real scrypt KDF. Runtime queries
-/// keep this seed out of the offline query cache. Returns `(id, email)`.
-pub async fn seed_platform_admin(pool: &PgPool) -> (String, String) {
+/// Provision a fresh, active platform user with a process-unique email, the given `role`, and
+/// the shared [`PLATFORM_ADMIN_PASSWORD`], hashed with the library's real scrypt KDF. Runtime
+/// queries keep this seed out of the offline query cache. Returns `(id, email)`. Used to mint
+/// both an `admin` token and a lesser `support` token that exercises the platform role
+/// hierarchy (a `support` role does not satisfy the `admin`-gated platform route).
+pub async fn seed_platform_user_with_role(pool: &PgPool, role: &str) -> (String, String) {
     static SEQ: AtomicU64 = AtomicU64::new(0);
     let seq = SEQ.fetch_add(1, Ordering::Relaxed);
     let pid = std::process::id();
-    let email = format!("admin-{pid}-{seq}@platform.test");
+    let email = format!("plat-{role}-{pid}-{seq}@platform.test");
     let params = bymax_auth_crypto::password::PasswordParams::default();
     let hash = bymax_auth_crypto::password::hash(PLATFORM_ADMIN_PASSWORD.as_bytes(), &params)
-        .expect("the demo admin password hashes");
+        .expect("the demo platform password hashes");
     let (id,): (String,) = sqlx::query_as(
         "INSERT INTO platform_users (email, name, password_hash, role, status) \
-         VALUES ($1, 'Test Admin', $2, 'admin', 'active') RETURNING id",
+         VALUES ($1, 'Test Platform User', $2, $3, 'active') RETURNING id",
     )
     .bind(&email)
     .bind(&hash)
+    .bind(role)
     .fetch_one(pool)
     .await
-    .expect("insert the platform admin");
+    .expect("insert the platform user");
     (id, email)
+}
+
+/// Provision a fresh, active platform **admin** (role `admin`) with the shared
+/// [`PLATFORM_ADMIN_PASSWORD`]. Returns `(id, email)`.
+pub async fn seed_platform_admin(pool: &PgPool) -> (String, String) {
+    seed_platform_user_with_role(pool, "admin").await
 }
 
 /// Log the seeded platform admin in through the mounted `/auth/platform/login` route and
@@ -497,16 +506,39 @@ pub async fn seed_platform_admin_mfa_enabled(pool: &PgPool) -> (String, String) 
     (id, email)
 }
 
-/// Compute the 6-digit TOTP code for a Base32 secret at `now + offset_secs`. Distinct
-/// offsets within the configured drift window yield distinct codes, so a test can perform
-/// several TOTP-gated operations without the per-step anti-replay rejecting a reused code.
-pub fn totp_code(secret_b32: &str, offset_secs: i64) -> String {
-    let raw = bymax_auth_crypto::totp::decode_secret_base32(secret_b32)
-        .expect("the enrolment secret is valid Base32");
-    let base = std::time::SystemTime::now()
+/// The TOTP step length, in seconds — the library's fixed 30s window.
+const TOTP_STEP_SECS: u64 = 30;
+/// If fewer than this many seconds remain in the current step, wait for the next window
+/// before deriving the code. The drift window is a single step, so a rollover between minting
+/// a code and the server verifying it could otherwise reject an in-window code; deriving the
+/// code at the START of a step guarantees it stays valid across the round-trip.
+const TOTP_BOUNDARY_GUARD_SECS: u64 = 2;
+
+/// Read the current UNIX time in whole seconds (monotonic-enough for a TOTP step).
+fn unix_now_secs() -> u64 {
+    std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_secs())
-        .unwrap_or(0);
+        .unwrap_or(0)
+}
+
+/// Compute the 6-digit TOTP code for a Base32 secret at `now + offset_secs`. Distinct offsets
+/// within the configured drift window yield distinct codes, so a test can perform several
+/// TOTP-gated operations without the per-step anti-replay rejecting a reused code.
+///
+/// This waits for the next step boundary when the current step is about to roll over, so the
+/// returned code retains a full step of validity through the server round-trip and the tight
+/// drift window never rejects a just-minted code. The wait is async so it yields to the
+/// current-thread test runtime rather than blocking it.
+pub async fn totp_code(secret_b32: &str, offset_secs: i64) -> String {
+    let raw = bymax_auth_crypto::totp::decode_secret_base32(secret_b32)
+        .expect("the enrolment secret is valid Base32");
+    let mut base = unix_now_secs();
+    let remaining = TOTP_STEP_SECS - (base % TOTP_STEP_SECS);
+    if remaining <= TOTP_BOUNDARY_GUARD_SECS {
+        tokio::time::sleep(std::time::Duration::from_secs(remaining)).await;
+        base = unix_now_secs();
+    }
     let now = i64::try_from(base)
         .unwrap_or(i64::MAX)
         .saturating_add(offset_secs);

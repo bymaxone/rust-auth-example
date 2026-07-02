@@ -22,6 +22,11 @@ use crate::error::AppError;
 /// configured dashboard role hierarchy; the engine resolves transitive satisfaction.
 const AUDIT_ADMIN_ROLE: &str = "admin";
 
+/// The platform role that gates the example's platform-only diagnostics route. Matches a key
+/// in the configured platform role hierarchy; the engine resolves transitive satisfaction, so
+/// a lesser platform role (e.g. `support`) does not satisfy it.
+const PLATFORM_ADMIN_ROLE: &str = "admin";
+
 /// Read the bearer access token from the `Authorization` header, if present and non-empty.
 /// The scheme match is case-insensitive, mirroring the library's header parsing. A query
 /// string is never consulted — a credential never travels in the URL.
@@ -84,9 +89,11 @@ where
     }
 }
 
-/// Requires an authenticated platform admin (the `PlatformUser` equivalent): a valid
-/// platform token (`type == platform`). A dashboard token presented here fails the platform
-/// verification and is rejected — the two token families never cross over.
+/// Requires a platform token whose role satisfies `admin` under the platform hierarchy: a
+/// valid platform token (`type == platform`) presenting a role that transitively includes
+/// `admin`. An unauthenticated (or non-platform) request is rejected with `401` and a valid
+/// platform token of a lesser role (e.g. `support`) with `403`. A dashboard token fails the
+/// platform verification and is rejected — the two token families never cross over.
 #[derive(Debug, Clone)]
 pub struct PlatformAdmin(pub PlatformClaims);
 
@@ -108,7 +115,16 @@ where
             .verify_platform_token(&token)
             .await
             .map_err(map_platform_error)?;
-        Ok(Self(claims))
+        // The token is a valid platform token; require its role to satisfy `admin` under the
+        // platform hierarchy, so a lesser platform role (e.g. `support`) is refused with `403`.
+        if app
+            .engine
+            .platform_role_satisfies(&claims.role, PLATFORM_ADMIN_ROLE)
+        {
+            Ok(Self(claims))
+        } else {
+            Err(AppError::Auth(AuthError::InsufficientRole))
+        }
     }
 }
 

@@ -35,11 +35,12 @@ async fn enrol_admin_mfa(app: &common::TestApp) -> (String, String) {
         setup["qrCodeUri"].as_str().is_some(),
         "setup returns a QR provisioning URI"
     );
+    let code = common::totp_code(&secret, 0).await;
     let resp = app
         .client
         .post(format!("{}/auth/platform/mfa/verify-enable", app.base_url))
         .bearer_auth(&access)
-        .json(&serde_json::json!({ "code": common::totp_code(&secret, 0) }))
+        .json(&serde_json::json!({ "code": code }))
         .send()
         .await
         .unwrap();
@@ -74,10 +75,11 @@ async fn platform_mfa_setup_enable_challenge_roundtrip() {
         .expect("an enrolment secret")
         .to_owned();
 
+    let code = common::totp_code(&secret, 0).await;
     let resp = client
         .post(format!("{base}/auth/platform/mfa/verify-enable"))
         .bearer_auth(&access)
-        .json(&serde_json::json!({ "code": common::totp_code(&secret, 0) }))
+        .json(&serde_json::json!({ "code": code }))
         .send()
         .await
         .unwrap();
@@ -103,9 +105,10 @@ async fn platform_mfa_setup_enable_challenge_roundtrip() {
         .to_owned();
 
     // The platform challenge issues a platform session (a fresh in-window code at +1 step).
+    let code = common::totp_code(&secret, 30).await;
     let resp = client
         .post(format!("{base}/auth/platform/mfa/challenge"))
-        .json(&serde_json::json!({ "mfaTempToken": temp, "code": common::totp_code(&secret, 30) }))
+        .json(&serde_json::json!({ "mfaTempToken": temp, "code": code }))
         .send()
         .await
         .unwrap();
@@ -128,11 +131,12 @@ async fn platform_mfa_disable_route_answers() {
         return;
     };
     let (access, secret) = enrol_admin_mfa(&app).await;
+    let code = common::totp_code(&secret, 30).await;
     let resp = app
         .client
         .post(format!("{}/auth/platform/mfa/disable", app.base_url))
         .bearer_auth(&access)
-        .json(&serde_json::json!({ "code": common::totp_code(&secret, 30) }))
+        .json(&serde_json::json!({ "code": code }))
         .send()
         .await
         .unwrap();
@@ -146,11 +150,12 @@ async fn platform_mfa_recovery_codes_route_answers() {
         return;
     };
     let (access, secret) = enrol_admin_mfa(&app).await;
+    let code = common::totp_code(&secret, 30).await;
     let resp = app
         .client
         .post(format!("{}/auth/platform/mfa/recovery-codes", app.base_url))
         .bearer_auth(&access)
-        .json(&serde_json::json!({ "code": common::totp_code(&secret, 30) }))
+        .json(&serde_json::json!({ "code": code }))
         .send()
         .await
         .unwrap();

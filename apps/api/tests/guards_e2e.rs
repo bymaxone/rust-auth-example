@@ -112,3 +112,30 @@ async fn platform_only_route_rejects_a_dashboard_token() {
     let resp = client.get(&url).send().await.unwrap();
     assert_eq!(resp.status().as_u16(), 401, "no token -> 401");
 }
+
+/// The platform-admin-gated route enforces the platform role hierarchy, not merely the token
+/// family: an `admin` platform token is admitted, while a valid `support` platform token — a
+/// lesser role that does not satisfy `admin` — is refused with `403`. This proves cross-role
+/// isolation inside the platform domain.
+#[tokio::test]
+async fn platform_route_enforces_the_admin_role() {
+    let Some(app) = common::spawn().await else {
+        return;
+    };
+    let base = &app.base_url;
+    let client = &app.client;
+    let (_admin_id, admin_email) = common::seed_platform_admin(&app.pool).await;
+    let admin = common::platform_login(&app, &admin_email).await;
+    let (_support_id, support_email) =
+        common::seed_platform_user_with_role(&app.pool, "support").await;
+    let support = common::platform_login(&app, &support_email).await;
+    let url = format!("{base}/diagnostics/platform");
+
+    // An admin platform token satisfies the `admin` requirement.
+    let resp = client.get(&url).bearer_auth(&admin).send().await.unwrap();
+    assert_eq!(resp.status().as_u16(), 200, "platform admin -> 200");
+
+    // A valid platform token whose role does not satisfy `admin` is forbidden.
+    let resp = client.get(&url).bearer_auth(&support).send().await.unwrap();
+    assert_eq!(resp.status().as_u16(), 403, "a lesser platform role -> 403");
+}
