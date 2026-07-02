@@ -42,7 +42,11 @@ function walkTs(dir) {
     if (SKIP_DIRS.has(entry.name)) continue;
     const full = join(dir, entry.name);
     if (entry.isDirectory()) acc.push(...walkTs(full));
-    else if (entry.name.endsWith('.ts') || entry.name.endsWith('.tsx')) acc.push(full);
+    else if (
+      (entry.name.endsWith('.ts') || entry.name.endsWith('.tsx')) &&
+      !entry.name.endsWith('.d.ts')
+    )
+      acc.push(full);
   }
   return acc;
 }

@@ -305,8 +305,8 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm audit:exports -- --report
-      - run: pnpm check:public-api -- --report
+      - run: pnpm audit:exports
+      - run: pnpm check:public-api
 
   supply-chain:
     name: supply-chain
