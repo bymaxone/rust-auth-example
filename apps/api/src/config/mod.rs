@@ -8,6 +8,10 @@
 //!
 //! Secret fields (`jwt_secret`, `mfa_encryption_key`) are redacted in the [`Debug`]
 //! output so they are never written to logs even if the struct is printed.
+//!
+//! Configuration is read from **unprefixed** environment variables (e.g.
+//! `DATABASE_URL`, `JWT_SECRET`) to match the documented `.env` contract, so a
+//! matching ambient variable in the shell will override the corresponding default.
 
 use std::fmt;
 
@@ -32,7 +36,10 @@ pub enum EmailProviderKind {
 ///
 /// Constructed exclusively by [`Settings::load`]; do not build this struct
 /// directly in production code.
-#[derive(Clone, Serialize, Deserialize)]
+///
+/// Deliberately does **not** derive [`Serialize`]: a serializer would bypass the
+/// redacting [`Debug`] impl and emit the secret fields in plaintext.
+#[derive(Clone, Deserialize)]
 pub struct Settings {
     /// TCP port the axum server binds (`API_PORT`, default `4000`).
     pub api_port: u16,
@@ -44,7 +51,7 @@ pub struct Settings {
     pub redis_url: String,
     /// Store key namespace (`REDIS_NAMESPACE`, default `rust_auth_example`).
     pub redis_namespace: String,
-    /// HS256 signing secret (`JWT_SECRET`); validated `>= 64` chars.
+    /// HS256 signing secret (`JWT_SECRET`); validated `>= 64` bytes.
     pub jwt_secret: String,
     /// base64-encoded 32-byte AES-256-GCM key (`MFA_ENCRYPTION_KEY`).
     pub mfa_encryption_key: String,
@@ -55,13 +62,17 @@ pub struct Settings {
 }
 
 /// Redacts secrets so the struct can be safely printed in logs.
+///
+/// `database_url` and `redis_url` are redacted alongside the two dedicated secret
+/// fields because a connection string can embed a password in its userinfo
+/// component.
 impl fmt::Debug for Settings {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Settings")
             .field("api_port", &self.api_port)
             .field("log_level", &self.log_level)
-            .field("database_url", &self.database_url)
-            .field("redis_url", &self.redis_url)
+            .field("database_url", &"[REDACTED]")
+            .field("redis_url", &"[REDACTED]")
             .field("redis_namespace", &self.redis_namespace)
             .field("jwt_secret", &"[REDACTED]")
             .field("mfa_encryption_key", &"[REDACTED]")
@@ -101,10 +112,10 @@ pub enum ConfigError {
     /// The inner error is boxed because `figment::Error` is a large type (208 bytes);
     /// boxing keeps `ConfigError` on the stack and avoids inflating every call site.
     #[error("failed to load configuration from the environment: {0}")]
-    Extract(Box<figment::Error>),
+    Extract(#[source] Box<figment::Error>),
     /// `JWT_SECRET` is shorter than the HS256 floor.
     #[error(
-        "JWT_SECRET must be at least {min} characters (got {got})",
+        "JWT_SECRET must be at least {min} bytes (got {got})",
         min = Settings::JWT_SECRET_MIN_LEN
     )]
     JwtSecretTooShort {
@@ -123,7 +134,7 @@ impl From<figment::Error> for ConfigError {
 }
 
 impl Settings {
-    /// HS256 secret floor — must be at least this many characters.
+    /// HS256 secret floor — must be at least this many bytes.
     pub const JWT_SECRET_MIN_LEN: usize = 64;
 
     /// Required decoded length of the MFA key (AES-256-GCM = 32 bytes).
@@ -139,6 +150,9 @@ impl Settings {
     /// Returns [`ConfigError`] when a required variable is missing, a value fails
     /// to parse, or a hard guard is violated.
     pub fn load() -> Result<Self, ConfigError> {
+        // NOTE: Env::raw() is intentionally unscoped (no prefix) so it reads the
+        // documented .env variable names verbatim; a matching ambient variable
+        // therefore overrides the corresponding default.
         let settings: Self = Figment::new()
             .merge(Serialized::defaults(Defaults::default()))
             .merge(Env::raw())
@@ -166,6 +180,8 @@ impl Settings {
 
 #[cfg(test)]
 #[allow(
+    // .expect() is the idiomatic failure mode in tests — a panic here is a test
+    // failure signal, not a runtime error path, so the workspace deny is relaxed.
     clippy::expect_used,
     // figment::Jail closures return Result<(), figment::Error> — that type is large
     // by design (it carries rich source/path diagnostics) and is not in our control.
@@ -202,6 +218,7 @@ mod tests {
             let debug = format!("{settings:?}");
             assert!(debug.contains("[REDACTED]"));
             assert!(!debug.contains(TEST_JWT));
+            assert!(!debug.contains(TEST_MFA_KEY));
             Ok(())
         });
     }
