@@ -1,0 +1,38 @@
+{
+  "name": "rust-auth-example",
+  "version": "0.0.0",
+  "description": "The public, production-shaped reference app for bymax-auth / @bymax-one/rust-auth.",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "author": {
+    "name": "Bymax One",
+    "url": "https://bymax.one"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bymaxone/rust-auth-example.git"
+  },
+  "packageManager": "pnpm@10.8.1",
+  "engines": {
+    "node": ">=24",
+    "pnpm": ">=10.8"
+  },
+  "scripts": {
+    "dev": "pnpm -r --parallel --if-present run dev",
+    "build": "pnpm -r --if-present run build",
+    "typecheck": "pnpm -r --if-present run typecheck",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test:cov": "pnpm -r --if-present run test:cov",
+    "prepare": "husky",
+    "infra:up": "docker compose up -d --wait",
+    "infra:down": "docker compose down",
+    "audit:exports": "node scripts/audit-library-exports.mjs",
+    "audit:public-api": "bash scripts/audit-rust-public-api.sh"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7"
+  }
+}

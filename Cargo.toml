@@ -1,0 +1,13 @@
+[workspace]
+resolver = "3"
+members = ["apps/api"]
+
+[workspace.package]
+edition = "2024"
+# MSRV floor: the lowest stable the workspace must still compile on. The pinned
+# toolchain (`rust-toolchain.toml`, 1.96.0) is deliberately higher and is proven
+# against this floor by a dedicated `msrv` CI job.
+rust-version = "1.90"
+license = "MIT"
+repository = "https://github.com/bymaxone/rust-auth-example"
+authors = ["Bymax One"]

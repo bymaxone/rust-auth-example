@@ -1,6 +1,6 @@
 # Phase 0 — Foundation, Tooling & CI Skeleton
 
-> **Status**: 🔄 In Progress · **Progress**: 0 / 7 tasks · **Last updated**: 2026-07-01
+> **Status**: 🔄 In Progress · **Progress**: 1 / 7 tasks · **Last updated**: 2026-07-01
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P0
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -45,7 +45,7 @@ When P0 is done: `cargo build --locked`, `cargo fmt --all --check`, and `cargo c
 
 | ID | Task | Status | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- | --- |
-| 0.1 | Cargo + pnpm dual workspace + toolchains | 📋 ToDo | P0 | M | — |
+| 0.1 | Cargo + pnpm dual workspace + toolchains | ✅ Done | P0 | M | — |
 | 0.2 | Rust lint/supply-chain + commit governance | 📋 ToDo | P0 | S | 0.1 |
 | 0.3 | Mandatory repo & community-health files | 📋 ToDo | P1 | S | 0.1 |
 | 0.4 | GitHub config & Copilot review | 📋 ToDo | P0 | M | 0.1 |
@@ -59,7 +59,7 @@ When P0 is done: `cargo build --locked`, `cargo fmt --all --check`, and `cargo c
 
 ### Task 0.1 — Cargo + pnpm dual workspace + toolchains
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: —
@@ -70,12 +70,12 @@ Create the dual-workspace root — the cargo workspace (`members = ['apps/api']`
 
 #### Acceptance criteria
 
-- [ ] Root `Cargo.toml` declares `[workspace] resolver = "3"`, `members = ["apps/api"]`, and a `[workspace.package]` with `edition = "2024"`, `rust-version = "1.90"`, `license = "MIT"`, `repository`, `authors`.
-- [ ] `rust-toolchain.toml` pins `channel = "1.96.0"`, the `wasm32-unknown-unknown` target, and the `rustfmt`/`clippy`/`llvm-tools-preview` components.
-- [ ] `apps/api/Cargo.toml` + `apps/api/src/main.rs` compile: `main.rs` carries `#![forbid(unsafe_code)]`, has no `unwrap`/`expect`/`panic!`, and `cargo build --locked` succeeds; `Cargo.lock` is committed.
-- [ ] `pnpm-workspace.yaml` lists `apps/web`; root `package.json` sets `packageManager: pnpm@10.8.x`, `engines.node >= 24`, and the `dev`/`build`/`typecheck`/`lint`/`format`/`format:check`/`test:cov`/`prepare`/`infra:up`/`infra:down`/`audit:exports`/`audit:public-api` scripts; `pnpm install` produces a committed `pnpm-lock.yaml`.
-- [ ] `tsconfig.base.json` sets TS strict + `exactOptionalPropertyTypes` + `noUncheckedIndexedAccess` + `noImplicitOverride` + `verbatimModuleSyntax`.
-- [ ] No `.gitkeep` / empty-directory placeholders exist.
+- [x] Root `Cargo.toml` declares `[workspace] resolver = "3"`, `members = ["apps/api"]`, and a `[workspace.package]` with `edition = "2024"`, `rust-version = "1.90"`, `license = "MIT"`, `repository`, `authors`.
+- [x] `rust-toolchain.toml` pins `channel = "1.96.0"`, the `wasm32-unknown-unknown` target, and the `rustfmt`/`clippy`/`llvm-tools-preview` components.
+- [x] `apps/api/Cargo.toml` + `apps/api/src/main.rs` compile: `main.rs` carries `#![forbid(unsafe_code)]`, has no `unwrap`/`expect`/`panic!`, and `cargo build --locked` succeeds; `Cargo.lock` is committed.
+- [x] `pnpm-workspace.yaml` lists `apps/web`; root `package.json` sets `packageManager: pnpm@10.8.x`, `engines.node >= 24`, and the `dev`/`build`/`typecheck`/`lint`/`format`/`format:check`/`test:cov`/`prepare`/`infra:up`/`infra:down`/`audit:exports`/`audit:public-api` scripts; `pnpm install` produces a committed `pnpm-lock.yaml`.
+- [x] `tsconfig.base.json` sets TS strict + `exactOptionalPropertyTypes` + `noUncheckedIndexedAccess` + `noImplicitOverride` + `verbatimModuleSyntax`.
+- [x] No `.gitkeep` / empty-directory placeholders exist.
 
 #### Files to create / modify
 
@@ -862,4 +862,4 @@ Run this only when the LAST task (0.7) is ✅:
 
 > Append-only. One line per completed task: `- <id> ✅ YYYY-MM-DD — <summary>`.
 
-_(empty — no tasks completed yet)_
+- 0.1 ✅ 2026-07-01 — Dual cargo + pnpm workspace, pinned toolchains, compiling `apps/api` stub, TS-strict base; `Cargo.lock` + `pnpm-lock.yaml` committed.

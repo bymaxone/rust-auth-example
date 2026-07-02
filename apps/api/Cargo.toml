@@ -1,0 +1,12 @@
+[package]
+name = "api"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+# Dependencies on the concrete `bymax-auth-*` crates are wired across the checkout
+# boundary in a later library-consumption step; the binary stays dependency-free
+# until then so the workspace compiles on its own.
+[dependencies]
