@@ -6,31 +6,37 @@
 //! authentication engine to the state as those subsystems are introduced, and
 //! mount their route groups onto the value returned here.
 
+use std::sync::Arc;
+
 use axum::Router;
+use bymax_auth_redis::RedisStores;
 use sqlx::PgPool;
 
 /// Shared, cheaply-cloneable handles every request needs.
 ///
-/// The Redis store handle and the wired authentication engine are attached to this
-/// struct as the store and engine layers are introduced; today it carries the
-/// running crate version for the health probe and the shared Postgres pool.
-/// Cloning is a pointer-cheap operation (the pool clone is a handle to the same
-/// underlying connections), so the state is duplicated freely per request.
+/// The wired authentication engine is attached to this struct as the engine layer
+/// is introduced; today it carries the running crate version for the health probe,
+/// the shared Postgres pool, and the shared Redis store handle. Cloning is a
+/// pointer-cheap operation (the pool clone and the `Arc` clone are handle copies),
+/// so the state is duplicated freely per request.
 #[derive(Clone)]
 pub struct AppState {
     /// The running crate version, surfaced by the health probe.
     pub version: &'static str,
     /// The shared Postgres connection pool the repositories draw from.
     pub pool: PgPool,
+    /// The shared Redis store handle backing every store seam of the engine.
+    pub stores: Arc<RedisStores>,
 }
 
 impl AppState {
-    /// Build the state from the connected Postgres pool and compile-time metadata.
+    /// Build the state from the connected handles and compile-time metadata.
     #[must_use]
-    pub fn new(pool: PgPool) -> Self {
+    pub fn new(pool: PgPool, stores: Arc<RedisStores>) -> Self {
         Self {
             version: env!("CARGO_PKG_VERSION"),
             pool,
+            stores,
         }
     }
 }
@@ -58,7 +64,12 @@ impl AppState {
     pub(crate) fn for_test() -> Self {
         let pool = PgPool::connect_lazy("postgres://localhost/placeholder")
             .expect("a well-formed url yields an infallible lazy pool");
-        Self::new(pool)
+        let stores = crate::stores::connect_stores(
+            "redis://127.0.0.1:6379",
+            "rust_auth_example".to_string(),
+        )
+        .expect("a well-formed redis url yields an infallible lazy handle");
+        Self::new(pool, stores)
     }
 }
 
@@ -91,9 +102,10 @@ mod tests {
         assert_eq!(response.status(), StatusCode::NOT_FOUND);
     }
 
-    #[test]
-    fn state_carries_the_crate_version() {
-        // The state reports the compile-time crate version verbatim.
+    #[tokio::test]
+    async fn state_carries_the_crate_version() {
+        // The state reports the compile-time crate version verbatim. This runs in a
+        // Tokio context because building the lazy pool requires the runtime.
         assert_eq!(AppState::for_test().version, env!("CARGO_PKG_VERSION"));
     }
 }

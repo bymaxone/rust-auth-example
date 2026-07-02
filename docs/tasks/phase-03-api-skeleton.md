@@ -1,6 +1,6 @@
 # Phase 3 — API Skeleton
 
-> **Status**: 🔄 In Progress · **Progress**: 3 / 6 tasks · **Last updated**: 2026-07-02
+> **Status**: 🔄 In Progress · **Progress**: 4 / 6 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P3
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -100,7 +100,7 @@ in P4.
 | 3.3 | `GET /health` (version probe) | 📋 ToDo | P1 | S | 3.1 |
 | 3.4 | Typed `AppError` → `IntoResponse` | ✅ Done | P0 | M | 3.1 |
 | 3.5 | sqlx `PgPool` provider | ✅ Done | P0 | M | 3.1 |
-| 3.6 | `RedisStores` handle + JSON telemetry | 📋 ToDo | P0 | M | 3.1 |
+| 3.6 | `RedisStores` handle + JSON telemetry | ✅ Done | P0 | M | 3.1 |
 
 ---
 
@@ -771,7 +771,7 @@ Completion Protocol (after you finish):
 
 ### Task 3.6 — `RedisStores` handle + JSON telemetry
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: 3.1
@@ -783,15 +783,15 @@ init the example owns, attaching the stores handle to `AppState`. This is the **
 
 #### Acceptance criteria
 
-- [ ] `apps/api/src/stores.rs` exports `fn connect_stores(redis_url: &str, namespace: String) -> Result<Arc<RedisStores>, AppError>`
+- [x] `apps/api/src/stores.rs` exports `fn connect_stores(redis_url: &str, namespace: String) -> Result<Arc<RedisStores>, AppError>`
   calling `RedisStores::connect(redis_url, namespace)` (lazy pool, no I/O at construct), mapping `RedisStoreError` →
   `AuthError` → `AppError`, and wrapping the result in `Arc`.
-- [ ] `apps/api/src/telemetry.rs` exports `fn init_tracing()` installing a JSON `tracing-subscriber` filtered by
+- [x] `apps/api/src/telemetry.rs` exports `fn init_tracing()` installing a JSON `tracing-subscriber` filtered by
   `RUST_LOG` (default `info`), using `try_init()` so a re-init never panics — the example owns telemetry because the
   adapter installs no subscriber.
-- [ ] `AppState` gains a `pub stores: Arc<RedisStores>` field; `main.rs` calls `telemetry::init_tracing()` first, then
+- [x] `AppState` gains a `pub stores: Arc<RedisStores>` field; `main.rs` calls `telemetry::init_tracing()` first, then
   `connect_stores(&settings.redis_url, settings.redis_namespace.clone())` before building the router.
-- [ ] Unit tests prove: `connect_stores` with a malformed `redis_url` (e.g. `"not-a-url"`) returns `Err(AppError::*)`;
+- [x] Unit tests prove: `connect_stores` with a malformed `redis_url` returns `Err(AppError::*)`;
   `connect_stores` with a well-formed URL returns `Ok` (the pool is lazy — no live Redis needed); `init_tracing()` called
   twice does not panic. 100% coverage on `stores.rs` and `telemetry.rs`.
 
@@ -915,3 +915,4 @@ If any DoD bullet is unmet or CI is red, set P3 to `🟡 Partial`, not `✅`.
 - 3.1 ✅ 2026-07-02 — tokio + axum bootstrap (main.rs + AppState)
 - 3.4 ✅ 2026-07-02 — typed AppError → IntoResponse (opaque 500)
 - 3.5 ✅ 2026-07-02 — sqlx PgPool provider (eager connect, fail-fast)
+- 3.6 ✅ 2026-07-02 — RedisStores handle + JSON telemetry

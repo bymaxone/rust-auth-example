@@ -9,7 +9,7 @@
 
 use std::net::SocketAddr;
 
-use api::{app, config, db};
+use api::{app, config, db, stores, telemetry};
 use tokio::signal;
 
 /// Maximum size of the shared Postgres connection pool.
@@ -17,9 +17,12 @@ const MAX_DB_CONNECTIONS: u32 = 10;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    telemetry::init_tracing();
+
     let settings = config::Settings::load()?;
     let pool = db::connect_pool(&settings.database_url, MAX_DB_CONNECTIONS).await?;
-    let state = app::AppState::new(pool);
+    let stores = stores::connect_stores(&settings.redis_url, settings.redis_namespace.clone())?;
+    let state = app::AppState::new(pool, stores);
     let router = app::build_router(state);
 
     let addr = SocketAddr::from(([127, 0, 0, 1], settings.api_port));
