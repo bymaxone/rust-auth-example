@@ -1,6 +1,6 @@
 # Phase 1 — Local Stack & Environment
 
-> **Status**: 🔄 In Progress · **Progress**: 4 / 5 tasks · **Last updated**: 2026-07-02
+> **Status**: 🔄 In Progress · **Progress**: 5 / 5 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P1
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -84,7 +84,7 @@ axum bootstrap, no routes, no `RedisStores::connect`, and no `AuthEngine` wiring
 | 1.2 | Test + prod compose | ✅ Done | P1 | S | 1.1 |
 | 1.3 | Init scripts + infra commands | ✅ Done | P1 | S | 1.1 |
 | 1.4 | Environment contract (`.env.example`) | ✅ Done | P0 | S | — |
-| 1.5 | figment `Settings` loader + validation | 📋 ToDo | P0 | M | 1.4 |
+| 1.5 | figment `Settings` loader + validation | ✅ Done | P0 | M | 1.4 |
 
 ---
 
@@ -633,7 +633,7 @@ Completion Protocol (after you finish):
 
 ### Task 1.5 — figment `Settings` loader + validation
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: 1.4
@@ -646,15 +646,15 @@ and `MFA_ENCRYPTION_KEY` base64-32 hard guards, and is unit-tested to prove each
 
 #### Acceptance criteria
 
-- [ ] `apps/api/src/config/mod.rs` defines `Settings` (one field per `OVERVIEW.md §9` api variable) deserialized via
+- [x] `apps/api/src/config/mod.rs` defines `Settings` (one field per `OVERVIEW.md §9` api variable) deserialized via
   `figment` (built-in defaults layered under `Env::raw()`), declared `mod config;` in `main.rs`, with `figment`,
   `serde`, `thiserror`, and `base64` added to `apps/api/Cargo.toml`.
-- [ ] `Settings::load() -> Result<Settings, ConfigError>` layers defaults → env, extracts, then `validate()`s; it is
+- [x] `Settings::load() -> Result<Settings, ConfigError>` layers defaults → env, extracts, then `validate()`s; it is
   **panic-free** (no `unwrap`/`expect`) and returns a typed error.
-- [ ] `ConfigError` is a `thiserror` enum with at least `Extract(#[from] figment::Error)`, `JwtSecretTooShort { got }`,
+- [x] `ConfigError` is a `thiserror` enum with at least `Extract(Box<figment::Error>)`, `JwtSecretTooShort { got }`,
   and `MfaKeyInvalid`; each `Display` names the variable and the constraint.
-- [ ] Hard guards enforced: `JWT_SECRET.len() >= 64`; `MFA_ENCRYPTION_KEY` base64-decodes to exactly 32 bytes.
-- [ ] Unit tests (using `figment::Jail`) prove: a valid env loads; a short `JWT_SECRET` returns
+- [x] Hard guards enforced: `JWT_SECRET.len() >= 64`; `MFA_ENCRYPTION_KEY` base64-decodes to exactly 32 bytes.
+- [x] Unit tests (using `figment::Jail`) prove: a valid env loads; a short `JWT_SECRET` returns
   `ConfigError::JwtSecretTooShort`; a malformed `MFA_ENCRYPTION_KEY` returns `ConfigError::MfaKeyInvalid`; the module is
   100% covered by `cargo llvm-cov nextest -p api`.
 
@@ -906,3 +906,4 @@ If any DoD bullet is unmet or CI is red, set P1 to `🟡 Partial`, not `✅`.
 - 1.2 ✅ 2026-07-02 — test (high-port tmpfs) + prod (GHCR) compose
 - 1.3 ✅ 2026-07-02 — postgres init.sql + redis.conf + infra:up/down
 - 1.4 ✅ 2026-07-02 — .env.example + .env.prod.example (full §9 contract)
+- 1.5 ✅ 2026-07-02 — figment Settings loader + fail-fast validation

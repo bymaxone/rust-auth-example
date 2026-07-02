@@ -9,6 +9,13 @@ publish = false
 # Path dependencies on the concrete `bymax-auth-*` crates are injected at the
 # checkout boundary; this package declares only the dependencies it uses directly.
 [dependencies]
+base64 = "0.22"
+figment = { version = "0.10", features = ["env"] }
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
+
+[dev-dependencies]
+figment = { version = "0.10", features = ["env", "test"] }
 
 [lints]
 workspace = true
