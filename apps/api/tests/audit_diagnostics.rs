@@ -73,6 +73,22 @@ async fn audit_keyset_pagination_walks_newest_first() {
         .unwrap();
     let first_id_page2 = page2["data"][0]["id"].as_i64().unwrap();
     assert!(first_id_page2 < cursor, "the next page is strictly older");
+
+    // Without an explicit limit the default page size applies and returns every row for
+    // the tenant, so no more remain and the cursor is null.
+    let full: Value = app
+        .client
+        .get(format!("{}/audit/logs", app.base_url))
+        .query(&[("tenantId", app.tenant_id.as_str())])
+        .send()
+        .await
+        .unwrap()
+        .json()
+        .await
+        .unwrap();
+    assert_eq!(full["data"].as_array().unwrap().len(), 5);
+    assert_eq!(full["hasMore"], false);
+    assert!(full["nextCursor"].is_null());
 }
 
 #[tokio::test]

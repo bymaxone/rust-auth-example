@@ -190,6 +190,17 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn a_malformed_recipient_is_a_delivery_error() {
+        // A valid provider still fails fast when the recipient address is malformed, hitting
+        // the recipient-parse error branch without contacting a relay.
+        let provider =
+            LettreEmailProvider::new("localhost", 1025, "no-reply@auth.local".to_owned())
+                .expect("a valid from address builds the provider");
+        let result = provider.send_mfa_enabled("not a mailbox", None).await;
+        assert!(matches!(result, Err(EmailError::Delivery(_))));
+    }
+
+    #[tokio::test]
     async fn delivers_every_message_to_mailpit() {
         // Against a live Mailpit relay every one of the seven sends renders and delivers,
         // exercising the transport end to end. The test skips when no relay is reachable so

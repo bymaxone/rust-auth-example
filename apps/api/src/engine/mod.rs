@@ -91,4 +91,26 @@ mod tests {
         );
         assert!(result.is_ok());
     }
+
+    #[tokio::test]
+    async fn a_malformed_redis_url_is_a_store_error() {
+        // A syntactically invalid `REDIS_URL` aborts assembly with the typed store error.
+        let pool = PgPool::connect_lazy("postgres://postgres:postgres@localhost:5432/example_app")
+            .expect("a well-formed url yields a lazy pool");
+        let mut settings = crate::config::dev_settings();
+        settings.redis_url = "http://not-a-redis-url".to_owned();
+        let result = build_engine(&settings, pool, Environment::Development);
+        assert!(matches!(result, Err(EngineError::RedisStore(_))));
+    }
+
+    #[tokio::test]
+    async fn a_malformed_smtp_from_is_an_email_error() {
+        // An invalid `SMTP_FROM` aborts assembly with the typed email error.
+        let pool = PgPool::connect_lazy("postgres://postgres:postgres@localhost:5432/example_app")
+            .expect("a well-formed url yields a lazy pool");
+        let mut settings = crate::config::dev_settings();
+        settings.smtp_from = "not a mailbox".to_owned();
+        let result = build_engine(&settings, pool, Environment::Development);
+        assert!(matches!(result, Err(EngineError::Email(_))));
+    }
 }
