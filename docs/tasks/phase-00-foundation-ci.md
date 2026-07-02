@@ -1,6 +1,6 @@
 # Phase 0 — Foundation, Tooling & CI Skeleton
 
-> **Status**: 🔄 In Progress · **Progress**: 5 / 7 tasks · **Last updated**: 2026-07-01
+> **Status**: 🔄 In Progress · **Progress**: 6 / 7 tasks · **Last updated**: 2026-07-01
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P0
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -50,7 +50,7 @@ When P0 is done: `cargo build --locked`, `cargo fmt --all --check`, and `cargo c
 | 0.3 | Mandatory repo & community-health files | ✅ Done | P1 | S | 0.1 |
 | 0.4 | GitHub config & Copilot review | ✅ Done | P0 | M | 0.1 |
 | 0.5 | Core CI workflow + audit-script stubs | ✅ Done | P0 | M | 0.1, 0.2 |
-| 0.6 | Security & supply-chain workflows | 📋 ToDo | P0 | M | 0.5 |
+| 0.6 | Security & supply-chain workflows | ✅ Done | P0 | M | 0.5 |
 | 0.7 | Mutation/release skeletons + Dockerfiles | 📋 ToDo | P1 | M | 0.5 |
 
 ---
@@ -642,7 +642,7 @@ Completion Protocol (after you finish):
 
 ### Task 0.6 — Security & supply-chain workflows
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: 0.5
@@ -653,11 +653,11 @@ Add the go-public security workflows — CodeQL (`javascript-typescript`, `secur
 
 #### Acceptance criteria
 
-- [ ] `.github/workflows/codeql.yml` analyzes `javascript-typescript` with the `security-extended` query suite on PR + push to `main` + a weekly cron, uploads SARIF to the Security tab, and scopes `security-events: write` to the analyze job only.
-- [ ] `.github/workflows/scorecard.yml` runs OpenSSF Scorecard on push to `main` + weekly cron (informational), with `id-token: write` scoped to the job and SARIF upload.
-- [ ] A secret-scan workflow (gitleaks) runs on PR + push and fails on a detected secret (test fixtures / Mailpit values excluded).
-- [ ] Every workflow sets top-level `permissions: contents: read`, pins all actions, and sets `timeout-minutes` per job.
-- [ ] Each third-party action version is re-verified against current docs (context7/WebSearch) before pinning.
+- [x] `.github/workflows/codeql.yml` analyzes `javascript-typescript` with the `security-extended` query suite on PR + push to `main` + a weekly cron, uploads SARIF to the Security tab, and scopes `security-events: write` to the analyze job only.
+- [x] `.github/workflows/scorecard.yml` runs OpenSSF Scorecard on push to `main` + weekly cron (informational), with `id-token: write` scoped to the job and SARIF upload.
+- [x] A secret-scan workflow (gitleaks) runs on PR + push and fails on a detected secret (test fixtures / Mailpit values excluded).
+- [x] Every workflow sets top-level `permissions: contents: read`, pins all actions, and sets `timeout-minutes` per job.
+- [x] Each third-party action version is re-verified against current docs (context7/WebSearch) before pinning.
 
 #### Files to create / modify
 
@@ -867,3 +867,4 @@ Run this only when the LAST task (0.7) is ✅:
 - 0.3 ✅ 2026-07-01 — Mandatory governance + community-health files: MIT `LICENSE`, badge-header `README.md` with ASCII diagram + docs table, `CHANGELOG.md`, `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, and the `CLAUDE.md`/`AGENTS.md` invariants.
 - 0.4 ✅ 2026-07-01 — GitHub config: issue templates + `config.yml` (security → advisory), PR template, `CODEOWNERS`, `dependabot.yml` (cargo/npm/actions), and the four Rust+TS Copilot review files (instruction files < 4000 chars, no planning-stage references).
 - 0.5 ✅ 2026-07-01 — Core `ci.yml` (full Appendix D job DAG, least-privilege, pinned, bounded, `dependency-review` gated informational while private) + the two export-audit scripts and the `.audit-ignore.json` seed, all green on the empty tree.
+- 0.6 ✅ 2026-07-01 — Security workflows: CodeQL (`javascript-typescript`, `security-extended`, v4), OpenSSF Scorecard (v2.4.3), and a gitleaks CLI secret-scan (real gate, org-license-free) with a `.gitleaks.toml` allow-list; CodeQL/Scorecard gated to public so private PRs stay green; action versions verified against current releases.

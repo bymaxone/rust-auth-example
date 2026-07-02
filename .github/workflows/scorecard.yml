@@ -1,0 +1,53 @@
+# OpenSSF Scorecard — an automated assessment of the repository's supply-chain
+# posture (pinned actions, token permissions, branch protection, SAST, etc.).
+#
+# Publishing results and uploading SARIF need a public repository; while private
+# the job is skipped (informational only) and becomes active once public.
+
+name: scorecard
+
+on:
+  branch_protection_rule:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '31 5 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scorecard-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analysis:
+    name: scorecard analysis
+    if: github.event.repository.visibility == 'public'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      security-events: write # upload the SARIF results
+      id-token: write # publish the signed results to the public viewer
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - name: Run analysis
+        uses: ossf/scorecard-action@v2.4.3
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          publish_results: true
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: scorecard-results
+          path: results.sarif
+          retention-days: 5
+      - name: Upload SARIF to the code-scanning dashboard
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: results.sarif
