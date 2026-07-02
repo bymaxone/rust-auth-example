@@ -16,6 +16,7 @@ pub mod diagnostics;
 pub mod email;
 pub mod engine;
 pub mod error;
+pub mod guards;
 pub mod hooks;
 pub mod layers;
 pub mod oauth;

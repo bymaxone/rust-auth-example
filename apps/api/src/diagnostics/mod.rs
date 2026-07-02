@@ -23,4 +23,6 @@ pub fn router() -> Router<AppState> {
         .route("/diagnostics/force-lockout", post(routes::force_lockout))
         .route("/diagnostics/reset-lockout", post(routes::reset_lockout))
         .route("/diagnostics/hooks", get(routes::recent_hooks))
+        .route("/diagnostics/whoami", get(routes::whoami))
+        .route("/diagnostics/platform", get(routes::platform_whoami))
 }

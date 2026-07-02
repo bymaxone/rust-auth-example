@@ -102,6 +102,8 @@ fn format_ts(ts: OffsetDateTime) -> String {
 
 /// `GET /audit/logs` — a keyset page over `audit_log` (id DESC, `id < cursor`).
 ///
+/// Admin-only: the [`DashboardAdmin`](crate::guards::DashboardAdmin) guard rejects an
+/// unauthenticated request with `401` and a non-admin with `403` before the query runs.
 /// Fetches `limit + 1` rows to compute `has_more`/`next_cursor` without a second
 /// count query.
 ///
@@ -109,6 +111,7 @@ fn format_ts(ts: OffsetDateTime) -> String {
 ///
 /// Returns [`AppError`] when the underlying query fails.
 pub async fn list_logs(
+    _admin: crate::guards::DashboardAdmin,
     State(state): State<AppState>,
     Query(query): Query<AuditQuery>,
 ) -> Result<Json<AuditPage>, AppError> {
@@ -157,9 +160,12 @@ pub async fn list_logs(
 
 /// `GET /audit/stream` — an SSE tail of new `audit_log` rows.
 ///
-/// Resumes from the `Last-Event-ID` header (the last delivered row id). Each event's
-/// `id` is the row's keyset cursor, so a reconnect continues after the last row.
+/// Admin-only: the [`DashboardAdmin`](crate::guards::DashboardAdmin) guard gates the tail
+/// (an unauthenticated request is `401`, a non-admin `403`). Resumes from the
+/// `Last-Event-ID` header (the last delivered row id). Each event's `id` is the row's keyset
+/// cursor, so a reconnect continues after the last row.
 pub async fn stream_logs(
+    _admin: crate::guards::DashboardAdmin,
     State(state): State<AppState>,
     Query(filter): Query<AuditStreamQuery>,
     headers: HeaderMap,

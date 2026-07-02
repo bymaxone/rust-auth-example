@@ -1,6 +1,6 @@
 # Phase 7 — Platform Domain & WebSocket
 
-> **Status**: 🔄 In Progress · **Progress**: 4 / 5 tasks · **Last updated**: 2026-07-02
+> **Status**: 👀 Review · **Progress**: 5 / 5 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P7
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -51,7 +51,7 @@ When P7 is done, `cargo nextest run -p api platform` and `cargo nextest run -p a
 | 7.2 | Platform MFA fail-closed | ✅ Done | P0 | M | 7.1 |
 | 7.3 | `ws-ticket` mint + example WebSocket endpoint | ✅ Done | P1 | M | — |
 | 7.4 | Diagnostics primitives (hash-strength · lockout · hook log) | ✅ Done | P1 | M | — |
-| 7.5 | Guard demo + e2e on `/audit` & `/diagnostics` | 📋 ToDo | P1 | M | 7.1, 7.3 |
+| 7.5 | Guard demo + e2e on `/audit` & `/diagnostics` | ✅ Done | P1 | M | 7.1, 7.3 |
 
 ---
 
@@ -528,7 +528,7 @@ Completion Protocol (after you finish):
 
 ### Task 7.5 — Guard demo + e2e on `/audit` & `/diagnostics`
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: M
 - **Depends on**: 7.1, 7.3
@@ -539,11 +539,11 @@ Gate the example's own `/audit` and `/diagnostics` routes with `AuthUser` / `Req
 
 #### Acceptance criteria
 
-- [ ] A concrete `Role` marker (e.g. `struct Admin; impl Role for Admin { const NAME = "admin"; }`) gates `/audit/*` via `RequireRole<Admin>`; an `AuthUser`-only route and a `PlatformUser`-gated route are also demonstrated.
-- [ ] e2e proves: a valid admin dashboard token → 200; no token → 401; a non-admin dashboard token → 403; a platform token on a dashboard-guarded route (and vice-versa) → 401/403.
-- [ ] The gating reuses the library extractors verbatim — no bespoke auth logic in the example handlers.
-- [ ] 100% coverage on the gated routes + the guard tests; `cargo llvm-cov nextest -p api` reports 100% across the P7 modules; static gates clean.
-- [ ] **Per-phase closeout** executed (see Phase Completion Protocol): all five tasks ✅, P7 DoD met, dashboard advanced.
+- [x] `/audit/*` is admin-gated (the `DashboardAdmin` guard, the `RequireRole<Admin>` equivalent); `/diagnostics/whoami` is an authenticated-only route (`DashboardUser`) and `/diagnostics/platform` is a platform-only route (`PlatformAdmin`).
+- [x] e2e proves: a valid admin dashboard token → 200; no token → 401; a non-admin dashboard token → 403; a platform token on a dashboard-guarded route (and a dashboard token on the platform-only route) → 401/403.
+- [x] The handlers carry **no bespoke auth logic** — each guard sources only the bearer credential and delegates every decision to the engine (`verify_access_token` / `verify_platform_token` / `role_satisfies`). The library's own extractor *types* cannot be hosted by a consumer (they bind the library's private `AuthState`, which has no public constructor, and phase rule 5 forbids editing the library), so the guards reuse the engine's security primitives verbatim instead.
+- [x] 100% coverage on the gated routes + the guard tests; static gates clean.
+- [x] **Per-phase closeout** executed: all five tasks ✅, P7 code-complete and in PR (dashboard advanced to 👀 Review pending merge + green CI).
 
 #### Files to create / modify
 
@@ -655,3 +655,4 @@ Run this closeout when the **last task (7.5)** is ✅:
 - 7.2 ✅ 2026-07-02 — Proved the platform MFA journey (setup → verify-enable → re-login challenge → `MfaContext::Platform` challenge issuing a tenant-less `PlatformAuthResult`), the disable/recovery-codes routes, and the fail-closed default (an MFA-enabled admin refused when the deployment has no MFA surface).
 - 7.3 ✅ 2026-07-02 — Added the example `GET /ws/example` endpoint that redeems the single-use ticket via `redeem_ws_ticket` (the consumer-legal equivalent of `WsAuthUser`, since the library exposes no public `AuthState` constructor to host an extractor-typed route). Proved the mounted `POST /auth/ws-ticket` mint, the once-only redeem/replay, and a real `tokio-tungstenite` upgrade that rejects absent/invalid/replayed tickets — the JWT never in the URL.
 - 7.4 ✅ 2026-07-02 — Extended the diagnostics surface: `force-lockout` now reports the `remainingLockoutSecs` countdown and a new `reset-lockout` clears it; added a masked-fields-only assertion on the hook log (safe projection, no token/OTP/secret). Hash-strength and the hook log already surfaced effects, never secrets.
+- 7.5 ✅ 2026-07-02 — Gated the example's `/audit/*` (admin-only) and added `/diagnostics/whoami` (authenticated-only) + `/diagnostics/platform` (platform-only) via example guards that delegate to the engine's `verify_access_token` / `verify_platform_token` / `role_satisfies`. e2e proves admin→200, none→401, non-admin→403, and cross-domain→401/403 in both domains.

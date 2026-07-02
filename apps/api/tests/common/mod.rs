@@ -421,6 +421,28 @@ pub async fn dashboard_access_token(app: &TestApp) -> String {
 /// and a non-admin token whose `role` claim carries the requested role; login requires a
 /// verified email, so the row is provisioned verified before logging in.
 pub async fn dashboard_access_token_with_role(app: &TestApp, email: &str, role: &str) -> String {
+    seed_and_login_dashboard(app, &app.tenant_id, email, role).await
+}
+
+/// Mint an admin dashboard token under a fresh, isolated tenant, so the admin's own
+/// `after_login` audit row never lands under the caller's tenant (keeping audit-count
+/// assertions stable). The `DashboardAdmin` guard checks only the role, not the tenant.
+pub async fn dashboard_admin_token_isolated(app: &TestApp) -> String {
+    static SEQ: AtomicU64 = AtomicU64::new(0);
+    let seq = SEQ.fetch_add(1, Ordering::Relaxed);
+    let pid = std::process::id();
+    let tenant = format!("guard-tenant-{pid}-{seq}");
+    let email = format!("guard-admin-{pid}-{seq}@example.test");
+    sqlx::query("INSERT INTO tenants (id, name) VALUES ($1, $1) ON CONFLICT DO NOTHING")
+        .bind(&tenant)
+        .execute(&app.pool)
+        .await
+        .expect("seed the isolated tenant");
+    seed_and_login_dashboard(app, &tenant, &email, "admin").await
+}
+
+/// Seed a verified, active dashboard user in `tenant` and log in, returning the bearer token.
+async fn seed_and_login_dashboard(app: &TestApp, tenant: &str, email: &str, role: &str) -> String {
     let params = bymax_auth_crypto::password::PasswordParams::default();
     let hash = bymax_auth_crypto::password::hash(DASHBOARD_PASSWORD.as_bytes(), &params)
         .expect("the dashboard password hashes");
@@ -434,7 +456,7 @@ pub async fn dashboard_access_token_with_role(app: &TestApp, email: &str, role: 
     .bind(email)
     .bind(&hash)
     .bind(role)
-    .bind(&app.tenant_id)
+    .bind(tenant)
     .execute(&app.pool)
     .await
     .expect("seed the dashboard user");
@@ -445,7 +467,7 @@ pub async fn dashboard_access_token_with_role(app: &TestApp, email: &str, role: 
         .json(&serde_json::json!({
             "email": email,
             "password": DASHBOARD_PASSWORD,
-            "tenantId": app.tenant_id,
+            "tenantId": tenant,
         }))
         .send()
         .await

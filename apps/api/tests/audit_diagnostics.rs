@@ -37,6 +37,9 @@ async fn audit_keyset_pagination_walks_newest_first() {
     let Some(app) = common::spawn().await else {
         return;
     };
+    // The audit read-API is admin-gated; mint an admin token under an isolated tenant so its
+    // own login audit row does not pollute this tenant's count.
+    let admin = common::dashboard_admin_token_isolated(&app).await;
     for i in 0..5 {
         insert_row(&app, &format!("evt-{i}")).await;
     }
@@ -45,6 +48,7 @@ async fn audit_keyset_pagination_walks_newest_first() {
     let page1: Value = app
         .client
         .get(format!("{}/audit/logs", app.base_url))
+        .bearer_auth(&admin)
         .query(&[("tenantId", app.tenant_id.as_str()), ("limit", "2")])
         .send()
         .await
@@ -60,6 +64,7 @@ async fn audit_keyset_pagination_walks_newest_first() {
     let page2: Value = app
         .client
         .get(format!("{}/audit/logs", app.base_url))
+        .bearer_auth(&admin)
         .query(&[
             ("tenantId", app.tenant_id.as_str()),
             ("limit", "2"),
@@ -79,6 +84,7 @@ async fn audit_keyset_pagination_walks_newest_first() {
     let full: Value = app
         .client
         .get(format!("{}/audit/logs", app.base_url))
+        .bearer_auth(&admin)
         .query(&[("tenantId", app.tenant_id.as_str())])
         .send()
         .await
@@ -99,10 +105,12 @@ async fn audit_stream_resumes_from_last_event_id() {
     // A marker row; a reconnect just below its id must redeliver exactly it.
     let marker_event = format!("sse-marker-{}", app.tenant_id);
     let marker_id = insert_row(&app, &marker_event).await;
+    let admin = common::dashboard_admin_token_isolated(&app).await;
 
     let mut resp = app
         .client
         .get(format!("{}/audit/stream", app.base_url))
+        .bearer_auth(&admin)
         .header("Last-Event-ID", (marker_id - 1).to_string())
         .send()
         .await

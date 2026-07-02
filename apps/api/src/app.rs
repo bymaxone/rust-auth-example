@@ -183,6 +183,8 @@ mod tests {
             "/diagnostics/force-lockout",
             "/diagnostics/reset-lockout",
             "/diagnostics/hooks",
+            "/diagnostics/whoami",
+            "/diagnostics/platform",
         ] {
             let response = router
                 .clone()

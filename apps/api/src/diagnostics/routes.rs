@@ -119,6 +119,37 @@ pub async fn reset_lockout(
     Ok(Json(ResetLockoutResponse { locked: false }))
 }
 
+/// The authenticated subject a guard resolved — the safe identity fields only, never a
+/// token or secret.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WhoAmI {
+    /// The subject id from the verified claims.
+    pub sub: String,
+    /// The role carried by the verified claims.
+    pub role: String,
+}
+
+/// `GET /diagnostics/whoami` — an authenticated-only route (the `AuthUser` guard demo).
+/// Returns the caller's subject and role from the verified dashboard token; an
+/// unauthenticated request is rejected with `401` before this handler runs.
+pub async fn whoami(user: crate::guards::DashboardUser) -> Json<WhoAmI> {
+    Json(WhoAmI {
+        sub: user.0.sub,
+        role: user.0.role,
+    })
+}
+
+/// `GET /diagnostics/platform` — a platform-only route (the `PlatformUser` guard demo).
+/// Visible solely to a valid platform admin; a dashboard token (or none) is rejected with
+/// `401`/`403`, proving the two token families never cross over.
+pub async fn platform_whoami(admin: crate::guards::PlatformAdmin) -> Json<WhoAmI> {
+    Json(WhoAmI {
+        sub: admin.0.sub,
+        role: admin.0.role,
+    })
+}
+
 /// `GET /diagnostics/hooks` — the most recent hook-event audit rows (a compact view).
 ///
 /// # Errors
