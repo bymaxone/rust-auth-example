@@ -11,7 +11,7 @@ use config::Settings;
 fn main() {
     match Settings::load() {
         Ok(s) => println!(
-            "{} {} listening on port {}",
+            "{} {} configuration loaded (API port {})",
             env!("CARGO_PKG_NAME"),
             env!("CARGO_PKG_VERSION"),
             s.api_port
