@@ -18,15 +18,18 @@ const MFA_ISSUER: &str = "rust-auth-example";
 const MFA_RECOVERY_CODE_COUNT: u8 = 8;
 /// Accepted number of ±30s drift windows when verifying a TOTP code.
 const MFA_TOTP_WINDOW: u8 = 1;
+/// The platform-admin role granted to the seeded demo administrator.
+const PLATFORM_ADMIN_ROLE: &str = "admin";
 
 /// Assembles the example's [`AuthConfig`] from validated [`Settings`] and rejects
 /// it fail-fast for the target [`Environment`].
 ///
 /// Picks the `nest_compat_defaults` profile (or `secure_defaults` under the
 /// `argon2` feature), injects the HS256 secret, seals TOTP secrets with the
-/// configured AES-256-GCM key, sets the dashboard role hierarchy, and enables the
-/// `sessions` + `mfa` + `invitations` controller groups. OAuth is enabled from settings
-/// when Google is configured; the `platform` group stays off until its seam is wired.
+/// configured AES-256-GCM key, sets the dashboard and platform role hierarchies, and
+/// enables the `sessions` + `mfa` + `platform` + `invitations` controller groups. OAuth
+/// is enabled from settings when Google is configured. Enabling the platform domain
+/// structurally requires the `SqlxPlatformUserRepository` seam, wired by the builder.
 ///
 /// # Errors
 ///
@@ -68,15 +71,25 @@ pub fn build_auth_config(
         totp_window: MFA_TOTP_WINDOW,
     });
 
-    // The platform-admin domain is wired separately once its repository and routes are
-    // added; enabling it here would auto-promote the platform controller group in `build`.
-    config.platform.enabled = false;
+    // Light up the tenant-less platform-admin domain. It is doubly gated: this config flag
+    // plus the `platform` controller toggle below. Enabling it structurally requires a
+    // platform role hierarchy and the `SqlxPlatformUserRepository` seam wired at build time.
+    config.platform.enabled = true;
 
-    // Enable the sessions and MFA controller groups; the platform route group stays off
-    // until its seam is wired.
+    // The platform role hierarchy is fully denormalized (each role lists every role it
+    // transitively includes) so a satisfaction check is a single-level lookup. It is a
+    // distinct namespace from the dashboard hierarchy: platform tokens never cross over.
+    config.roles.platform_hierarchy = Some(HashMap::from([(
+        PLATFORM_ADMIN_ROLE.to_owned(),
+        vec![PLATFORM_ADMIN_ROLE.to_owned()],
+    )]));
+
+    // Enable the sessions, MFA, and platform controller groups. The combined platform-MFA
+    // group mounts automatically from `platform && mfa`.
     config.controllers = ControllerToggles {
         sessions: true,
         mfa: true,
+        platform: true,
         ..config.controllers
     };
 
@@ -157,10 +170,17 @@ mod tests {
         assert!(!config.controllers.oauth);
         assert!(config.controllers.invitations);
         assert!(config.invitations.enabled);
-        assert!(!config.controllers.platform);
-        assert!(!config.platform.enabled);
+        assert!(config.controllers.platform);
+        assert!(config.platform.enabled);
         assert!(config.mfa.is_some());
         assert!(config.roles.hierarchy.contains_key("admin"));
+        assert!(
+            config
+                .roles
+                .platform_hierarchy
+                .as_ref()
+                .is_some_and(|hierarchy| hierarchy.contains_key("admin"))
+        );
     }
 
     #[test]

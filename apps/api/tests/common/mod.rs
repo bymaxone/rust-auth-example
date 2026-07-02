@@ -23,7 +23,9 @@ use secrecy::SecretString;
 
 use bymax_auth_core::AuthEngine;
 use bymax_auth_core::config::Environment;
-use bymax_auth_core::testing::{InMemoryStores, InMemoryUserRepository, MockOAuthProvider};
+use bymax_auth_core::testing::{
+    InMemoryPlatformUserRepository, InMemoryStores, InMemoryUserRepository, MockOAuthProvider,
+};
 use bymax_auth_core::traits::email::{EmailError, EmailProvider, InviteData, SessionInfo};
 use bymax_auth_core::traits::oauth::OAuthProvider;
 use bymax_auth_redis::RedisStores;
@@ -35,6 +37,7 @@ use api::engine::build_engine;
 use api::engine::config::build_auth_config;
 use api::hooks::AuditAuthHooks;
 use api::layers::apply_global_layers;
+use api::repository::platform_user::SqlxPlatformUserRepository;
 use api::repository::user::SqlxUserRepository;
 
 pub mod mailpit;
@@ -128,6 +131,9 @@ pub struct TestApp {
     pub base_url: String,
     /// An HTTP client for driving the surface.
     pub client: reqwest::Client,
+    /// The shared, fully-wired engine, so a test can call server-only methods
+    /// (`verify_access_token` / `verify_platform_token` / `issue_ws_ticket`) directly.
+    pub engine: Arc<AuthEngine>,
     /// The shared Postgres pool, for asserting on the `audit_log`.
     pub pool: PgPool,
     /// The verification OTPs the engine "emailed", keyed by recipient.
@@ -211,6 +217,7 @@ pub async fn spawn() -> Option<TestApp> {
             .config(config)
             .environment(Environment::Development)
             .user_repository(Arc::new(SqlxUserRepository::new(pool.clone())))
+            .platform_user_repository(Arc::new(SqlxPlatformUserRepository::new(pool.clone())))
             .redis_stores(stores.clone())
             .email_provider(email_provider)
             .hooks(Arc::new(AuditAuthHooks::new(pool.clone())))
@@ -221,7 +228,7 @@ pub async fn spawn() -> Option<TestApp> {
     let state = AppState::new(
         pool.clone(),
         stores,
-        engine,
+        Arc::clone(&engine),
         RuntimeEnvironment::Development,
     );
     let router =
@@ -246,6 +253,7 @@ pub async fn spawn() -> Option<TestApp> {
     Some(TestApp {
         base_url: format!("http://{addr}"),
         client,
+        engine,
         pool,
         verification_otps,
         tenant_id,
@@ -305,7 +313,7 @@ pub async fn spawn_engine(customize: impl FnOnce(&mut Settings)) -> Option<TestA
     let state = AppState::new(
         pool.clone(),
         stores,
-        engine,
+        Arc::clone(&engine),
         RuntimeEnvironment::Development,
     );
     let router =
@@ -331,6 +339,7 @@ pub async fn spawn_engine(customize: impl FnOnce(&mut Settings)) -> Option<TestA
     Some(TestApp {
         base_url: format!("http://{addr}"),
         client,
+        engine,
         pool,
         verification_otps: Arc::new(Mutex::new(HashMap::new())),
         tenant_id,
@@ -346,6 +355,108 @@ pub fn with_google_oauth(settings: &mut Settings) {
     settings.oauth_google_client_secret = Some(SecretString::from("test-client-secret".to_owned()));
     settings.oauth_google_callback_url =
         Some("http://localhost:3000/api/auth/oauth/google/callback".to_owned());
+}
+
+/// The shared password for platform admins provisioned by the platform integration tests.
+/// A documented local-only fixture, never a real secret.
+pub const PLATFORM_ADMIN_PASSWORD: &str = "AdminPass!Demo123";
+
+/// The password used for dashboard users provisioned by the integration tests.
+pub const DASHBOARD_PASSWORD: &str = "Sup3rSecret!pw";
+
+/// Provision a fresh, active platform admin with a process-unique email and the shared
+/// [`PLATFORM_ADMIN_PASSWORD`], hashed with the library's real scrypt KDF. Runtime queries
+/// keep this seed out of the offline query cache. Returns `(id, email)`.
+pub async fn seed_platform_admin(pool: &PgPool) -> (String, String) {
+    static SEQ: AtomicU64 = AtomicU64::new(0);
+    let seq = SEQ.fetch_add(1, Ordering::Relaxed);
+    let pid = std::process::id();
+    let email = format!("admin-{pid}-{seq}@platform.test");
+    let params = bymax_auth_crypto::password::PasswordParams::default();
+    let hash = bymax_auth_crypto::password::hash(PLATFORM_ADMIN_PASSWORD.as_bytes(), &params)
+        .expect("the demo admin password hashes");
+    let (id,): (String,) = sqlx::query_as(
+        "INSERT INTO platform_users (email, name, password_hash, role, status) \
+         VALUES ($1, 'Test Admin', $2, 'admin', 'active') RETURNING id",
+    )
+    .bind(&email)
+    .bind(&hash)
+    .fetch_one(pool)
+    .await
+    .expect("insert the platform admin");
+    (id, email)
+}
+
+/// Log the seeded platform admin in through the mounted `/auth/platform/login` route and
+/// return its bearer access token from the response body (Both delivery).
+pub async fn platform_login(app: &TestApp, email: &str) -> String {
+    let body: serde_json::Value = app
+        .client
+        .post(format!("{}/auth/platform/login", app.base_url))
+        .json(&serde_json::json!({ "email": email, "password": PLATFORM_ADMIN_PASSWORD }))
+        .send()
+        .await
+        .expect("platform login request")
+        .json()
+        .await
+        .expect("platform login body");
+    body["accessToken"]
+        .as_str()
+        .expect("platform login issues an access token")
+        .to_owned()
+}
+
+/// Register a fresh dashboard user in the app's tenant and return its bearer access token.
+/// Registration issues a session immediately (Both delivery), so the token is in the body.
+pub async fn dashboard_access_token(app: &TestApp) -> String {
+    static SEQ: AtomicU64 = AtomicU64::new(0);
+    let seq = SEQ.fetch_add(1, Ordering::Relaxed);
+    let pid = std::process::id();
+    let email = format!("dash-{pid}-{seq}@example.test");
+    dashboard_access_token_with_role(app, &email, "user").await
+}
+
+/// Seed a verified, active dashboard user with an explicit role and return its bearer access
+/// token. Seeding the row directly (email verified) lets the guard demo mint both an admin
+/// and a non-admin token whose `role` claim carries the requested role; login requires a
+/// verified email, so the row is provisioned verified before logging in.
+pub async fn dashboard_access_token_with_role(app: &TestApp, email: &str, role: &str) -> String {
+    let params = bymax_auth_crypto::password::PasswordParams::default();
+    let hash = bymax_auth_crypto::password::hash(DASHBOARD_PASSWORD.as_bytes(), &params)
+        .expect("the dashboard password hashes");
+    sqlx::query(
+        "INSERT INTO users (email, name, password_hash, role, status, tenant_id, email_verified) \
+         VALUES ($1, 'Dash User', $2, $3, 'active', $4, true) \
+         ON CONFLICT (tenant_id, email) DO UPDATE \
+           SET role = EXCLUDED.role, password_hash = EXCLUDED.password_hash, \
+               status = 'active', email_verified = true",
+    )
+    .bind(email)
+    .bind(&hash)
+    .bind(role)
+    .bind(&app.tenant_id)
+    .execute(&app.pool)
+    .await
+    .expect("seed the dashboard user");
+
+    let body: serde_json::Value = app
+        .client
+        .post(format!("{}/auth/login", app.base_url))
+        .json(&serde_json::json!({
+            "email": email,
+            "password": DASHBOARD_PASSWORD,
+            "tenantId": app.tenant_id,
+        }))
+        .send()
+        .await
+        .expect("login request")
+        .json()
+        .await
+        .expect("login body");
+    body["accessToken"]
+        .as_str()
+        .expect("an access token is issued")
+        .to_owned()
 }
 
 /// A Postgres + Redis-backed engine wired with the example's real `AuditAuthHooks` and a
@@ -403,6 +514,7 @@ pub async fn oauth_policy_stack() -> Option<OAuthPolicyStack> {
         .config(config)
         .environment(Environment::Development)
         .user_repository(Arc::new(SqlxUserRepository::new(pool.clone())))
+        .platform_user_repository(Arc::new(SqlxPlatformUserRepository::new(pool.clone())))
         .redis_stores(stores.clone())
         .hooks(Arc::new(AuditAuthHooks::new(pool.clone())))
         .oauth_provider(Arc::new(MockOAuthProvider::new("google")))
@@ -460,6 +572,7 @@ pub fn testing_engine_with(provider: Arc<dyn OAuthProvider>) -> TestingEngine {
         .config(config)
         .environment(Environment::Test)
         .user_repository(users.clone())
+        .platform_user_repository(Arc::new(InMemoryPlatformUserRepository::new()))
         .redis_stores(stores.clone())
         .hooks(Arc::new(AuditAuthHooks::new(dead_pool)))
         .oauth_provider(provider)

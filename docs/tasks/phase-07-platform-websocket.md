@@ -1,6 +1,6 @@
 # Phase 7 — Platform Domain & WebSocket
 
-> **Status**: 📋 ToDo · **Progress**: 0 / 5 tasks · **Last updated**: 2026-06-23
+> **Status**: 🔄 In Progress · **Progress**: 1 / 5 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P7
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -47,7 +47,7 @@ When P7 is done, `cargo nextest run -p api platform` and `cargo nextest run -p a
 
 | ID | Task | Status | Priority | Size | Depends on |
 |---|---|---|---|---|---|
-| 7.1 | Platform domain wiring + cross-domain token isolation | 📋 ToDo | P0 | M | — |
+| 7.1 | Platform domain wiring + cross-domain token isolation | ✅ Done | P0 | M | — |
 | 7.2 | Platform MFA fail-closed | 📋 ToDo | P0 | M | 7.1 |
 | 7.3 | `ws-ticket` mint + example WebSocket endpoint | 📋 ToDo | P1 | M | — |
 | 7.4 | Diagnostics primitives (hash-strength · lockout · hook log) | 📋 ToDo | P1 | M | — |
@@ -59,7 +59,7 @@ When P7 is done, `cargo nextest run -p api platform` and `cargo nextest run -p a
 
 ### Task 7.1 — Platform domain wiring + cross-domain token isolation
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: —
@@ -70,11 +70,11 @@ Enable `platform.enabled` and wire the `SqlxPlatformUserRepository` seam into th
 
 #### Acceptance criteria
 
-- [ ] The engine builder sets `config.platform.enabled = true`, flips `ControllerToggles.platform = true`, and attaches `.platform_user_repository(Arc::new(SqlxPlatformUserRepository::new(pool)))`; the `platform` Cargo feature is on for `bymax-auth-axum`/`-core`/`-redis`.
-- [ ] `POST /auth/platform/login`, `GET /auth/platform/me`, `POST /auth/platform/refresh`, `POST /auth/platform/logout`, and `DELETE /auth/platform/sessions` answer with the correct status codes (200 / 200 / 200 / 204 / 204) against the seeded demo platform admin.
-- [ ] A dashboard access token is rejected by `verify_platform_token` (401/403), and a platform access token is rejected by `verify_access_token` (401/403) — both directions asserted.
-- [ ] `engine.platform_auth()` and `engine.platform_user_repository()` both resolve to `Some(...)` once `platform.enabled`.
-- [ ] 100% coverage on the new/changed wiring + platform route tests; `cargo fmt --check`, `cargo clippy -- -D warnings` clean.
+- [x] The engine builder sets `config.platform.enabled = true`, flips `ControllerToggles.platform = true`, and attaches `.platform_user_repository(Arc::new(SqlxPlatformUserRepository::new(pool)))`; the `platform` Cargo feature is on for `bymax-auth-axum`/`-core`/`-redis`.
+- [x] `POST /auth/platform/login`, `GET /auth/platform/me`, `POST /auth/platform/refresh`, `POST /auth/platform/logout`, and `DELETE /auth/platform/sessions` answer with the correct status codes (200 / 200 / 200 / 204 / 204) against the seeded demo platform admin.
+- [x] A dashboard access token is rejected by `verify_platform_token` (401/403), and a platform access token is rejected by `verify_access_token` (401/403) — both directions asserted.
+- [x] `engine.platform_auth()` and `engine.platform_user_repository()` both resolve to `Some(...)` once `platform.enabled`.
+- [x] 100% coverage on the new/changed wiring + platform route tests; `cargo fmt --check`, `cargo clippy -- -D warnings` clean.
 
 #### Files to create / modify
 
@@ -651,4 +651,4 @@ Run this closeout when the **last task (7.5)** is ✅:
 
 > Append-only. One line per completed task: `- <id> ✅ YYYY-MM-DD — <summary>`.
 
-_(empty — no tasks completed yet)_
+- 7.1 ✅ 2026-07-02 — Enabled the platform domain (config flag + controller toggle + platform role hierarchy), wired the `SqlxPlatformUserRepository` seam into the builder, and proved the five `/auth/platform/*` routes plus dashboard↔platform token isolation (both directions, engine seam + HTTP).
