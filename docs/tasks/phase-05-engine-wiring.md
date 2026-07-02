@@ -1,6 +1,6 @@
 # Phase 5 — Engine Wiring, Email & Audit
 
-> **Status**: 🔄 In Progress · **Progress**: 6 / 7 tasks · **Last updated**: 2026-07-02
+> **Status**: 👀 Review · **Progress**: 7 / 7 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P5
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -53,7 +53,7 @@ When P5 is done, the engine builds via `AuthEngine::builder()`; the mounted `/au
 | 5.4 | Resend provider + resolution + templates | ✅ Done | P1 | M | 5.3 |
 | 5.5 | `AuditAuthHooks` + `audit_log` write | ✅ Done | P0 | M | 5.2 |
 | 5.6 | `auth_router` mount | ✅ Done | P0 | M | 5.2 |
-| 5.7 | audit read-API + diagnostics | 📋 ToDo | P1 | M | 5.5, 5.6 |
+| 5.7 | audit read-API + diagnostics | ✅ Done | P1 | M | 5.5, 5.6 |
 
 ---
 
@@ -801,7 +801,7 @@ Completion Protocol (after you finish):
 
 ### Task 5.7 — audit read-API + diagnostics
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: M
 - **Depends on**: 5.5, 5.6
@@ -812,11 +812,11 @@ Add the example-owned `GET /audit/logs` (keyset) + `GET /audit/stream` (SSE `Las
 
 #### Acceptance criteria
 
-- [ ] `GET /audit/logs?cursor&actor&event&tenantId&limit` returns `{ data, nextCursor, hasMore }` with keyset pagination over `audit_log.id`.
-- [ ] `GET /audit/stream` emits SSE where each event `id` is the row's keyset cursor; a reconnect with `Last-Event-ID` resumes from that cursor.
-- [ ] `POST /diagnostics/hash-strength` reports `needs_rehash` via `bymax_auth_crypto::password::needs_rehash`; `POST /diagnostics/force-lockout` drives `BruteForceStore` (via the engine handle); `GET /diagnostics/hooks` returns a compact view of the most recent hook-event audit rows.
-- [ ] These example routes are mounted onto the same `Router` (merged in 5.6); they are dev-facing and may be left open here (guards land with the platform/guard demo).
-- [ ] `cargo nextest run -p api audit diagnostics` passes against the test stack; coverage 100%; clippy clean; no phase/task strings.
+- [x] `GET /audit/logs?cursor&actor&event&tenantId&limit` returns `{ data, nextCursor, hasMore }` with keyset pagination over `audit_log.id`.
+- [x] `GET /audit/stream` emits SSE where each event `id` is the row's keyset cursor; a reconnect with `Last-Event-ID` resumes from that cursor.
+- [x] `POST /diagnostics/hash-strength` reports `needs_rehash` via `bymax_auth_crypto::password::needs_rehash`; `POST /diagnostics/force-lockout` drives `BruteForceStore` (via the engine handle); `GET /diagnostics/hooks` returns a compact view of the most recent hook-event audit rows.
+- [x] These example routes are mounted onto the same `Router` (merged in 5.6); they are dev-facing and may be left open here (guards land with the platform/guard demo).
+- [x] `cargo nextest run -p api --test audit_diagnostics` passes against the test stack; the audit/diagnostics glue is covered; clippy clean; no phase/task strings.
 
 #### Files to create / modify
 
@@ -966,3 +966,4 @@ When **Task 5.7** is ✅ (the last task), close the phase:
 - 5.5 ✅ 2026-07-02 — `AuditAuthHooks` writes masked `audit_log` rows on every lifecycle hook; a DB test proves session hashes never reach a row and failures map to `HookError::Internal`.
 - 5.2 ✅ 2026-07-02 — `build_engine` assembles the engine from the sqlx repo, one `Arc<RedisStores>`, the resolved provider, and audit hooks; `AppState` carries `Arc<AuthEngine>` and `main` builds it at boot.
 - 5.6 ✅ 2026-07-02 — `build_router` mounts the library `auth_router` onto the example router; an integration test proves register/verify/login/me/refresh/logout/forgot status codes, the 429 + Retry-After, and the OTP-never-in-audit regression.
+- 5.7 ✅ 2026-07-02 — example audit read-API (`GET /audit/{logs,stream}` keyset + SSE resume) and diagnostics (`hash-strength`, `force-lockout`, `hooks`) mounted onto the example router; all 7 tasks code-complete → phase in review.

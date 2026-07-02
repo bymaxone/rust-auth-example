@@ -9,8 +9,10 @@
 #![deny(missing_docs)]
 
 pub mod app;
+pub mod audit;
 pub mod config;
 pub mod db;
+pub mod diagnostics;
 pub mod email;
 pub mod engine;
 pub mod error;

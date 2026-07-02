@@ -69,10 +69,13 @@ pub fn build_router(state: AppState) -> Router {
     example_routes().with_state(state).merge(auth)
 }
 
-/// The example's own domain routes (health today; the audit read-API and the
-/// diagnostics surface merge in alongside).
+/// The example's own domain routes: the health probe, the audit read-API, and the
+/// diagnostics surface.
 fn example_routes() -> Router<AppState> {
-    Router::new().merge(crate::routes::health::routes())
+    Router::new()
+        .merge(crate::routes::health::routes())
+        .merge(crate::audit::router())
+        .merge(crate::diagnostics::router())
 }
 
 #[cfg(test)]
