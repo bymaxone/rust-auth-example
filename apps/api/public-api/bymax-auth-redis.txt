@@ -53,10 +53,8 @@ impl core::panic::unwind_safe::RefUnwindSafe for bymax_auth_redis::NamespacedRed
 impl core::panic::unwind_safe::RefUnwindSafe for bymax_auth_redis::Prefix
 impl core::panic::unwind_safe::UnwindSafe for bymax_auth_redis::NamespacedRedis
 impl core::panic::unwind_safe::UnwindSafe for bymax_auth_redis::Prefix
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_redis::NamespacedRedis where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_redis::Prefix where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_redis::RedisStoreError where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_redis::RedisStores where B: http_body::Body
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_redis::Prefix where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_redis::Prefix where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
 impl<ST, DT> zerocopy::pointer::invariant::CastableFrom<ST, zerocopy::pointer::invariant::Initialized, zerocopy::pointer::invariant::Initialized> for bymax_auth_redis::NamespacedRedis where ST: ?core::marker::Sized, DT: ?core::marker::Sized
 impl<ST, DT> zerocopy::pointer::invariant::CastableFrom<ST, zerocopy::pointer::invariant::Initialized, zerocopy::pointer::invariant::Initialized> for bymax_auth_redis::Prefix where ST: ?core::marker::Sized, DT: ?core::marker::Sized
 impl<ST, DT> zerocopy::pointer::invariant::CastableFrom<ST, zerocopy::pointer::invariant::Initialized, zerocopy::pointer::invariant::Initialized> for bymax_auth_redis::RedisStoreError where ST: ?core::marker::Sized, DT: ?core::marker::Sized
@@ -172,6 +170,8 @@ pub fn bymax_auth_redis::Prefix::borrow_mut(&mut self) -> &mut T
 pub fn bymax_auth_redis::Prefix::clone(&self) -> bymax_auth_redis::Prefix
 pub fn bymax_auth_redis::Prefix::clone_into(&self, &mut T)
 pub fn bymax_auth_redis::Prefix::eq(&self, &bymax_auth_redis::Prefix) -> bool
+pub fn bymax_auth_redis::Prefix::equivalent(&self, &K) -> bool
+pub fn bymax_auth_redis::Prefix::equivalent(&self, &K) -> bool
 pub fn bymax_auth_redis::Prefix::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_redis::Prefix::from(T) -> T
 pub fn bymax_auth_redis::Prefix::into(self) -> U

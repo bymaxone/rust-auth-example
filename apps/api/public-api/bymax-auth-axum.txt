@@ -343,45 +343,6 @@ impl<'de> serde_core::de::Deserialize<'de> for bymax_auth_axum::ResendVerificati
 impl<'de> serde_core::de::Deserialize<'de> for bymax_auth_axum::ResetPasswordDto
 impl<'de> serde_core::de::Deserialize<'de> for bymax_auth_axum::VerifyEmailDto
 impl<'de> serde_core::de::Deserialize<'de> for bymax_auth_axum::VerifyOtpDto
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_axum::AcceptInvitationDto where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_axum::AuthRejection where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_axum::AuthRouter where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_axum::AuthState where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_axum::AuthUser where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_axum::AxumAuthConfig where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_axum::ClientIpSource where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_axum::CreateInvitationDto where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_axum::CurrentUser where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_axum::ForgotPasswordDto where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_axum::LoginDto where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_axum::MfaChallengeDto where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_axum::MfaDisableDto where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_axum::MfaRegenerateRecoveryCodesDto where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_axum::MfaSatisfied where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_axum::MfaVerifyDto where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_axum::OAuthCallbackQuery where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_axum::OAuthInitiateQuery where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_axum::OptionalAuthUser where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_axum::PlatformLoginDto where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_axum::PlatformUser where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_axum::RateLimit where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_axum::RateLimitConfig where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_axum::RefreshDto where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_axum::RegisterDto where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_axum::RequirePlatformRole<R> where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_axum::RequireRole<R> where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_axum::ResendOtpDto where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_axum::ResendVerificationDto where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_axum::ResetPasswordDto where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_axum::RouteGroups where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_axum::SelfOrAdmin<A> where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_axum::UserStatus where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_axum::ValidatedJson<T> where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_axum::ValidatedQuery<T> where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_axum::VerifyEmailDto where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_axum::VerifyOtpDto where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_axum::WsAuthUser where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_axum::WsAuthUserFromHeader where B: http_body::Body
 impl<A, S> axum_core::extract::FromRequestParts<S> for bymax_auth_axum::SelfOrAdmin<A> where A: bymax_auth_axum::AdminRole, bymax_auth_axum::AuthState: axum_core::extract::from_ref::FromRef<S>, S: core::marker::Send + core::marker::Sync
 impl<A: core::clone::Clone + bymax_auth_axum::AdminRole> core::clone::Clone for bymax_auth_axum::SelfOrAdmin<A>
 impl<A: core::fmt::Debug + bymax_auth_axum::AdminRole> core::fmt::Debug for bymax_auth_axum::SelfOrAdmin<A>
@@ -392,9 +353,17 @@ impl<A> core::marker::Unpin for bymax_auth_axum::SelfOrAdmin<A> where A: core::m
 impl<A> core::marker::UnsafeUnpin for bymax_auth_axum::SelfOrAdmin<A>
 impl<A> core::panic::unwind_safe::RefUnwindSafe for bymax_auth_axum::SelfOrAdmin<A> where A: core::panic::unwind_safe::RefUnwindSafe
 impl<A> core::panic::unwind_safe::UnwindSafe for bymax_auth_axum::SelfOrAdmin<A> where A: core::panic::unwind_safe::UnwindSafe
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_axum::ClientIpSource where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_axum::RateLimit where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_axum::RateLimitConfig where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_axum::RouteGroups where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_axum::ClientIpSource where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
 impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_axum::ClientIpSource where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
 impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_axum::RateLimit where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_axum::RateLimit where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
 impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_axum::RateLimitConfig where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_axum::RateLimitConfig where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_axum::RouteGroups where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
 impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_axum::RouteGroups where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
 impl<R, S> axum_core::extract::FromRequestParts<S> for bymax_auth_axum::RequirePlatformRole<R> where R: bymax_auth_axum::PlatformRole, bymax_auth_axum::AuthState: axum_core::extract::from_ref::FromRef<S>, S: core::marker::Send + core::marker::Sync
 impl<R, S> axum_core::extract::FromRequestParts<S> for bymax_auth_axum::RequireRole<R> where R: bymax_auth_axum::Role, bymax_auth_axum::AuthState: axum_core::extract::from_ref::FromRef<S>, S: core::marker::Send + core::marker::Sync
@@ -1311,6 +1280,8 @@ pub fn bymax_auth_axum::ClientIpSource::clone_into(&self, &mut T)
 pub fn bymax_auth_axum::ClientIpSource::default() -> bymax_auth_axum::ClientIpSource
 pub fn bymax_auth_axum::ClientIpSource::eq(&self, &bymax_auth_axum::ClientIpSource) -> bool
 pub fn bymax_auth_axum::ClientIpSource::equivalent(&self, &K) -> bool
+pub fn bymax_auth_axum::ClientIpSource::equivalent(&self, &K) -> bool
+pub fn bymax_auth_axum::ClientIpSource::equivalent(&self, &K) -> bool
 pub fn bymax_auth_axum::ClientIpSource::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_axum::ClientIpSource::from(T) -> T
 pub fn bymax_auth_axum::ClientIpSource::from_ref(&T) -> T
@@ -1523,6 +1494,8 @@ pub fn bymax_auth_axum::RateLimit::clone(&self) -> bymax_auth_axum::RateLimit
 pub fn bymax_auth_axum::RateLimit::clone_into(&self, &mut T)
 pub fn bymax_auth_axum::RateLimit::eq(&self, &bymax_auth_axum::RateLimit) -> bool
 pub fn bymax_auth_axum::RateLimit::equivalent(&self, &K) -> bool
+pub fn bymax_auth_axum::RateLimit::equivalent(&self, &K) -> bool
+pub fn bymax_auth_axum::RateLimit::equivalent(&self, &K) -> bool
 pub fn bymax_auth_axum::RateLimit::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_axum::RateLimit::from(T) -> T
 pub fn bymax_auth_axum::RateLimit::from_ref(&T) -> T
@@ -1541,6 +1514,8 @@ pub fn bymax_auth_axum::RateLimitConfig::clone(&self) -> bymax_auth_axum::RateLi
 pub fn bymax_auth_axum::RateLimitConfig::clone_into(&self, &mut T)
 pub fn bymax_auth_axum::RateLimitConfig::default() -> Self
 pub fn bymax_auth_axum::RateLimitConfig::eq(&self, &bymax_auth_axum::RateLimitConfig) -> bool
+pub fn bymax_auth_axum::RateLimitConfig::equivalent(&self, &K) -> bool
+pub fn bymax_auth_axum::RateLimitConfig::equivalent(&self, &K) -> bool
 pub fn bymax_auth_axum::RateLimitConfig::equivalent(&self, &K) -> bool
 pub fn bymax_auth_axum::RateLimitConfig::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_axum::RateLimitConfig::from(T) -> T
@@ -1657,6 +1632,8 @@ pub fn bymax_auth_axum::RouteGroups::borrow_mut(&mut self) -> &mut T
 pub fn bymax_auth_axum::RouteGroups::clone(&self) -> bymax_auth_axum::RouteGroups
 pub fn bymax_auth_axum::RouteGroups::clone_into(&self, &mut T)
 pub fn bymax_auth_axum::RouteGroups::eq(&self, &bymax_auth_axum::RouteGroups) -> bool
+pub fn bymax_auth_axum::RouteGroups::equivalent(&self, &K) -> bool
+pub fn bymax_auth_axum::RouteGroups::equivalent(&self, &K) -> bool
 pub fn bymax_auth_axum::RouteGroups::equivalent(&self, &K) -> bool
 pub fn bymax_auth_axum::RouteGroups::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_axum::RouteGroups::from(T) -> T
