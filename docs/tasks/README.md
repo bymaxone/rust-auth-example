@@ -16,8 +16,8 @@ map into the task files and the rulebook for executing them one task at a time.
 | Phase | File | Scope | Status |
 | --- | --- | --- | --- |
 | P0 | [`phase-00-foundation-ci.md`](./phase-00-foundation-ci.md) | Foundation, Tooling & CI Skeleton | ✅ |
-| P1 | [`phase-01-local-stack.md`](./phase-01-local-stack.md) | Local Stack & Environment | 👀 |
-| P2 | [`phase-02-library-consumption.md`](./phase-02-library-consumption.md) | Library Consumption & Export Audits | 📋 |
+| P1 | [`phase-01-local-stack.md`](./phase-01-local-stack.md) | Local Stack & Environment | ✅ |
+| P2 | [`phase-02-library-consumption.md`](./phase-02-library-consumption.md) | Library Consumption & Export Audits | 🔄 |
 | P3 | [`phase-03-api-skeleton.md`](./phase-03-api-skeleton.md) | API Skeleton | 📋 |
 | P4 | [`phase-04-schema-repositories.md`](./phase-04-schema-repositories.md) | Schema & Repositories | 📋 |
 | P5 | [`phase-05-engine-wiring.md`](./phase-05-engine-wiring.md) | Engine Wiring, Email & Audit | 📋 |
