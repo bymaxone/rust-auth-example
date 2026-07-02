@@ -14,12 +14,20 @@ bymax-auth-axum  = { path = "../../../rust-auth/crates/bymax-auth-axum",  versio
 bymax-auth-core  = { path = "../../../rust-auth/crates/bymax-auth-core",  version = "0.0.0", features = ["full"] }
 bymax-auth-redis = { path = "../../../rust-auth/crates/bymax-auth-redis", version = "0.0.0", features = ["mfa", "oauth", "platform"] }
 bymax-auth-types = { path = "../../../rust-auth/crates/bymax-auth-types", version = "0.0.0" }
+# The repository traits (`UserRepository`, `PlatformUserRepository`) are `#[async_trait]`.
+async-trait = "0.1"
 axum = "0.8"
 base64 = "0.22"
 figment = { version = "0.10", features = ["env"] }
 serde = { version = "1", features = ["derive"] }
-sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "tls-rustls-aws-lc-rs", "postgres"] }
+# `tls-rustls-aws-lc-rs` keeps the rustls backend free of `ring`, which deny.toml
+# bans. `macros` enables the compile-checked `query!`/`query_as!` the repositories
+# use; `time` maps `TIMESTAMPTZ` onto `time::OffsetDateTime` to match the domain
+# records; `migrate` supports the schema-migration tooling.
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "tls-rustls-aws-lc-rs", "postgres", "macros", "migrate", "time"] }
 thiserror = "2"
+# `TIMESTAMPTZ` columns decode to `time::OffsetDateTime`, matching the domain records.
+time = { version = "0.3", default-features = false }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal", "net"] }
 tower = { version = "0.5", default-features = false }
 tower-http = { version = "0.6", features = ["cors", "trace", "limit", "set-header"] }

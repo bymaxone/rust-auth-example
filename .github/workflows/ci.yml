@@ -33,6 +33,9 @@ env:
   # A syntactically valid placeholder so cargo builds and tests run without a
   # live database connection.
   DATABASE_URL: postgres://postgres:postgres@localhost:5432/ci_placeholder
+  # Build the sqlx query macros from the committed `apps/api/.sqlx/` cache rather
+  # than connecting to a database; every job that compiles the API relies on it.
+  SQLX_OFFLINE: 'true'
 
 jobs:
   # Builds the linked browser package so the file: link resolves.

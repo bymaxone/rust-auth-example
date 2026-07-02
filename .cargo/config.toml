@@ -1,0 +1,12 @@
+# Cargo configuration for the API workspace.
+#
+# The sqlx `query!`/`query_as!` macros are compile-time checked against a live
+# database named by `DATABASE_URL`. This placeholder points at the local dev stack
+# (`docker compose up`) so a bare `cargo build` and `cargo sqlx prepare` resolve the
+# schema without any extra shell setup. It is a well-known local credential, never a
+# real secret. Set `SQLX_OFFLINE=true` (as CI does) to build purely from the
+# committed `apps/api/.sqlx/` cache with no database reachable; the runtime
+# connection string always comes from the process environment via the Settings
+# loader, never from this file.
+[env]
+DATABASE_URL = "postgres://postgres:postgres@127.0.0.1:5432/example_app"

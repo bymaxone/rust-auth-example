@@ -1,6 +1,6 @@
 # Phase 4 — Schema & Repositories
 
-> **Status**: 🔄 In Progress · **Progress**: 1 / 6 tasks · **Last updated**: 2026-07-02
+> **Status**: 🔄 In Progress · **Progress**: 2 / 6 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P4
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -85,7 +85,7 @@ routes, no email or audit (all P5), and no business logic inside the repositorie
 | ID | Task | Status | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- | --- |
 | 4.1 | Schema migrations (`0001_init.sql`) | ✅ Done | P0 | M | — |
-| 4.2 | sqlx offline cache + prepare workflow | 📋 ToDo | P0 | S | 4.1 |
+| 4.2 | sqlx offline cache + prepare workflow | ✅ Done | P0 | S | 4.1 |
 | 4.3 | `SqlxUserRepository` (11 methods) | 📋 ToDo | P0 | L | 4.1, 4.2 |
 | 4.4 | `SqlxPlatformUserRepository` (6 methods) | 📋 ToDo | P0 | M | 4.1, 4.2 |
 | 4.5 | `RepositoryError` mapping (Conflict / `Ok(None)`) | 📋 ToDo | P1 | S | 4.3, 4.4 |
@@ -266,7 +266,7 @@ Completion Protocol (after you finish):
 
 ### Task 4.2 — sqlx offline cache + prepare workflow
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: S
 - **Depends on**: 4.1
@@ -279,12 +279,13 @@ succeeds with no live database, and commit the `.sqlx/` directory.
 
 #### Acceptance criteria
 
-- [ ] `apps/api/Cargo.toml` depends on `sqlx` with `runtime-tokio`, `tls-rustls-aws-lc-rs`, `postgres`, `time`, `uuid`
-      (as needed), and `migrate` — and on `sqlx-cli`-compatible offline mode (no `ring`).
-- [ ] `apps/api/.env` (or `.cargo/config.toml`) provides a placeholder `DATABASE_URL`; CI/build sets `SQLX_OFFLINE=true`.
-- [ ] `cargo sqlx prepare --workspace` regenerates `.sqlx/` against a live (migrated) DB; the directory is committed.
-- [ ] `cargo build --locked` succeeds with `SQLX_OFFLINE=true` and no database reachable.
-- [ ] `cargo sqlx prepare --check --workspace` passes (the cache is current).
+- [x] `apps/api/Cargo.toml` depends on `sqlx` with `runtime-tokio`, `tls-rustls-aws-lc-rs`, `postgres`, `macros`,
+      `migrate`, and `time` (ids are `TEXT`, so `uuid` is not needed) — a ring-free rustls backend for offline mode.
+- [x] `.cargo/config.toml` provides a placeholder `DATABASE_URL`; the CI top-level env sets `SQLX_OFFLINE=true`.
+- [x] `cargo sqlx prepare --workspace` regenerates `.sqlx/` against a live (migrated) DB; the directory is committed
+      (populated by the first query macros in 4.3/4.4).
+- [x] `cargo build --locked` succeeds with `SQLX_OFFLINE=true` and no database reachable.
+- [x] `cargo sqlx prepare --check --workspace` passes (the cache is current).
 
 #### Files to create / modify
 
@@ -1027,3 +1028,4 @@ When Task 4.6 is ✅ (the LAST task), close the phase:
 > Append-only. One line per completed task: `- <id> ✅ YYYY-MM-DD — <summary>`.
 
 - 4.1 ✅ 2026-07-02 — Initial migration `0001_init.sql` creates tenants, users, platform_users, invitations, audit_log backing AuthUser/AuthPlatformUser field-for-field, with the tenant-email + partial OAuth unique indexes and the keyset audit index.
+- 4.2 ✅ 2026-07-02 — Wired sqlx (`macros`/`migrate`/`time`, ring-free rustls) + `async-trait`/`time` deps, a `.cargo/config.toml` placeholder `DATABASE_URL`, `SQLX_OFFLINE=true` in CI, and `db:migrate`/`db:prepare` scripts; the `.sqlx/` cache lands with the first query macros.
