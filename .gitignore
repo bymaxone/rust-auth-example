@@ -10,6 +10,8 @@ dist/
 build/
 .next/
 *.tsbuildinfo
+# Next.js generated type declarations (regenerated on build)
+apps/web/next-env.d.ts
 
 # Coverage
 coverage/
