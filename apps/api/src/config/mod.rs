@@ -299,7 +299,7 @@ pub(crate) fn dev_settings() -> Settings {
 /// A high-entropy, mixed-alphabet JWT fixture that clears the length + entropy guards
 /// (dev-only, never a real secret).
 #[cfg(test)]
-const DEV_FIXTURE_JWT: &str = "aB3xY7zQ9kL2mN5pR8tV1wF4hJ6dS0gC7uE2iO5aZ4bH8nK1qW6";
+const DEV_FIXTURE_JWT: &str = "aB3xY7zQ9kL2mN5pR8tV1wF4hJ6dS0gC7uE2iO5aZ4bH8nK1qW6mD9fT2vX5cP8b";
 
 #[cfg(test)]
 #[allow(

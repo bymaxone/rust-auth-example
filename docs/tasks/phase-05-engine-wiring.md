@@ -447,7 +447,7 @@ Add a `reqwest`-based Resend `EmailProvider` (opt-in via `RESEND_API_KEY`), the 
 #### Acceptance criteria
 
 - [x] `ResendEmailProvider` in `apps/api/src/email/resend.rs` implements all 7 `EmailProvider` methods by POSTing to `https://api.resend.com/emails` with `Authorization: Bearer <key>`, rendering via the shared `email::templates` module.
-- [x] `resolve_email_provider(settings) -> Result<Arc<dyn EmailProvider>, EmailError>` returns `ResendEmailProvider` when `settings.resend_api_key` is `Some`, otherwise `LettreEmailProvider`.
+- [x] `resolve_email_provider(settings) -> Result<Arc<dyn EmailProvider>, EmailError>` returns `ResendEmailProvider` when `settings.email_provider` is `Resend` (requiring `RESEND_API_KEY`, else a fail-fast error), otherwise the lettre to Mailpit provider; `SMTP_FROM` is validated on both paths.
 - [x] The 7 `templates/email/*.html` are finalized (BCP-47 `locale` handling with an `es` copy set); both providers render identical HTML (DRY — one shared render module).
 - [x] A Resend unit test mocks the HTTP endpoint (a local axum server) and asserts the request reaches `/emails` with bearer auth; a resolution test asserts the selector picks each provider correctly.
 - [x] `cargo nextest run -p api email` passes; `src/email/resend.rs` + `src/email/mod.rs` 100% covered; clippy clean.
