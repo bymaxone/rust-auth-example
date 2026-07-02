@@ -27,9 +27,9 @@
     "format:check": "prettier --check .",
     "test:cov": "pnpm -r --if-present run test:cov",
     "prepare": "husky",
-    "infra:up": "docker compose up --wait",
+    "infra:up": "docker compose up -d --wait",
     "infra:down": "docker compose down -v",
-    "infra:test:up": "docker compose -f docker-compose.test.yml up --wait",
+    "infra:test:up": "docker compose -f docker-compose.test.yml up -d --wait",
     "infra:test:down": "docker compose -f docker-compose.test.yml down -v",
     "audit:exports": "node scripts/audit-library-exports.mjs",
     "audit:public-api": "bash scripts/audit-rust-public-api.sh"

@@ -12,6 +12,8 @@ services:
       POSTGRES_DB: example_app_test
     ports:
       - '127.0.0.1:55432:5432'
+    # postgres:18 stores data under /var/lib/postgresql/<major>/docker (not /data).
+    # Mount at the parent so the tmpfs covers whatever version-specific path is used.
     tmpfs:
       - /var/lib/postgresql
     healthcheck:

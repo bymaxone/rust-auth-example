@@ -19,7 +19,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB:-example_app_prod}
     volumes:
-      - pg-prod-data:/var/lib/postgresql/data
+      - pg-prod-data:/var/lib/postgresql
     healthcheck:
       test:
         - CMD-SHELL
@@ -76,8 +76,8 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      # /health route lands in P3; this prod file is a smoke harness, not run yet.
-      test: ['CMD-SHELL', 'wget -qO- http://localhost:4000/health || exit 1']
+      # /health route is wired in a later phase; this prod file is a smoke harness, not run yet.
+      test: ['CMD-SHELL', 'wget -qO- http://localhost:${API_PORT:-4000}/health || exit 1']
       interval: 10s
       timeout: 5s
       start_period: 20s
@@ -89,7 +89,7 @@ services:
     image: ghcr.io/bymaxone/rust-auth-example-web:${IMAGE_TAG:-latest}
     restart: unless-stopped
     ports:
-      - '${WEB_PORT:-3000}:3000'
+      - '127.0.0.1:${WEB_PORT:-3000}:3000'
     environment:
       INTERNAL_API_URL: ${INTERNAL_API_URL:-http://api:4000}
       AUTH_JWT_SECRET_FOR_PROXY: ${AUTH_JWT_SECRET_FOR_PROXY}
