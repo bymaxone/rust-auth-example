@@ -34,6 +34,11 @@ pub enum EmailProviderKind {
 
 /// The fully validated runtime configuration for `apps/api`.
 ///
+/// Models the configuration variables the current API surface needs. Variables
+/// used by later phases (SMTP host/port, OAuth credentials, `DATABASE_URL_TEST`,
+/// `RESEND_API_KEY`) are absent here by design and will be added when those
+/// phases wire their respective subsystems.
+///
 /// Constructed exclusively by [`Settings::load`]; do not build this struct
 /// directly in production code.
 ///
@@ -43,7 +48,10 @@ pub enum EmailProviderKind {
 pub struct Settings {
     /// TCP port the axum server binds (`API_PORT`, default `4000`).
     pub api_port: u16,
-    /// `tracing` filter directive (`LOG_LEVEL`, default `info`).
+    /// Settings-level log filter default (`LOG_LEVEL`, default `info`).
+    ///
+    /// `RUST_LOG` is consumed directly by the tracing `EnvFilter` when logging
+    /// is wired in a later phase; it is not a `Settings` field.
     pub log_level: String,
     /// sqlx Postgres connection string (`DATABASE_URL`).
     pub database_url: String,
@@ -65,14 +73,19 @@ pub struct Settings {
 ///
 /// `database_url` and `redis_url` are redacted alongside the two dedicated secret
 /// fields because a connection string can embed a password in its userinfo
-/// component.
+/// component. The redacted fields are still accessed so the compiler confirms they
+/// exist and are the correct type; only the value is suppressed.
 impl fmt::Debug for Settings {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // Each redacted field is accessed via len() to prove it is non-empty in
+        // the debug output without revealing the value.
+        let db_hint = format!("[REDACTED {} bytes]", self.database_url.len());
+        let redis_hint = format!("[REDACTED {} bytes]", self.redis_url.len());
         f.debug_struct("Settings")
             .field("api_port", &self.api_port)
             .field("log_level", &self.log_level)
-            .field("database_url", &"[REDACTED]")
-            .field("redis_url", &"[REDACTED]")
+            .field("database_url", &db_hint)
+            .field("redis_url", &redis_hint)
             .field("redis_namespace", &self.redis_namespace)
             .field("jwt_secret", &"[REDACTED]")
             .field("mfa_encryption_key", &"[REDACTED]")
@@ -207,7 +220,8 @@ mod tests {
 
     /// A 32-byte base64 key used as a test fixture (dev-only, never a real key).
     const TEST_MFA_KEY: &str = "ZGV2X29ubHlfbG9jYWxfMzJfYnl0ZV9rZXlfMDAwMDA=";
-    /// A 65-character JWT value used as a test fixture (dev-only, never a real secret).
+    /// A 72-byte JWT value used as a test fixture (dev-only, never a real secret).
+    /// All characters are ASCII, so byte length equals character length.
     const TEST_JWT: &str =
         "test_fixture_local_only_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 
