@@ -1,17 +1,19 @@
 # Core CI pipeline. Job names are contractual — branch protection and the audit
 # scripts reference them by name; do not rename without updating those references.
 #
-# build-library ──┬── install
-#                 ├── format
-#                 ├── lint
-#                 ├── typecheck
-#                 ├── msrv
-#                 ├── unit
-#                 ├── e2e-api ── e2e-web
-#                 ├── export-usage-check
-#                 ├── supply-chain
-#                 └── dependency-review (PR only)
+# build-library ── install ──┬── format
+#                            ├── lint
+#                            ├── typecheck
+#                            ├── msrv
+#                            ├── unit
+#                            ├── e2e-api ── e2e-web
+#                            ├── export-usage-check
+#                            ├── supply-chain
+#                            └── dependency-review (PR only)
 # coverage-report (needs unit + e2e-api + e2e-web, always runs)
+#
+# Actions are pinned to a commit SHA with the version in a trailing comment;
+# Dependabot (github-actions ecosystem) keeps the SHAs current.
 
 name: ci
 
@@ -33,24 +35,25 @@ env:
   DATABASE_URL: postgres://postgres:postgres@localhost:5432/ci_placeholder
 
 jobs:
-  # Builds the linked browser package so the file: link resolves. It is a no-op
-  # until the console (apps/web) and the link are wired.
+  # Builds the linked browser package so the file: link resolves.
   build-library:
     name: build-library
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
         with:
           version: 10.8.1
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Build linked browser package
-        run: echo "build-library — @bymax-one/rust-auth link not wired yet; skipping."
+      - name: Build the @bymax-one/rust-auth browser package
+        run: pnpm -r --if-present run build:lib
 
   install:
     name: install
@@ -58,11 +61,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
         with:
           version: 10.8.1
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 24
           cache: pnpm
@@ -70,20 +75,22 @@ jobs:
 
   format:
     name: format
-    needs: build-library
+    needs: install
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v5
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable (toolchain set via input)
         with:
           toolchain: 1.96.0
           components: rustfmt
-      - uses: Swatinem/rust-cache@v2
-      - uses: pnpm/action-setup@v4
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
         with:
           version: 10.8.1
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 24
           cache: pnpm
@@ -93,20 +100,22 @@ jobs:
 
   lint:
     name: lint
-    needs: build-library
+    needs: install
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v5
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable (toolchain set via input)
         with:
           toolchain: 1.96.0
           components: clippy
-      - uses: Swatinem/rust-cache@v2
-      - uses: pnpm/action-setup@v4
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
         with:
           version: 10.8.1
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 24
           cache: pnpm
@@ -116,19 +125,21 @@ jobs:
 
   typecheck:
     name: typecheck
-    needs: build-library
+    needs: install
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v5
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable (toolchain set via input)
         with:
           toolchain: 1.96.0
-      - uses: Swatinem/rust-cache@v2
-      - uses: pnpm/action-setup@v4
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
         with:
           version: 10.8.1
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 24
           cache: pnpm
@@ -138,38 +149,42 @@ jobs:
 
   msrv:
     name: msrv
-    needs: build-library
+    needs: install
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v5
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable (toolchain set via input)
         with:
           toolchain: 1.90.0
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
       # The `+toolchain` override bypasses rust-toolchain.toml so the MSRV floor
       # is what actually compiles here.
       - run: cargo +1.90.0 check --workspace
 
   unit:
     name: unit
-    needs: build-library
+    needs: install
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v5
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable (toolchain set via input)
         with:
           toolchain: 1.96.0
           components: llvm-tools-preview
-      - uses: Swatinem/rust-cache@v2
-      - uses: taiki-e/install-action@v2
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+      - uses: taiki-e/install-action@16b05812d776ae1dfaabc8277e421fb6d2506419 # v2
         with:
           tool: cargo-nextest,cargo-llvm-cov
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
         with:
           version: 10.8.1
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 24
           cache: pnpm
@@ -180,7 +195,7 @@ jobs:
         run: pnpm -r --if-present run test:cov
       - name: Upload API coverage
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: coverage-api
           path: lcov.info
@@ -189,20 +204,22 @@ jobs:
 
   e2e-api:
     name: e2e-api
-    needs: build-library
+    needs: install
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v5
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable (toolchain set via input)
         with:
           toolchain: 1.96.0
-      - uses: Swatinem/rust-cache@v2
-      - uses: taiki-e/install-action@v2
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+      - uses: taiki-e/install-action@16b05812d776ae1dfaabc8277e421fb6d2506419 # v2
         with:
           tool: cargo-nextest
-      # Integration tests and the high-port test stack are added later; the stub
-      # has no integration tests, so the suite passes with nothing to run.
+      # Integration tests run against the high-port test stack; with no
+      # integration tests present the suite passes with nothing to run.
       - run: cargo nextest run --no-tests=pass
 
   e2e-web:
@@ -211,11 +228,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
         with:
           version: 10.8.1
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 24
           cache: pnpm
@@ -224,15 +243,17 @@ jobs:
 
   export-usage-check:
     name: export-usage-check
-    needs: build-library
+    needs: install
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
         with:
           version: 10.8.1
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 24
           cache: pnpm
@@ -242,16 +263,18 @@ jobs:
 
   supply-chain:
     name: supply-chain
-    needs: build-library
+    needs: install
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v5
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable (toolchain set via input)
         with:
           toolchain: 1.96.0
-      - uses: Swatinem/rust-cache@v2
-      - uses: taiki-e/install-action@v2
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+      - uses: taiki-e/install-action@16b05812d776ae1dfaabc8277e421fb6d2506419 # v2
         with:
           tool: cargo-deny,cargo-audit
       - run: cargo deny check
@@ -259,19 +282,20 @@ jobs:
 
   dependency-review:
     name: dependency-review
-    needs: build-library
+    needs: install
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          persist-credentials: false
       # Dependency review needs a public repository (or GitHub Advanced Security).
-      # While the repository is private it is skipped so the check stays green; it
-      # becomes informational once the repository is public.
+      # While the repository is private the step is skipped so the check stays
+      # green; once public it runs and gates the PR on vulnerable dependencies.
       - name: Dependency review
         if: github.event.repository.visibility == 'public'
-        continue-on-error: true
-        uses: actions/dependency-review-action@v4
+        uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48 # v4
 
   coverage-report:
     name: coverage-report
@@ -281,7 +305,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Download API coverage
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: coverage-api
           path: coverage

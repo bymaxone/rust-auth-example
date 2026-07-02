@@ -6,9 +6,8 @@ rust-version.workspace = true
 license.workspace = true
 publish = false
 
-# Dependencies on the concrete `bymax-auth-*` crates are wired across the checkout
-# boundary in a later library-consumption step; the binary stays dependency-free
-# until then so the workspace compiles on its own.
+# Path dependencies on the concrete `bymax-auth-*` crates are injected at the
+# checkout boundary; this package declares only the dependencies it uses directly.
 [dependencies]
 
 [lints]

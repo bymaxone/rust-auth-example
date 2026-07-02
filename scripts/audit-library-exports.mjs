@@ -76,7 +76,14 @@ function loadIgnore() {
     /** @type {{ exports?: { symbol: string }[] }} */
     const parsed = JSON.parse(readFileSync(IGNORE_FILE, 'utf8'));
     return new Set((parsed.exports ?? []).map((e) => e.symbol));
-  } catch {
+  } catch (error) {
+    // An absent file is fine (nothing to allow-list). A present-but-invalid file
+    // must be surfaced: swallowing it would silently disable the whole allow-list.
+    if (existsSync(IGNORE_FILE)) {
+      process.stderr.write(
+        `audit:exports — failed to parse .audit-ignore.json: ${String(error)}\n`,
+      );
+    }
     return new Set();
   }
 }

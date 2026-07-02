@@ -3,6 +3,8 @@
 # are checked independently so a partial failure can be retried without
 # overwriting the image that already published. This is the only workflow with
 # cancel-in-progress: false — a release run must never be cancelled mid-flight.
+#
+# Actions are pinned to a commit SHA with the version in a trailing comment.
 
 name: release
 
@@ -26,14 +28,28 @@ jobs:
     permissions:
       contents: read
       packages: write
+      # Reserved for OIDC-based build provenance/attestation on publish; scoped to
+      # this job only so no other job can mint an OIDC token.
       id-token: write
+    env:
+      TAG_NAME: ${{ github.ref_name }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          persist-credentials: false
+
+      # Log in first so the existence checks below can query the private registry.
+      - name: Log in to GHCR
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Check if API image already exists
         id: api-exists
         run: |
-          if docker manifest inspect "ghcr.io/bymaxone/rust-auth-example-api:${{ github.ref_name }}" > /dev/null 2>&1; then
+          if docker manifest inspect "ghcr.io/bymaxone/rust-auth-example-api:${TAG_NAME}" > /dev/null 2>&1; then
             echo "exists=true" >> "${GITHUB_OUTPUT}"
           else
             echo "exists=false" >> "${GITHUB_OUTPUT}"
@@ -42,24 +58,16 @@ jobs:
       - name: Check if web image already exists
         id: web-exists
         run: |
-          if docker manifest inspect "ghcr.io/bymaxone/rust-auth-example-web:${{ github.ref_name }}" > /dev/null 2>&1; then
+          if docker manifest inspect "ghcr.io/bymaxone/rust-auth-example-web:${TAG_NAME}" > /dev/null 2>&1; then
             echo "exists=true" >> "${GITHUB_OUTPUT}"
           else
             echo "exists=false" >> "${GITHUB_OUTPUT}"
           fi
 
-      - name: Log in to GHCR
-        if: steps.api-exists.outputs.exists != 'true' || steps.web-exists.outputs.exists != 'true'
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Generate API image metadata
         id: api-meta
         if: steps.api-exists.outputs.exists != 'true'
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
         with:
           images: ghcr.io/bymaxone/rust-auth-example-api
           flavor: latest=auto
@@ -69,7 +77,7 @@ jobs:
 
       - name: Build and push API image
         if: steps.api-exists.outputs.exists != 'true'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
           file: apps/api/Dockerfile
@@ -80,7 +88,7 @@ jobs:
       - name: Generate web image metadata
         id: web-meta
         if: steps.web-exists.outputs.exists != 'true'
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
         with:
           images: ghcr.io/bymaxone/rust-auth-example-web
           flavor: latest=auto
@@ -90,7 +98,7 @@ jobs:
 
       - name: Build and push web image
         if: steps.web-exists.outputs.exists != 'true'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
           file: apps/web/Dockerfile
@@ -108,28 +116,29 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: write
+    env:
+      TAG_NAME: ${{ github.ref_name }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           ref: main
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Append row to RELEASES.md
         run: |
-          TAG="${{ github.ref_name }}"
-          if grep -qF "| \`${TAG}\`" docs/RELEASES.md; then
-            echo "Tag ${TAG} already recorded — skipping."
+          if grep -qF "| \`${TAG_NAME}\`" docs/RELEASES.md; then
+            echo "Tag ${TAG_NAME} already recorded — skipping."
             exit 0
           fi
           LIB_VERSION="$(grep -oE 'bymax-auth-core.*version *= *"=?[0-9.]+"' apps/api/Cargo.toml | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)"
           LIB_VERSION="${LIB_VERSION:-0.0.0 (path)}"
           DATE="$(date -u +%Y-%m-%d)"
-          ROW="| \`${TAG}\` | ${LIB_VERSION} | ${DATE} | ghcr.io/bymaxone/rust-auth-example-{api,web}:${TAG} |"
+          ROW="| \`${TAG_NAME}\` | ${LIB_VERSION} | ${DATE} | ghcr.io/bymaxone/rust-auth-example-{api,web}:${TAG_NAME} |"
           awk -v row="${ROW}" '{ print } /<!-- releases:insert -->/ { print row }' docs/RELEASES.md > docs/RELEASES.md.tmp
           mv docs/RELEASES.md.tmp docs/RELEASES.md
 
       - name: Push bot commit
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@b863ae1933cb653a53c021fe36dbb774e1fb9403 # v5
         with:
           commit_message: 'chore(release): record ${{ github.ref_name }} in RELEASES.md [skip ci]'
           commit_user_name: github-actions[bot]

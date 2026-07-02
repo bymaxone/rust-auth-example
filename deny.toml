@@ -11,9 +11,10 @@ all-features = true
 [advisories]
 # A new RustSec advisory against the committed Cargo.lock fails CI. Vulnerability
 # and unsound advisories are always denied by cargo-deny and cannot be weakened
-# here, so only the configurable knobs are set: `unmaintained = "all"` flags every
-# unmaintained crate (not just workspace-direct ones), and yanked versions are
-# errors. `ignore` records intentional, reviewed exceptions (none yet).
+# here. `unmaintained` is cargo-deny's advisories *scope* selector
+# (all | workspace | transitive | none); "all" checks every crate in the graph,
+# not just workspace-direct ones. Yanked versions are errors; `ignore` records
+# intentional, reviewed exceptions (none yet).
 unmaintained = "all"
 yanked = "deny"
 ignore = []

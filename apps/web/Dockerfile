@@ -7,7 +7,7 @@
 # Runtime env (never baked into a layer): INTERNAL_API_URL, AUTH_JWT_SECRET_FOR_PROXY.
 
 # ── Stage 1: base ───────────────────────────────────────────────────────────
-FROM node:24-slim AS base
+FROM node:24-slim@sha256:b31e7a42fdf8b8aa5f5ed477c72d694301273f1069c5a2f71d53c6482e99a2fc AS base
 RUN corepack enable && corepack prepare pnpm@10.8.1 --activate
 
 # ── Stage 2: deps ───────────────────────────────────────────────────────────
@@ -36,7 +36,7 @@ RUN INTERNAL_API_URL=http://build-placeholder:4000 \
     pnpm --filter web run build
 
 # ── Stage 4: runtime ────────────────────────────────────────────────────────
-FROM node:24-slim AS runtime
+FROM node:24-slim@sha256:b31e7a42fdf8b8aa5f5ed477c72d694301273f1069c5a2f71d53c6482e99a2fc AS runtime
 WORKDIR /app
 RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 --ingroup nodejs nextjs
 
