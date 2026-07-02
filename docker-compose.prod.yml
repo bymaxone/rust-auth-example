@@ -75,13 +75,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    healthcheck:
-      # /health route is wired in a later phase; this prod file is a smoke harness, not run yet.
-      test: ['CMD-SHELL', 'wget -qO- http://localhost:${API_PORT:-4000}/health || exit 1']
-      interval: 10s
-      timeout: 5s
-      start_period: 20s
-      retries: 5
+    # No healthcheck yet: the image is distroless (no shell/wget) and the /health
+    # route is wired in a later phase. A native check is added alongside that route.
     networks:
       - prod
 
@@ -95,13 +90,9 @@ services:
       AUTH_JWT_SECRET_FOR_PROXY: ${AUTH_JWT_SECRET_FOR_PROXY}
     depends_on:
       api:
-        condition: service_healthy
-    healthcheck:
-      test: ['CMD-SHELL', 'wget -qO- http://localhost:3000 || exit 1']
-      interval: 10s
-      timeout: 5s
-      start_period: 20s
-      retries: 5
+        # service_started (not service_healthy) until the api exposes a health
+        # endpoint and ships a check-capable base image.
+        condition: service_started
     networks:
       - prod
 
