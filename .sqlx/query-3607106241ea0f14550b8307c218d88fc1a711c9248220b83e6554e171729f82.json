@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT string_agg( event || ' ' || coalesce(actor_id, '') || ' ' || coalesce(actor_email, '') || ' ' || coalesce(ip, '') || ' ' || coalesce(user_agent, '') || ' ' || coalesce(metadata::text, ''), ' ') FROM audit_log WHERE tenant_id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "string_agg",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": ["Text"]
+    },
+    "nullable": [null]
+  },
+  "hash": "3607106241ea0f14550b8307c218d88fc1a711c9248220b83e6554e171729f82"
+}

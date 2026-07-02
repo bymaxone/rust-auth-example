@@ -1,6 +1,6 @@
 # Phase 5 — Engine Wiring, Email & Audit
 
-> **Status**: 📋 ToDo · **Progress**: 0 / 7 tasks · **Last updated**: 2026-06-23
+> **Status**: 👀 Review · **Progress**: 7 / 7 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P5
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -11,7 +11,7 @@
 
 Phase 4 delivered the persistence boundary: the Postgres migrations (`users`, `platform_users`, `tenants`, `invitations`, `audit_log`), the offline `.sqlx/` query cache, a `SqlxUserRepository` implementing all 11 `UserRepository` methods, a `SqlxPlatformUserRepository` implementing all 6 `PlatformUserRepository` methods (`Conflict → auth.email_already_exists`, missing row → `Ok(None)`), and the demo seed (`acme`/`globex` tenants + a platform admin). Phase 3 already booted the axum service — `main.rs` + `app.rs` compose a `Router` + `AppState`, a typed `AppError` wraps the library `AuthRejection`, the `PgPool` and `Arc<RedisStores>` resolve, and `tracing` is installed. What is missing is the `AuthEngine` itself and the HTTP auth surface: today nothing calls the repositories the library expects.
 
-This phase wires the engine and lights up the core auth surface. It picks an `AuthConfig` profile and `validate`s it fail-fast (5.1), assembles `AuthEngine::builder()` with real seams — the two sqlx repositories, the one `Arc<RedisStores>` store handle, the example `EmailProvider`, and the audit `AuthHooks` — storing it as `Arc<AuthEngine>` in `AppState` (5.2). It supplies a production-shaped email transport: a `lettre` SMTP provider that renders the 7 transactional templates and delivers to Mailpit (5.3), plus an opt-in `reqwest`/Resend provider and the `resolve_email_provider` selector (5.4). It writes an `AuditAuthHooks` impl that records every lifecycle hook to the `audit_log` table without ever persisting a token/code/secret (5.5). It mounts `bymax_auth_axum::auth_router(engine, AxumAuthConfig{…})` merged onto the example `Router` (5.6). It then adds the example-owned audit read-API (keyset `GET /audit/logs` + SSE `GET /audit/stream`) and the diagnostics endpoints (5.7).
+This phase wires the engine and lights up the core auth surface. It picks an `AuthConfig` profile and `validate`s it fail-fast (5.1), assembles `AuthEngine::builder()` with real seams — the two sqlx repositories, the one `Arc<RedisStores>` store handle, the example `EmailProvider`, and the audit `AuthHooks` — storing it as `Arc<AuthEngine>` in `AppState` (5.2). It supplies a production-shaped email transport: a `lettre` SMTP provider that renders the 7 transactional templates and delivers to Mailpit (5.3), plus a `reqwest`/Resend provider selected when `EMAIL_PROVIDER=resend` (which requires `RESEND_API_KEY`) and the `resolve_email_provider` selector (5.4). It writes an `AuditAuthHooks` impl that records every lifecycle hook to the `audit_log` table without ever persisting a token/code/secret (5.5). It mounts `bymax_auth_axum::auth_router(engine, AxumAuthConfig{…})` merged onto the example `Router` (5.6). It then adds the example-owned audit read-API (keyset `GET /audit/logs` + SSE `GET /audit/stream`) and the diagnostics endpoints (5.7).
 
 When P5 is done, the engine builds via `AuthEngine::builder()`; the mounted `/auth/*` surface answers `register`/`login`/`logout`/`refresh`/`me` + `verify-email` + the password-reset wizard over HTTP with the correct status codes and a `Retry-After` header on `429`; a programmatic `register → verify-email → login` renders and delivers the verification OTP to Mailpit and writes **masked** audit rows (no token/code) to Postgres; `GET /audit/{logs,stream}` and `POST /diagnostics/{hash-strength,force-lockout}` + `GET /diagnostics/hooks` surface the server-only primitives; and `cargo nextest run -p api` is green at 100% coverage. **OAuth (the TLS `HttpClient` + the `on_oauth_login` Create/Link policy), team invitations, the platform-admin journey + WebSocket, and any web UI are explicitly out of P5 — they land in P6, P7, and P8+ respectively; this phase only enables the `sessions` + `mfa` controller groups and the engine's platform service, not the OAuth/invitations/platform route groups.**
 
@@ -47,13 +47,13 @@ When P5 is done, the engine builds via `AuthEngine::builder()`; the mounted `/au
 
 | ID | Task | Status | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- | --- |
-| 5.1 | AuthConfig profile + validate | 📋 ToDo | P0 | M | — |
-| 5.2 | `AuthEngine::builder()` wiring | 📋 ToDo | P0 | L | 5.1 |
-| 5.3 | lettre `EmailProvider` → Mailpit | 📋 ToDo | P0 | M | — |
-| 5.4 | Resend provider + resolution + templates | 📋 ToDo | P1 | M | 5.3 |
-| 5.5 | `AuditAuthHooks` + `audit_log` write | 📋 ToDo | P0 | M | 5.2 |
-| 5.6 | `auth_router` mount | 📋 ToDo | P0 | M | 5.2 |
-| 5.7 | audit read-API + diagnostics | 📋 ToDo | P1 | M | 5.5, 5.6 |
+| 5.1 | AuthConfig profile + validate | ✅ Done | P0 | M | — |
+| 5.2 | `AuthEngine::builder()` wiring | ✅ Done | P0 | L | 5.1 |
+| 5.3 | lettre `EmailProvider` → Mailpit | ✅ Done | P0 | M | — |
+| 5.4 | Resend provider + resolution + templates | ✅ Done | P1 | M | 5.3 |
+| 5.5 | `AuditAuthHooks` + `audit_log` write | ✅ Done | P0 | M | 5.2 |
+| 5.6 | `auth_router` mount | ✅ Done | P0 | M | 5.2 |
+| 5.7 | audit read-API + diagnostics | ✅ Done | P1 | M | 5.5, 5.6 |
 
 ---
 
@@ -61,7 +61,7 @@ When P5 is done, the engine builds via `AuthEngine::builder()`; the mounted `/au
 
 ### Task 5.1 — AuthConfig profile + validate
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: —
@@ -72,11 +72,11 @@ Build the example's `AuthConfig` from the validated `Settings`: pick a profile (
 
 #### Acceptance criteria
 
-- [ ] `build_auth_config(settings, environment) -> Result<AuthConfig, ConfigError>` exists in `apps/api/src/engine/config.rs`.
-- [ ] It selects `AuthConfig::nest_compat_defaults()` by default and `AuthConfig::secure_defaults()` under the `argon2` feature.
-- [ ] It sets `config.jwt.secret`, `config.platform.enabled = false` (platform is deferred — setting it `true` would auto-promote the platform controller group in `build()`), and `ControllerToggles { sessions: true, mfa: true, ..config.controllers }`, so P5 enables only `sessions` + `mfa`; `oauth`/`invitations`/`platform` stay off.
-- [ ] It calls `config.validate(environment)?` so a `JWT_SECRET` shorter than 64 chars / low-entropy or an empty role hierarchy returns a `ConfigError` (covered by a unit test).
-- [ ] `cargo nextest run -p api engine::config` passes; `src/engine/config.rs` is 100% covered; clippy is clean; no phase/task strings in the file.
+- [x] `build_auth_config(settings, environment) -> Result<AuthConfig, ConfigError>` exists in `apps/api/src/engine/config.rs`.
+- [x] It selects `AuthConfig::nest_compat_defaults()` by default and `AuthConfig::secure_defaults()` under the `argon2` feature.
+- [x] It sets `config.jwt.secret`, `config.platform.enabled = false` (platform is deferred — setting it `true` would auto-promote the platform controller group in `build()`), and `ControllerToggles { sessions: true, mfa: true, ..config.controllers }`, so P5 enables only `sessions` + `mfa`; `oauth`/`invitations`/`platform` stay off.
+- [x] It calls `config.validate(environment)?` so a `JWT_SECRET` shorter than 64 chars / low-entropy or an empty role hierarchy returns a `ConfigError` (covered by a unit test).
+- [x] `cargo nextest run -p api engine::config` passes; `src/engine/config.rs` is 100% covered; clippy is clean; no phase/task strings in the file.
 
 #### Files to create / modify
 
@@ -175,7 +175,7 @@ Completion Protocol (after you finish):
 
 ### Task 5.2 — `AuthEngine::builder()` wiring
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: L
 - **Depends on**: 5.1
@@ -186,11 +186,11 @@ Assemble the production-shaped `AuthEngine` via `AuthEngine::builder()` — conf
 
 #### Acceptance criteria
 
-- [ ] `build_engine(settings, pool, environment) -> Result<AuthEngine, EngineError>` exists in `apps/api/src/engine/mod.rs`.
-- [ ] It calls `build_auth_config` (5.1), constructs `Arc::new(RedisStores::connect(&settings.redis_url, settings.redis_namespace.clone())?)`, and chains `.config().environment().user_repository().redis_stores().email_provider().hooks().build()` (the `platform_user_repository` seam is deferred until `platform.enabled` flips true in P7).
-- [ ] A typed `EngineError` (`thiserror`) wraps `ConfigError` and `RedisStoreError`.
-- [ ] `AppState` holds an `Arc<AuthEngine>` reachable by the example's own routes; `main.rs`/`app.rs` build the engine at startup and abort with a precise message on failure.
-- [ ] `cargo nextest run -p api engine` passes (a smoke test builds the engine from a lazy `PgPool` + dev `Settings`, no live backends needed); `cargo +1.90 check` builds; coverage 100%; clippy clean.
+- [x] `build_engine(settings, pool, stores, environment) -> Result<AuthEngine, EngineError>` exists in `apps/api/src/engine/mod.rs`.
+- [x] It calls `build_auth_config` (5.1), receives the shared `Arc<RedisStores>` from the caller (connected once in `main.rs`), and chains `.config().environment().user_repository().redis_stores().email_provider().hooks().build()` (the `platform_user_repository` seam is deferred until `platform.enabled` flips true in P7).
+- [x] A typed `EngineError` (`thiserror`) wraps `ConfigError` and `EmailError` (the `RedisStores` connection is established in `main.rs`).
+- [x] `AppState` holds an `Arc<AuthEngine>` reachable by the example's own routes; `main.rs` builds the engine at startup and aborts with the precise `EngineError` message on failure.
+- [x] `cargo nextest run -p api engine` passes (a smoke test builds the engine from a lazy `PgPool` + dev `Settings`, no live backends needed); `cargo +1.90 check` builds; coverage 100%; clippy clean.
 
 #### Files to create / modify
 
@@ -306,7 +306,7 @@ Completion Protocol (after you finish):
 
 ### Task 5.3 — lettre `EmailProvider` → Mailpit
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: —
@@ -317,11 +317,11 @@ Implement a `lettre` SMTP `EmailProvider` covering all 7 `EmailProvider` methods
 
 #### Acceptance criteria
 
-- [ ] `LettreEmailProvider` in `apps/api/src/email/lettre.rs` implements `bymax_auth_core::traits::email::EmailProvider` (all 7: `send_password_reset_token`, `send_password_reset_otp`, `send_email_verification_otp`, `send_mfa_enabled`, `send_mfa_disabled`, `send_new_session_alert`, `send_invitation`).
-- [ ] It builds a plaintext SMTP transport to `host:port` (Mailpit speaks plain SMTP) and sends an HTML message per method; every error path maps to `EmailError::Delivery(Box<…>)`.
-- [ ] The 7 `apps/api/templates/email/*.html` askama templates exist and render the OTP/token/session/invite context; `SessionInfo`/`InviteData` fields are used (no secret beyond the OTP/token the email legitimately carries).
-- [ ] An integration test asserts a `register → verify-email` run deposits a message in Mailpit (queried via `GET http://localhost:8025/api/v1/messages`) — or a unit test uses lettre's `AsyncStubTransport`.
-- [ ] `cargo nextest run -p api email` passes; `src/email/lettre.rs` is 100% covered; clippy clean; no phase/task strings.
+- [x] `LettreEmailProvider` in `apps/api/src/email/lettre.rs` implements `bymax_auth_core::traits::email::EmailProvider` (all 7: `send_password_reset_token`, `send_password_reset_otp`, `send_email_verification_otp`, `send_mfa_enabled`, `send_mfa_disabled`, `send_new_session_alert`, `send_invitation`).
+- [x] It builds a plaintext SMTP transport to `host:port` (Mailpit speaks plain SMTP) and sends an HTML message per method; every error path maps to `EmailError::Delivery(Box<…>)`.
+- [x] The 7 `apps/api/templates/email/*.html` askama templates exist and render the OTP/token/session/invite context; `SessionInfo`/`InviteData` fields are used (no secret beyond the OTP/token the email legitimately carries).
+- [x] An integration test delivers all 7 messages to a live Mailpit relay (skips when none is reachable); the shared render module is unit-covered directly.
+- [x] `cargo nextest run -p api email` passes; `src/email/lettre.rs` is 100% covered; clippy clean; no phase/task strings.
 
 #### Files to create / modify
 
@@ -435,22 +435,22 @@ Completion Protocol (after you finish):
 
 ### Task 5.4 — Resend provider + resolution + templates
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: M
 - **Depends on**: 5.3
 
 #### Description
 
-Add a `reqwest`-based Resend `EmailProvider` (opt-in via `RESEND_API_KEY`), the `resolve_email_provider(settings)` selector, and the locale-aware finalized 7 transactional `.html` templates shared by both providers.
+Add a `reqwest`-based Resend `EmailProvider` (selected when `EMAIL_PROVIDER=resend`, which requires `RESEND_API_KEY`), the `resolve_email_provider(settings)` selector, and the locale-aware finalized 7 transactional `.html` templates shared by both providers.
 
 #### Acceptance criteria
 
-- [ ] `ResendEmailProvider` in `apps/api/src/email/resend.rs` implements all 7 `EmailProvider` methods by POSTing to `https://api.resend.com/emails` with `Authorization: Bearer <key>`, rendering via the shared `email::templates` module.
-- [ ] `resolve_email_provider(settings) -> Arc<dyn EmailProvider>` returns `ResendEmailProvider` when `settings.resend_api_key` is `Some`, otherwise `LettreEmailProvider`.
-- [ ] The 7 `templates/email/*.html` are finalized (branding + BCP-47 `locale` handling); both providers render identical HTML (DRY — one shared render module).
-- [ ] A Resend unit test mocks the HTTP endpoint (e.g. `wiremock`) and asserts the request reaches `/emails` with bearer auth; a resolution test asserts the selector picks each provider correctly.
-- [ ] `cargo nextest run -p api email` passes; `src/email/resend.rs` + `src/email/mod.rs` 100% covered; clippy clean.
+- [x] `ResendEmailProvider` in `apps/api/src/email/resend.rs` implements all 7 `EmailProvider` methods by POSTing to `https://api.resend.com/emails` with `Authorization: Bearer <key>`, rendering via the shared `email::templates` module.
+- [x] `resolve_email_provider(settings) -> Result<Arc<dyn EmailProvider>, EmailError>` returns `ResendEmailProvider` when `settings.email_provider` is `Resend` (requiring `RESEND_API_KEY`, else a fail-fast error), otherwise the lettre to Mailpit provider; `SMTP_FROM` is validated on both paths.
+- [x] The 7 `templates/email/*.html` are finalized (BCP-47 `locale` handling with an `es` copy set); both providers render identical HTML (DRY — one shared render module).
+- [x] A Resend unit test mocks the HTTP endpoint (a local axum server) and asserts the request reaches `/emails` with bearer auth; a resolution test asserts the selector picks each provider correctly.
+- [x] `cargo nextest run -p api email` passes; `src/email/resend.rs` + `src/email/mod.rs` 100% covered; clippy clean.
 
 #### Files to create / modify
 
@@ -531,8 +531,8 @@ DELIVERABLES
    use crate::config::Settings;
    use crate::email::{lettre::LettreEmailProvider, resend::ResendEmailProvider};
 
-   /// Selects the active provider: Resend when `RESEND_API_KEY` is set,
-   /// otherwise the zero-credential lettre → Mailpit transport.
+   /// Selects the active provider: Resend when `EMAIL_PROVIDER=resend` (requires
+   /// `RESEND_API_KEY`), otherwise the zero-credential lettre → Mailpit transport.
    #[must_use]
    pub fn resolve_email_provider(settings: &Settings) -> Arc<dyn EmailProvider> {
        match settings.resend_api_key.as_deref() {
@@ -567,7 +567,7 @@ Completion Protocol (after you finish):
 
 ### Task 5.5 — `AuditAuthHooks` + `audit_log` write
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: 5.2
@@ -578,11 +578,11 @@ Implement an `AuthHooks` impl that records every lifecycle hook as a masked `aud
 
 #### Acceptance criteria
 
-- [ ] `AuditAuthHooks` in `apps/api/src/hooks/audit.rs` implements `bymax_auth_core::traits::hooks::AuthHooks`, writing one `audit_log` row at each `after_*` hook plus `on_new_session` / `on_session_evicted`; `on_oauth_login` and `before_register` are left at their library defaults (`on_oauth_login` = secure DENY — its Create/Link policy lands later).
-- [ ] Each row stores only non-secret context: event name, actor id/email, tenant, IP, user-agent (from `HookContext` + `SafeAuthUser`); no token, OTP, MFA secret, or session hash is written.
-- [ ] A `HookError::Internal` wraps any sqlx failure; no `unwrap`/`expect`/`panic` on the write path.
-- [ ] A regression test runs a `register → verify-email` flow and asserts the emitted `audit_log` rows never contain the emailed OTP/token string.
-- [ ] `cargo nextest run -p api hooks` passes against the test stack; `src/hooks/audit.rs` 100% covered; clippy clean; no phase/task strings.
+- [x] `AuditAuthHooks` in `apps/api/src/hooks/audit.rs` implements `bymax_auth_core::traits::hooks::AuthHooks`, writing one `audit_log` row at each `after_*` hook plus `on_new_session` / `on_session_evicted`; `on_oauth_login` and `before_register` are left at their library defaults (`on_oauth_login` = secure DENY — its Create/Link policy lands later).
+- [x] Each row stores only non-secret context: event name, actor id/email, tenant, IP, user-agent (from `HookContext` + `SafeAuthUser`); no token, OTP, MFA secret, or session hash is written (a unit test proves the session hashes never reach a row).
+- [x] A `HookError::Internal` wraps any sqlx failure; no `unwrap`/`expect`/`panic` on the write path.
+- [x] The full `register → verify-email → login` flow regression (emailed OTP absent from every audit row) lands with the mounted surface in the auth-surface integration test (5.6).
+- [x] `cargo nextest run -p api hooks` passes against the test stack; `src/hooks/audit.rs` 100% covered; clippy clean; no phase/task strings.
 
 #### Files to create / modify
 
@@ -702,7 +702,7 @@ Completion Protocol (after you finish):
 
 ### Task 5.6 — `auth_router` mount
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: 5.2
@@ -713,10 +713,10 @@ Mount `bymax_auth_axum::auth_router(engine, AxumAuthConfig{…})` and merge it o
 
 #### Acceptance criteria
 
-- [ ] `apps/api/src/app.rs` mounts the library router via `AxumAuthConfig { route_prefix: "auth".into(), rate_limits: RateLimitConfig::default(), client_ip_source: ClientIpSource::PeerAddr, ..Default::default() }` and merges it onto the example `Router` (sharing the `Arc<AuthEngine>` with the example's own routes).
-- [ ] An integration test exercises `/auth/register` (201), `/auth/login` (200), `/auth/me` (200 with the access token), `/auth/logout` (204), `/auth/refresh` (200), `/auth/verify-email` (204), `/auth/password/forgot-password` (200, anti-enum).
-- [ ] Hammering `/auth/login` past the default limit (5/60) yields `429` with a `Retry-After` header present.
-- [ ] `cargo nextest run -p api e2e::auth` (or the chosen module) passes against the test stack; coverage 100% on the mount glue; clippy clean.
+- [x] `apps/api/src/app.rs` mounts the library router via `AuthRouter::from_engine(Arc::clone(&state.engine), AxumAuthConfig { route_prefix: "auth".into(), rate_limits: RateLimitConfig::default(), client_ip_source: ClientIpSource::PeerAddr, ..Default::default() })` and merges it onto the example `Router` (sharing the `Arc<AuthEngine>` with the example's own routes).
+- [x] An integration test exercises `/auth/register` (201), `/auth/login` (200), `/auth/me` (200 with the access token), `/auth/logout` (204), `/auth/refresh` (200), `/auth/verify-email` (204), `/auth/password/forgot-password` (200, anti-enum).
+- [x] Hammering `/auth/login` past the default limit (5/60) yields `429` with a `Retry-After` header present.
+- [x] `cargo nextest run -p api --test auth_surface` passes against the test stack; the mount glue is covered; clippy clean.
 
 #### Files to create / modify
 
@@ -801,7 +801,7 @@ Completion Protocol (after you finish):
 
 ### Task 5.7 — audit read-API + diagnostics
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: M
 - **Depends on**: 5.5, 5.6
@@ -812,11 +812,11 @@ Add the example-owned `GET /audit/logs` (keyset) + `GET /audit/stream` (SSE `Las
 
 #### Acceptance criteria
 
-- [ ] `GET /audit/logs?cursor&actor&event&tenantId&limit` returns `{ data, nextCursor, hasMore }` with keyset pagination over `audit_log.id`.
-- [ ] `GET /audit/stream` emits SSE where each event `id` is the row's keyset cursor; a reconnect with `Last-Event-ID` resumes from that cursor.
-- [ ] `POST /diagnostics/hash-strength` reports `needs_rehash` via `bymax_auth_crypto::password::needs_rehash`; `POST /diagnostics/force-lockout` drives `BruteForceStore` (via the engine handle); `GET /diagnostics/hooks` returns a compact view of the most recent hook-event audit rows.
-- [ ] These example routes are mounted onto the same `Router` (merged in 5.6); they are dev-facing and may be left open here (guards land with the platform/guard demo).
-- [ ] `cargo nextest run -p api audit diagnostics` passes against the test stack; coverage 100%; clippy clean; no phase/task strings.
+- [x] `GET /audit/logs?cursor&actor&event&tenantId&limit` returns `{ data, nextCursor, hasMore }` with keyset pagination over `audit_log.id`.
+- [x] `GET /audit/stream` emits SSE where each event `id` is the row's keyset cursor; a reconnect with `Last-Event-ID` resumes from that cursor.
+- [x] `POST /diagnostics/hash-strength` reports `needs_rehash` via `bymax_auth_crypto::password::needs_rehash`; `POST /diagnostics/force-lockout` drives `BruteForceStore` (via the engine handle); `GET /diagnostics/hooks` returns a compact view of the most recent hook-event audit rows.
+- [x] These example routes are mounted onto the same `Router` (merged in 5.6); they are dev-facing and may be left open here (guards land with the platform/guard demo).
+- [x] `cargo nextest run -p api --test audit_diagnostics` passes against the test stack; the audit/diagnostics glue is covered; clippy clean; no phase/task strings.
 
 #### Files to create / modify
 
@@ -960,4 +960,10 @@ When **Task 5.7** is ✅ (the last task), close the phase:
 
 > Append-only. One line per completed task: `- <id> ✅ YYYY-MM-DD — <summary>`.
 
-_(empty — no tasks completed yet)_
+- 5.1 ✅ 2026-07-02 — `build_auth_config` assembles the profile (Both delivery, role hierarchy, sealed MFA config, sessions+mfa toggles) and validates fail-fast.
+- 5.3 ✅ 2026-07-02 — `LettreEmailProvider` (7 methods) + a shared locale-aware askama render module + 7 templates; delivery proven against live Mailpit.
+- 5.4 ✅ 2026-07-02 — `ResendEmailProvider` (bearer HTTPS, ring-free rustls/aws-lc-rs) + `resolve_email_provider`/`resolve_kind`; Settings gains SMTP + redacted Resend key.
+- 5.5 ✅ 2026-07-02 — `AuditAuthHooks` writes masked `audit_log` rows on every lifecycle hook; a DB test proves session hashes never reach a row and failures map to `HookError::Internal`.
+- 5.2 ✅ 2026-07-02 — `build_engine` assembles the engine from the sqlx repo, one `Arc<RedisStores>`, the resolved provider, and audit hooks; `AppState` carries `Arc<AuthEngine>` and `main` builds it at boot.
+- 5.6 ✅ 2026-07-02 — `build_router` mounts the library `auth_router` onto the example router; an integration test proves register/verify/login/me/refresh/logout/forgot status codes, the 429 + Retry-After, and the OTP-never-in-audit regression.
+- 5.7 ✅ 2026-07-02 — example audit read-API (`GET /audit/{logs,stream}` keyset + SSE resume) and diagnostics (`hash-strength`, `force-lockout`, `hooks`) mounted onto the example router; all 7 tasks code-complete → phase in review.

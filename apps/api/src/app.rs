@@ -1,82 +1,111 @@
 //! Shared application state and the router composition seam.
 //!
-//! [`AppState`] is the cheaply-cloneable bundle of handles every request needs;
-//! [`build_router`] merges the example's own route groups into a single
-//! [`Router`]. Later layers attach the Redis store handle and the wired
-//! authentication engine to the state as those subsystems are introduced, and
-//! mount their route groups onto the value returned here.
+//! [`AppState`] is the cheaply-cloneable bundle of handles every request needs — the
+//! Postgres pool, the shared Redis store handle, and the fully-wired `AuthEngine`.
+//! [`build_router`] mounts the library auth surface (derived from the engine's
+//! controller toggles) and merges the example's own domain routes onto one [`Router`].
 
 use std::sync::Arc;
 
 use axum::Router;
-use bymax_auth_core::traits::repository::{PlatformUserRepository, UserRepository};
+use bymax_auth_axum::{AuthRouter, AxumAuthConfig, ClientIpSource, RateLimitConfig};
+use bymax_auth_core::AuthEngine;
 use bymax_auth_redis::RedisStores;
 use sqlx::PgPool;
 
-use crate::repository::platform_user::SqlxPlatformUserRepository;
-use crate::repository::user::SqlxUserRepository;
+use crate::config::RuntimeEnvironment;
 
 /// Shared, cheaply-cloneable handles every request needs.
 ///
-/// The wired authentication engine is attached to this struct as the engine layer
-/// is introduced; today it carries the running crate version for the health probe,
-/// the shared Postgres pool, and the shared Redis store handle. Cloning is a
-/// pointer-cheap operation (the pool clone and the `Arc` clone are handle copies),
+/// It carries the running crate version for the health probe, the shared Postgres
+/// pool the example's own routes query, the shared Redis store handle, and the
+/// fully-wired [`AuthEngine`] the example's routes reach for server-only primitives.
+/// Cloning is pointer-cheap (the pool clone and the `Arc` clones are handle copies),
 /// so the state is duplicated freely per request.
 #[derive(Clone)]
 pub struct AppState {
     /// The running crate version, surfaced by the health probe.
     pub version: &'static str,
-    /// The shared Postgres connection pool the repositories draw from.
+    /// Deployment environment; controls which route groups mount at startup.
+    pub app_env: RuntimeEnvironment,
+    /// The shared Postgres connection pool the example's own routes draw from.
     pub pool: PgPool,
     /// The shared Redis store handle backing every store seam of the engine.
     pub stores: Arc<RedisStores>,
-    /// The dashboard user persistence seam, ready for the engine builder.
-    pub user_repository: Arc<dyn UserRepository>,
-    /// The tenant-less platform-admin persistence seam. Held unconditionally; the
-    /// engine layer wires it only when the platform domain is enabled.
-    pub platform_user_repository: Arc<dyn PlatformUserRepository>,
+    /// The fully-wired authentication engine, shared with the mounted auth router.
+    pub engine: Arc<AuthEngine>,
 }
 
 impl AppState {
-    /// Build the state from the connected handles and compile-time metadata.
-    ///
-    /// The dashboard [`UserRepository`] is constructed over a clone of the pool so
-    /// the engine layer can consume it as an `Arc<dyn UserRepository>` seam.
+    /// Build the state from the connected handles, the wired engine, compile-time
+    /// metadata, and the deployment environment.
     #[must_use]
-    pub fn new(pool: PgPool, stores: Arc<RedisStores>) -> Self {
-        let user_repository = Arc::new(SqlxUserRepository::new(pool.clone()));
-        let platform_user_repository = Arc::new(SqlxPlatformUserRepository::new(pool.clone()));
+    pub fn new(
+        pool: PgPool,
+        stores: Arc<RedisStores>,
+        engine: Arc<AuthEngine>,
+        app_env: RuntimeEnvironment,
+    ) -> Self {
         Self {
             version: env!("CARGO_PKG_VERSION"),
+            app_env,
             pool,
             stores,
-            user_repository,
-            platform_user_repository,
+            engine,
         }
     }
 }
 
-/// Compose the example's own router.
+/// Compose the full example `Router`: the mounted library auth surface plus the
+/// example's own domain routes, sharing one `Arc<AuthEngine>`.
 ///
-/// Later layers merge their route groups and the mounted authentication router
-/// onto the value returned here before the global middleware stack wraps it.
+/// The library router is derived from the engine's resolved `ControllerToggles`, so
+/// only the enabled groups (`auth`, `password_reset`, `sessions`, `mfa`) mount. The
+/// example's own routes are merged onto the same value before the global middleware
+/// stack wraps it.
 pub fn build_router(state: AppState) -> Router {
-    Router::new()
-        .merge(crate::routes::health::routes())
-        .with_state(state)
+    let auth = AuthRouter::from_engine(
+        Arc::clone(&state.engine),
+        AxumAuthConfig {
+            route_prefix: "auth".to_owned(),
+            rate_limits: RateLimitConfig::default(),
+            client_ip_source: ClientIpSource::PeerAddr,
+            ..Default::default()
+        },
+    )
+    .into_router();
+
+    example_routes(state.app_env).with_state(state).merge(auth)
+}
+
+/// The example's own domain routes.
+///
+/// The audit read-API (`/audit/*`) and diagnostics surface (`/diagnostics/*`) are
+/// development-only: they expose the full audit trail unauthenticated and allow
+/// force-locking any account, so they must not be reachable in production.
+/// Only the health probe mounts unconditionally.
+fn example_routes(app_env: RuntimeEnvironment) -> Router<AppState> {
+    let mut router = Router::new().merge(crate::routes::health::routes());
+    if app_env == RuntimeEnvironment::Development {
+        router = router
+            .merge(crate::audit::router())
+            .merge(crate::diagnostics::router());
+    }
+    router
 }
 
 #[cfg(test)]
 impl AppState {
-    /// Build a state with a lazy, non-connecting pool for unit tests.
+    /// Build a state with lazy, non-connecting handles and a fully-wired engine for
+    /// unit tests.
     ///
-    /// `connect_lazy` constructs the pool without any I/O, so unit tests exercise
-    /// the router and handlers without a live database.
+    /// Every backend handle is lazy (`connect_lazy` / `RedisStores::connect`) and the
+    /// engine builds without I/O, so unit tests exercise the router and handlers
+    /// without any live backend.
     #[allow(
-        // A malformed URL is the only failure mode of `connect_lazy`; the literal
-        // below is well-formed, so the `expect` is unreachable. The workspace-level
-        // `expect_used` denial is relaxed for this test-only constructor.
+        // The literals below are well-formed and every pool/handle is lazy, so the
+        // engine builds infallibly here; the workspace-level `expect_used` denial is
+        // relaxed for this test-only constructor.
         clippy::expect_used
     )]
     pub(crate) fn for_test() -> Self {
@@ -87,7 +116,16 @@ impl AppState {
             "rust_auth_example".to_string(),
         )
         .expect("a well-formed redis url yields an infallible lazy handle");
-        Self::new(pool, stores)
+        let engine = Arc::new(
+            crate::engine::build_engine(
+                &crate::config::dev_settings(),
+                pool.clone(),
+                Arc::clone(&stores),
+                bymax_auth_core::config::Environment::Development,
+            )
+            .expect("the dev settings fixture yields a valid engine"),
+        );
+        Self::new(pool, stores, engine, RuntimeEnvironment::Development)
     }
 }
 
@@ -125,5 +163,33 @@ mod tests {
         // The state reports the compile-time crate version verbatim. This runs in a
         // Tokio context because building the lazy pool requires the runtime.
         assert_eq!(AppState::for_test().version, env!("CARGO_PKG_VERSION"));
+    }
+
+    #[tokio::test]
+    async fn audit_and_diagnostics_are_absent_outside_development() {
+        // In non-Development environments the audit and diagnostics routes must not
+        // mount — every such path resolves to 404, proving they are unreachable in
+        // production without any authentication bypass needed.
+        let mut state = AppState::for_test();
+        state.app_env = RuntimeEnvironment::Production;
+        let router = build_router(state);
+        for uri in [
+            "/audit/logs",
+            "/audit/stream",
+            "/diagnostics/hash-strength",
+            "/diagnostics/force-lockout",
+            "/diagnostics/hooks",
+        ] {
+            let response = router
+                .clone()
+                .oneshot(Request::builder().uri(uri).body(Body::empty()).unwrap())
+                .await
+                .unwrap();
+            assert_eq!(
+                response.status(),
+                StatusCode::NOT_FOUND,
+                "{uri} must be absent outside Development"
+            );
+        }
     }
 }

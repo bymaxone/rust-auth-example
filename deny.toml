@@ -32,6 +32,10 @@ allow = [
     "Unicode-3.0",
     "Zlib",
     "BSL-1.0",
+    # BSD Zero Clause License — a maximally-permissive public-domain-equivalent license
+    # carried by `quoted_printable` (the MIME body encoder behind the lettre SMTP
+    # provider). Server-only; never on the wasm edge path.
+    "0BSD",
     # Community Data License Agreement Permissive 2.0 — a permissive, non-copyleft
     # data license carried by `webpki-roots` (Mozilla's trusted CA bundle behind the
     # sqlx rustls TLS root store). Server-only; never on the wasm edge path.
@@ -56,6 +60,7 @@ deny = [
 skip = [
     { crate = "hashbrown@0.17.1", reason = "sqlx-core → indexmap 2.x; server-only persistence dep." },
     { crate = "windows-sys@0.48.0", reason = "sqlx-postgres → etcetera home-dir lookup; server-only, Windows-only leaf." },
+    { crate = "webpki-roots@0.26.11", reason = "sqlx-core's rustls root store; the reqwest Resend TLS stack pulls webpki-roots 1.x. Both server-only, never on the wasm edge path." },
 ]
 # The rate-limiter and WebSocket transport bring their own `rand`/`getrandom`/
 # `hashbrown` majors and pull `thiserror 1`; skipping their subtrees keeps the

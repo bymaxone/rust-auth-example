@@ -61,6 +61,11 @@ pub fn apply_global_layers(router: Router, settings: &Settings) -> Result<Router
             header::REFERRER_POLICY,
             HeaderValue::from_static("no-referrer"),
         ))
+        // Ignored by browsers over plain HTTP; enforces HTTPS once served behind TLS.
+        .layer(SetResponseHeaderLayer::overriding(
+            header::STRICT_TRANSPORT_SECURITY,
+            HeaderValue::from_static("max-age=63072000; includeSubDomains"),
+        ))
         .layer(SetResponseHeaderLayer::overriding(
             HeaderName::from_static("x-frame-options"),
             HeaderValue::from_static("DENY"),
@@ -82,10 +87,11 @@ pub fn apply_global_layers(router: Router, settings: &Settings) -> Result<Router
 )]
 mod tests {
     use super::*;
-    use crate::config::EmailProviderKind;
+    use crate::config::{EmailProviderKind, RuntimeEnvironment};
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
     use axum::routing::get;
+    use secrecy::SecretString;
     use tower::ServiceExt as _;
 
     /// The origin the browser sends on every dashboard request in these tests.
@@ -95,14 +101,21 @@ mod tests {
     fn settings(web_origin: &str) -> Settings {
         Settings {
             api_port: 4000,
+            app_env: RuntimeEnvironment::Development,
             log_level: "info".to_string(),
             database_url: "postgres://localhost/example".to_string(),
             redis_url: "redis://localhost:6379".to_string(),
             redis_namespace: "rust_auth_example".to_string(),
-            jwt_secret: "x".repeat(64),
-            mfa_encryption_key: "ZGV2X29ubHlfbG9jYWxfMzJfYnl0ZV9rZXlfMDAwMDA=".to_string(),
+            jwt_secret: SecretString::from("x".repeat(64)),
+            mfa_encryption_key: SecretString::from(
+                "ZGV2X29ubHlfbG9jYWxfMzJfYnl0ZV9rZXlfMDAwMDA=".to_string(),
+            ),
             web_origin: web_origin.to_string(),
             email_provider: EmailProviderKind::Mailpit,
+            smtp_host: "localhost".to_string(),
+            smtp_port: 1025,
+            smtp_from: "no-reply@auth.local".to_string(),
+            resend_api_key: None,
         }
     }
 
@@ -184,6 +197,12 @@ mod tests {
                 .get(header::REFERRER_POLICY)
                 .and_then(|v| v.to_str().ok()),
             Some("no-referrer")
+        );
+        assert!(
+            headers
+                .get(header::STRICT_TRANSPORT_SECURITY)
+                .and_then(|v| v.to_str().ok())
+                .is_some_and(|v| v.contains("max-age="))
         );
     }
 

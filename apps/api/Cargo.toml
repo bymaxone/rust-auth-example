@@ -16,20 +16,52 @@ bymax-auth-core   = { path = "../../../rust-auth/crates/bymax-auth-core",   vers
 bymax-auth-crypto = { path = "../../../rust-auth/crates/bymax-auth-crypto", version = "0.0.0", features = ["scrypt"] }
 bymax-auth-redis  = { path = "../../../rust-auth/crates/bymax-auth-redis",  version = "0.0.0", features = ["mfa", "oauth", "platform"] }
 bymax-auth-types  = { path = "../../../rust-auth/crates/bymax-auth-types",  version = "0.0.0" }
+# Generates the `Stream` backing the audit SSE tail with async/await syntax.
+async-stream = "0.3"
 # The repository traits (`UserRepository`, `PlatformUserRepository`) are `#[async_trait]`.
 async-trait = "0.1"
+# Compile-time HTML templating for the transactional emails; `.html` files auto-escape.
+askama = "0.13"
 axum = "0.8"
 base64 = "0.22"
+# The SMTP `EmailProvider` transport. Plaintext to Mailpit locally — no TLS backend is
+# selected, keeping the banned `openssl`/`ring` crates off the graph.
+lettre = { version = "0.11", default-features = false, features = [
+    "builder",
+    "smtp-transport",
+    "tokio1",
+] }
 figment = { version = "0.10", features = ["env"] }
+# The `Stream` trait named in the audit SSE handler's return type.
+futures-core = "0.3"
+# The Resend HTTPS transport. `default-features = false` + the `-no-provider` rustls
+# feature keep the banned `ring` crate off the graph; the rustls `aws-lc-rs` provider
+# already resolved by the sqlx TLS stack supplies the process-default crypto backend.
+reqwest = { version = "0.12", default-features = false, features = [
+    "json",
+    "rustls-tls-webpki-roots-no-provider",
+] }
+# Installs the `aws-lc-rs` rustls crypto provider as the process default so the
+# `-no-provider` reqwest TLS backend has a ring-free provider to build its config from.
+# The same rustls version is already resolved by the sqlx TLS stack.
+rustls = { version = "0.23", default-features = false, features = ["aws_lc_rs"] }
+# Wraps the HS256 signing secret / MFA key / Resend API key as redacting, zeroizing
+# `SecretString`s, matching the library's `JwtConfig::secret`/`MfaConfig::encryption_key`
+# types. The `serde` feature lets figment deserialize the secrets straight into the
+# protected type so plaintext never lives in an unprotected `String`.
+secrecy = { version = "0.10", features = ["serde"] }
 serde = { version = "1", features = ["derive"] }
+# Builds the Resend request body and serializes the audit read-API responses.
+serde_json = "1"
 # `tls-rustls-aws-lc-rs` keeps the rustls backend free of `ring`, which deny.toml
 # bans. `macros` enables the compile-checked `query!`/`query_as!` the repositories
 # use; `time` maps `TIMESTAMPTZ` onto `time::OffsetDateTime` to match the domain
 # records; `migrate` supports the schema-migration tooling.
 sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "tls-rustls-aws-lc-rs", "postgres", "macros", "migrate", "time"] }
 thiserror = "2"
-# `TIMESTAMPTZ` columns decode to `time::OffsetDateTime`, matching the domain records.
-time = { version = "0.3", default-features = false }
+# `TIMESTAMPTZ` columns decode to `time::OffsetDateTime`, matching the domain records;
+# `formatting` renders the audit read-API timestamps as RFC 3339 strings.
+time = { version = "0.3", default-features = false, features = ["formatting"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal", "net"] }
 tower = { version = "0.5", default-features = false }
 tower-http = { version = "0.6", features = ["cors", "trace", "limit", "set-header"] }
@@ -39,8 +71,12 @@ tracing-subscriber = { version = "0.3", features = ["json", "env-filter"] }
 [dev-dependencies]
 figment = { version = "0.10", features = ["env", "test"] }
 http-body-util = "0.1"
-serde_json = "1"
 tower = { version = "0.5", default-features = false, features = ["util"] }
+
+[features]
+# Switch the password hasher to Argon2id (the hardened `secure_defaults` profile)
+# instead of the default scrypt; forwarded to the library crates that own the KDF.
+argon2 = ["bymax-auth-core/argon2", "bymax-auth-crypto/argon2"]
 
 [lints]
 workspace = true

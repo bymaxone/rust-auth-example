@@ -20,6 +20,7 @@ use figment::{
     Figment,
     providers::{Env, Serialized},
 };
+use secrecy::{ExposeSecret as _, SecretString};
 use serde::{Deserialize, Serialize};
 
 /// The transport selected for outbound transactional email.
@@ -32,12 +33,41 @@ pub enum EmailProviderKind {
     Resend,
 }
 
+/// The deployment environment, mapped onto the library's `Environment` at startup.
+///
+/// It drives the library's production-only guards (secure cookies, redirect https
+/// checks). Defaults to `development` for the local-first reference stack; a real
+/// deployment sets `APP_ENV=production`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum RuntimeEnvironment {
+    /// A development deployment (the local default).
+    #[default]
+    Development,
+    /// A production deployment.
+    Production,
+    /// A test deployment.
+    Test,
+}
+
+impl RuntimeEnvironment {
+    /// Map onto the library's [`bymax_auth_core::config::Environment`].
+    #[must_use]
+    pub fn as_core(self) -> bymax_auth_core::config::Environment {
+        use bymax_auth_core::config::Environment;
+        match self {
+            Self::Development => Environment::Development,
+            Self::Production => Environment::Production,
+            Self::Test => Environment::Test,
+        }
+    }
+}
+
 /// The fully validated runtime configuration for `apps/api`.
 ///
-/// Models the configuration variables the current API surface needs. Variables
-/// used by later phases (SMTP host/port, OAuth credentials, `DATABASE_URL_TEST`,
-/// `RESEND_API_KEY`) are absent here by design and will be added when those
-/// phases wire their respective subsystems.
+/// Bundles the server, datastore, JWT/MFA, email-transport, and CORS settings the
+/// service needs at boot. `DATABASE_URL_TEST` is a test-only override read directly by
+/// the integration tests and is deliberately not modelled here.
 ///
 /// Constructed exclusively by [`Settings::load`]; do not build this struct
 /// directly in production code.
@@ -49,10 +79,12 @@ pub enum EmailProviderKind {
 pub struct Settings {
     /// TCP port the axum server binds (`API_PORT`, default `4000`).
     pub api_port: u16,
+    /// Deployment environment (`APP_ENV`, default `development`).
+    pub app_env: RuntimeEnvironment,
     /// Settings-level log filter default (`LOG_LEVEL`, default `info`).
     ///
-    /// `RUST_LOG` is consumed directly by the tracing `EnvFilter` when logging
-    /// is wired in a later phase; it is not a `Settings` field.
+    /// `RUST_LOG` is consumed directly by the tracing `EnvFilter`; it is not a
+    /// `Settings` field.
     pub log_level: String,
     /// sqlx Postgres connection string (`DATABASE_URL`).
     pub database_url: String,
@@ -60,14 +92,25 @@ pub struct Settings {
     pub redis_url: String,
     /// Store key namespace (`REDIS_NAMESPACE`, default `rust_auth_example`).
     pub redis_namespace: String,
-    /// HS256 signing secret (`JWT_SECRET`); validated `>= 64` bytes.
-    pub jwt_secret: String,
-    /// base64-encoded 32-byte AES-256-GCM key (`MFA_ENCRYPTION_KEY`).
-    pub mfa_encryption_key: String,
+    /// HS256 signing secret (`JWT_SECRET`); validated `>= 64` bytes. Zeroized on drop.
+    pub jwt_secret: SecretString,
+    /// base64-encoded 32-byte AES-256-GCM key (`MFA_ENCRYPTION_KEY`). Zeroized on drop.
+    pub mfa_encryption_key: SecretString,
     /// CORS allow-origin (`WEB_ORIGIN`, default `http://localhost:3000`).
     pub web_origin: String,
     /// Outbound email transport (`EMAIL_PROVIDER`, default `mailpit`).
     pub email_provider: EmailProviderKind,
+    /// SMTP relay host for the lettre provider (`SMTP_HOST`, default `localhost`).
+    pub smtp_host: String,
+    /// SMTP relay port (`SMTP_PORT`, default `1025`, the Mailpit listener).
+    pub smtp_port: u16,
+    /// `From` mailbox for outbound mail (`SMTP_FROM`, default `no-reply@auth.local`).
+    pub smtp_from: String,
+    /// Resend API key (`RESEND_API_KEY`); required when `EMAIL_PROVIDER=resend`,
+    /// ignored otherwise.
+    ///
+    /// A secret: redacted in [`Debug`] and zeroized on drop.
+    pub resend_api_key: Option<SecretString>,
 }
 
 /// Redacts secrets so the struct can be safely printed in logs.
@@ -84,6 +127,7 @@ impl fmt::Debug for Settings {
         let redis_hint = format!("[REDACTED {} bytes]", self.redis_url.len());
         f.debug_struct("Settings")
             .field("api_port", &self.api_port)
+            .field("app_env", &self.app_env)
             .field("log_level", &self.log_level)
             .field("database_url", &db_hint)
             .field("redis_url", &redis_hint)
@@ -92,6 +136,14 @@ impl fmt::Debug for Settings {
             .field("mfa_encryption_key", &"[REDACTED]")
             .field("web_origin", &self.web_origin)
             .field("email_provider", &self.email_provider)
+            .field("smtp_host", &self.smtp_host)
+            .field("smtp_port", &self.smtp_port)
+            .field("smtp_from", &self.smtp_from)
+            // Reveal only presence, never the key material.
+            .field(
+                "resend_api_key",
+                &self.resend_api_key.as_ref().map(|_| "[REDACTED]"),
+            )
             .finish()
     }
 }
@@ -100,20 +152,28 @@ impl fmt::Debug for Settings {
 #[derive(Serialize)]
 struct Defaults {
     api_port: u16,
+    app_env: RuntimeEnvironment,
     log_level: String,
     redis_namespace: String,
     web_origin: String,
     email_provider: EmailProviderKind,
+    smtp_host: String,
+    smtp_port: u16,
+    smtp_from: String,
 }
 
 impl Default for Defaults {
     fn default() -> Self {
         Self {
             api_port: 4000,
+            app_env: RuntimeEnvironment::Development,
             log_level: "info".to_string(),
             redis_namespace: "rust_auth_example".to_string(),
             web_origin: "http://localhost:3000".to_string(),
             email_provider: EmailProviderKind::Mailpit,
+            smtp_host: "localhost".to_string(),
+            smtp_port: 1025,
+            smtp_from: "no-reply@auth.local".to_string(),
         }
     }
 }
@@ -139,6 +199,9 @@ pub enum ConfigError {
     /// `MFA_ENCRYPTION_KEY` is not valid base64 or does not decode to exactly 32 bytes.
     #[error("MFA_ENCRYPTION_KEY must be base64-encoded 32 bytes (AES-256-GCM key)")]
     MfaKeyInvalid,
+    /// `EMAIL_PROVIDER` is `resend` but `RESEND_API_KEY` is absent.
+    #[error("`EMAIL_PROVIDER` is `resend` but `RESEND_API_KEY` is not configured")]
+    ResendKeyMissing,
 }
 
 impl From<figment::Error> for ConfigError {
@@ -192,20 +255,52 @@ impl Settings {
 
     /// Enforce the hard guards on secret fields after a successful extraction.
     fn validate(&self) -> Result<(), ConfigError> {
-        if self.jwt_secret.len() < Self::JWT_SECRET_MIN_LEN {
+        if self.jwt_secret.expose_secret().len() < Self::JWT_SECRET_MIN_LEN {
             return Err(ConfigError::JwtSecretTooShort {
-                got: self.jwt_secret.len(),
+                got: self.jwt_secret.expose_secret().len(),
             });
         }
         let decoded = base64::engine::general_purpose::STANDARD
-            .decode(self.mfa_encryption_key.as_bytes())
+            .decode(self.mfa_encryption_key.expose_secret().as_bytes())
             .map_err(|_| ConfigError::MfaKeyInvalid)?;
         if decoded.len() != Self::MFA_KEY_LEN {
             return Err(ConfigError::MfaKeyInvalid);
         }
+        if self.email_provider == EmailProviderKind::Resend && self.resend_api_key.is_none() {
+            return Err(ConfigError::ResendKeyMissing);
+        }
         Ok(())
     }
 }
+
+/// A well-formed development [`Settings`] fixture, shared by the crate's unit tests
+/// that need a validated configuration (the engine builder and the app state).
+#[cfg(test)]
+pub(crate) fn dev_settings() -> Settings {
+    Settings {
+        api_port: 4000,
+        app_env: RuntimeEnvironment::Development,
+        log_level: "info".to_owned(),
+        database_url: "postgres://postgres:postgres@localhost:5432/example_app".to_owned(),
+        redis_url: "redis://127.0.0.1:6379".to_owned(),
+        redis_namespace: "rust_auth_example".to_owned(),
+        jwt_secret: SecretString::from(DEV_FIXTURE_JWT.to_owned()),
+        mfa_encryption_key: SecretString::from(
+            "ZGV2X29ubHlfbG9jYWxfMzJfYnl0ZV9rZXlfMDAwMDA=".to_owned(),
+        ),
+        web_origin: "http://localhost:3000".to_owned(),
+        email_provider: EmailProviderKind::Mailpit,
+        smtp_host: "localhost".to_owned(),
+        smtp_port: 1025,
+        smtp_from: "no-reply@auth.local".to_owned(),
+        resend_api_key: None,
+    }
+}
+
+/// A high-entropy, mixed-alphabet JWT fixture that clears the length + entropy guards
+/// (dev-only, never a real secret).
+#[cfg(test)]
+const DEV_FIXTURE_JWT: &str = "aB3xY7zQ9kL2mN5pR8tV1wF4hJ6dS0gC7uE2iO5aZ4bH8nK1qW6mD9fT2vX5cP8b";
 
 #[cfg(test)]
 #[allow(
@@ -238,6 +333,26 @@ mod tests {
     }
 
     #[test]
+    fn runtime_environment_maps_onto_the_library_environment() {
+        // Every runtime environment maps onto its library counterpart, and the default
+        // is the local-first development environment.
+        use bymax_auth_core::config::Environment;
+        assert_eq!(
+            RuntimeEnvironment::Development.as_core(),
+            Environment::Development
+        );
+        assert_eq!(
+            RuntimeEnvironment::Production.as_core(),
+            Environment::Production
+        );
+        assert_eq!(RuntimeEnvironment::Test.as_core(), Environment::Test);
+        assert_eq!(
+            RuntimeEnvironment::default(),
+            RuntimeEnvironment::Development
+        );
+    }
+
+    #[test]
     fn loads_a_valid_environment() {
         figment::Jail::expect_with(|jail| {
             seed(jail);
@@ -258,8 +373,44 @@ mod tests {
         figment::Jail::expect_with(|jail| {
             seed(jail);
             jail.set_env("EMAIL_PROVIDER", "resend");
-            let settings = Settings::load().expect("resend provider must load");
+            jail.set_env("RESEND_API_KEY", "re_test_key");
+            let settings = Settings::load().expect("resend provider with key must load");
             assert_eq!(settings.email_provider, EmailProviderKind::Resend);
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn rejects_resend_provider_without_key() {
+        figment::Jail::expect_with(|jail| {
+            seed(jail);
+            jail.set_env("EMAIL_PROVIDER", "resend");
+            // No RESEND_API_KEY set — must refuse to boot.
+            let err = Settings::load().expect_err("resend without key must be rejected");
+            assert!(matches!(err, ConfigError::ResendKeyMissing));
+            let msg = err.to_string();
+            assert!(msg.contains("RESEND_API_KEY"));
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn smtp_defaults_apply_and_the_resend_key_is_redacted() {
+        figment::Jail::expect_with(|jail| {
+            seed(jail);
+            jail.set_env("RESEND_API_KEY", "re_test_secret_value");
+            let settings = Settings::load().expect("valid env with a resend key must load");
+            assert_eq!(settings.smtp_host, "localhost");
+            assert_eq!(settings.smtp_port, 1025);
+            assert_eq!(settings.smtp_from, "no-reply@auth.local");
+            assert_eq!(
+                settings.resend_api_key.as_ref().map(|k| k.expose_secret()),
+                Some("re_test_secret_value")
+            );
+            // The key value is present but never rendered in the debug output.
+            let debug = format!("{settings:?}");
+            assert!(debug.contains("[REDACTED]"));
+            assert!(!debug.contains("re_test_secret_value"));
             Ok(())
         });
     }
