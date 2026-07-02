@@ -1,6 +1,6 @@
 # Phase 7 — Platform Domain & WebSocket
 
-> **Status**: 🔄 In Progress · **Progress**: 3 / 5 tasks · **Last updated**: 2026-07-02
+> **Status**: 🔄 In Progress · **Progress**: 4 / 5 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P7
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -50,7 +50,7 @@ When P7 is done, `cargo nextest run -p api platform` and `cargo nextest run -p a
 | 7.1 | Platform domain wiring + cross-domain token isolation | ✅ Done | P0 | M | — |
 | 7.2 | Platform MFA fail-closed | ✅ Done | P0 | M | 7.1 |
 | 7.3 | `ws-ticket` mint + example WebSocket endpoint | ✅ Done | P1 | M | — |
-| 7.4 | Diagnostics primitives (hash-strength · lockout · hook log) | 📋 ToDo | P1 | M | — |
+| 7.4 | Diagnostics primitives (hash-strength · lockout · hook log) | ✅ Done | P1 | M | — |
 | 7.5 | Guard demo + e2e on `/audit` & `/diagnostics` | 📋 ToDo | P1 | M | 7.1, 7.3 |
 
 ---
@@ -411,7 +411,7 @@ Completion Protocol (after you finish):
 
 ### Task 7.4 — Diagnostics primitives (hash-strength · lockout · hook log)
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: M
 - **Depends on**: —
@@ -422,11 +422,11 @@ Build the example-owned diagnostics surface for the server-only primitives that 
 
 #### Acceptance criteria
 
-- [ ] `GET /diagnostics/hash-strength` reports whether a PHC hash is stale for the engine's current `PasswordParams` (`password::needs_rehash`) — returns a boolean/verdict, never the hash itself.
-- [ ] `POST /diagnostics/force-lockout` drives `BruteForceStore::record_failure` until `is_locked` is true, then reports `remaining_lockout_secs` as a countdown; `reset` clears it.
-- [ ] `GET /diagnostics/hooks` returns the `AuditAuthHooks` event log (event name + actor + timestamp, sourced from `SafeAuthUser`/`HookContext`) and is asserted to contain no token/OTP/secret.
-- [ ] All three endpoints map errors through the example's typed error → the library envelope; no internal string leaks.
-- [ ] 100% coverage on the diagnostics module; static gates clean.
+- [x] `/diagnostics/hash-strength` reports whether a PHC hash is stale for the current `PasswordParams` (`password::needs_rehash`) — returns a `needsRehash` verdict, never the hash itself (a `POST` body carries the PHC so it never lands in a URL/log).
+- [x] `POST /diagnostics/force-lockout` drives `BruteForceStore::record_failure` until `is_locked` is true, then reports `remainingLockoutSecs` as a countdown; `POST /diagnostics/reset-lockout` clears it.
+- [x] `GET /diagnostics/hooks` returns the `AuditAuthHooks` event log (event name + actor + timestamp) and is asserted to expose only masked fields — no token/OTP/secret (a projection over safe columns; the emailed OTP never appears).
+- [x] All endpoints map errors through the example's typed `AppError` → the library envelope; no internal string leaks.
+- [x] 100% coverage on the diagnostics module; static gates clean.
 
 #### Files to create / modify
 
@@ -654,3 +654,4 @@ Run this closeout when the **last task (7.5)** is ✅:
 - 7.1 ✅ 2026-07-02 — Enabled the platform domain (config flag + controller toggle + platform role hierarchy), wired the `SqlxPlatformUserRepository` seam into the builder, and proved the five `/auth/platform/*` routes plus dashboard↔platform token isolation (both directions, engine seam + HTTP).
 - 7.2 ✅ 2026-07-02 — Proved the platform MFA journey (setup → verify-enable → re-login challenge → `MfaContext::Platform` challenge issuing a tenant-less `PlatformAuthResult`), the disable/recovery-codes routes, and the fail-closed default (an MFA-enabled admin refused when the deployment has no MFA surface).
 - 7.3 ✅ 2026-07-02 — Added the example `GET /ws/example` endpoint that redeems the single-use ticket via `redeem_ws_ticket` (the consumer-legal equivalent of `WsAuthUser`, since the library exposes no public `AuthState` constructor to host an extractor-typed route). Proved the mounted `POST /auth/ws-ticket` mint, the once-only redeem/replay, and a real `tokio-tungstenite` upgrade that rejects absent/invalid/replayed tickets — the JWT never in the URL.
+- 7.4 ✅ 2026-07-02 — Extended the diagnostics surface: `force-lockout` now reports the `remainingLockoutSecs` countdown and a new `reset-lockout` clears it; added a masked-fields-only assertion on the hook log (safe projection, no token/OTP/secret). Hash-strength and the hook log already surfaced effects, never secrets.

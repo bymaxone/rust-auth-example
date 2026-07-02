@@ -21,5 +21,6 @@ pub fn router() -> Router<AppState> {
     Router::new()
         .route("/diagnostics/hash-strength", post(routes::hash_strength))
         .route("/diagnostics/force-lockout", post(routes::force_lockout))
+        .route("/diagnostics/reset-lockout", post(routes::reset_lockout))
         .route("/diagnostics/hooks", get(routes::recent_hooks))
 }

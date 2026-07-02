@@ -181,6 +181,7 @@ mod tests {
             "/audit/stream",
             "/diagnostics/hash-strength",
             "/diagnostics/force-lockout",
+            "/diagnostics/reset-lockout",
             "/diagnostics/hooks",
         ] {
             let response = router

@@ -56,12 +56,15 @@ pub struct ForceLockoutResponse {
     pub locked: bool,
     /// The failure count recorded on the final attempt.
     pub attempts: i64,
+    /// Seconds remaining on the lockout — the countdown a login form would surface. Zero
+    /// when the identifier is not locked.
+    pub remaining_lockout_secs: u64,
 }
 
 /// `POST /diagnostics/force-lockout` — records failures until the identifier locks.
 ///
 /// Drives the engine's `BruteForceStore` with the configured max-attempts and
-/// window, then reports the lockout state.
+/// window, then reports the lockout state and the `remaining_lockout_secs` countdown.
 ///
 /// # Errors
 ///
@@ -85,7 +88,35 @@ pub async fn force_lockout(
         }
     }
     let locked = store.is_locked(&request.identifier, max_attempts).await?;
-    Ok(Json(ForceLockoutResponse { locked, attempts }))
+    let remaining_lockout_secs = store.remaining_lockout_secs(&request.identifier).await?;
+    Ok(Json(ForceLockoutResponse {
+        locked,
+        attempts,
+        remaining_lockout_secs,
+    }))
+}
+
+/// The state after clearing a lockout.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ResetLockoutResponse {
+    /// Whether the identifier is locked after the reset (always `false`).
+    pub locked: bool,
+}
+
+/// `POST /diagnostics/reset-lockout` — clears the failure counter for an identifier, so the
+/// lockout countdown returns to zero (the operator-unlock path).
+///
+/// # Errors
+///
+/// Returns [`AppError`] when the store cannot be reached.
+pub async fn reset_lockout(
+    State(state): State<AppState>,
+    Json(request): Json<ForceLockoutRequest>,
+) -> Result<Json<ResetLockoutResponse>, AppError> {
+    let store = state.engine.brute_force_store();
+    store.reset(&request.identifier).await?;
+    Ok(Json(ResetLockoutResponse { locked: false }))
 }
 
 /// `GET /diagnostics/hooks` — the most recent hook-event audit rows (a compact view).
