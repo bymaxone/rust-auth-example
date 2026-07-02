@@ -1,6 +1,6 @@
 # Phase 1 — Local Stack & Environment
 
-> **Status**: 🔄 In Progress · **Progress**: 3 / 5 tasks · **Last updated**: 2026-07-02
+> **Status**: 🔄 In Progress · **Progress**: 4 / 5 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P1
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -83,7 +83,7 @@ axum bootstrap, no routes, no `RedisStores::connect`, and no `AuthEngine` wiring
 | 1.1 | docker-compose dev stack | ✅ Done | P0 | M | — |
 | 1.2 | Test + prod compose | ✅ Done | P1 | S | 1.1 |
 | 1.3 | Init scripts + infra commands | ✅ Done | P1 | S | 1.1 |
-| 1.4 | Environment contract (`.env.example`) | 📋 ToDo | P0 | S | — |
+| 1.4 | Environment contract (`.env.example`) | ✅ Done | P0 | S | — |
 | 1.5 | figment `Settings` loader + validation | 📋 ToDo | P0 | M | 1.4 |
 
 ---
@@ -512,7 +512,7 @@ Completion Protocol (after you finish):
 
 ### Task 1.4 — Environment contract (`.env.example`)
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: S
 - **Depends on**: —
@@ -525,19 +525,19 @@ documented contract the loader validates.
 
 #### Acceptance criteria
 
-- [ ] `.env.example` documents every variable from `OVERVIEW.md §9`, sectioned (shared / docker / api / JWT / email /
+- [x] `.env.example` documents every variable from `OVERVIEW.md §9`, sectioned (shared / docker / api / JWT / email /
   OAuth / web): `API_PORT=4000`, `RUST_LOG`/`LOG_LEVEL`, `POSTGRES_USER`/`POSTGRES_PASSWORD`/`POSTGRES_DB`,
   `DATABASE_URL`, `DATABASE_URL_TEST`, `REDIS_URL`, `REDIS_NAMESPACE`, `JWT_SECRET`, `MFA_ENCRYPTION_KEY`,
   `EMAIL_PROVIDER`, `SMTP_HOST`/`SMTP_PORT`/`SMTP_FROM`, `RESEND_API_KEY`, `OAUTH_GOOGLE_CLIENT_ID`/`_CLIENT_SECRET`/
   `_CALLBACK_URL`, `WEB_ORIGIN`, `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_OAUTH_GOOGLE_ENABLED`, `INTERNAL_API_URL`,
   `AUTH_JWT_SECRET_FOR_PROXY`.
-- [ ] `.env.example` ships a **throwaway dev-only** `JWT_SECRET` of ≥ 64 chars and a base64 32-byte
+- [x] `.env.example` ships a **throwaway dev-only** `JWT_SECRET` of ≥ 64 chars and a base64 32-byte
   `MFA_ENCRYPTION_KEY`, with a comment that these are local-only and must be regenerated for any shared environment; the
   three `OAUTH_GOOGLE_*` lines are commented out (OAuth disabled by default).
-- [ ] `.env.prod.example` lists the same keys with every secret blank and a `# openssl rand -hex 64` /
+- [x] `.env.prod.example` lists the same keys with every secret blank and a `# openssl rand -hex 64` /
   `# openssl rand -base64 32` generation hint; `WEB_ORIGIN`/`DATABASE_URL`/`REDIS_URL` carry `https://`/managed-URL
   guidance.
-- [ ] `.env`, `.env.prod`, `.env.test` are git-ignored (already from P0); only the `*.example` files are committed.
+- [x] `.env`, `.env.prod`, `.env.test` are git-ignored (already from P0); only the `*.example` files are committed.
 
 #### Files to create / modify
 
@@ -905,3 +905,4 @@ If any DoD bullet is unmet or CI is red, set P1 to `🟡 Partial`, not `✅`.
 - 1.1 ✅ 2026-07-02 — docker-compose dev stack (pg + redis + mailpit)
 - 1.2 ✅ 2026-07-02 — test (high-port tmpfs) + prod (GHCR) compose
 - 1.3 ✅ 2026-07-02 — postgres init.sql + redis.conf + infra:up/down
+- 1.4 ✅ 2026-07-02 — .env.example + .env.prod.example (full §9 contract)

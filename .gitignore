@@ -27,10 +27,11 @@ playwright-report/
 blob-report/
 playwright/.cache/
 
-# Environment variables (keep .env.example)
+# Environment variables (keep *.example files; never commit real .env files)
 .env
 .env.*
 !.env.example
+!.env.prod.example
 
 # Logs
 *.log
