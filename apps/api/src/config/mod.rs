@@ -106,7 +106,8 @@ pub struct Settings {
     pub smtp_port: u16,
     /// `From` mailbox for outbound mail (`SMTP_FROM`, default `no-reply@auth.local`).
     pub smtp_from: String,
-    /// Resend API key (`RESEND_API_KEY`); when present, selects the Resend transport.
+    /// Resend API key (`RESEND_API_KEY`); required when `EMAIL_PROVIDER=resend`,
+    /// ignored otherwise.
     ///
     /// A secret: redacted in [`Debug`] and zeroized on drop.
     pub resend_api_key: Option<SecretString>,

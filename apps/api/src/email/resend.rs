@@ -94,7 +94,7 @@ impl EmailProvider for ResendEmailProvider {
         self.deliver(
             email,
             "Reset your password",
-            templates::password_reset_token(token, locale),
+            templates::password_reset_token(token, locale)?,
         )
         .await
     }
@@ -108,7 +108,7 @@ impl EmailProvider for ResendEmailProvider {
         self.deliver(
             email,
             "Reset your password",
-            templates::password_reset_otp(otp, locale),
+            templates::password_reset_otp(otp, locale)?,
         )
         .await
     }
@@ -122,7 +122,7 @@ impl EmailProvider for ResendEmailProvider {
         self.deliver(
             email,
             "Verify your email",
-            templates::verification_otp(otp, locale),
+            templates::verification_otp(otp, locale)?,
         )
         .await
     }
@@ -131,7 +131,7 @@ impl EmailProvider for ResendEmailProvider {
         self.deliver(
             email,
             "Two-factor authentication enabled",
-            templates::mfa_enabled(locale),
+            templates::mfa_enabled(locale)?,
         )
         .await
     }
@@ -140,7 +140,7 @@ impl EmailProvider for ResendEmailProvider {
         self.deliver(
             email,
             "Two-factor authentication disabled",
-            templates::mfa_disabled(locale),
+            templates::mfa_disabled(locale)?,
         )
         .await
     }
@@ -154,7 +154,7 @@ impl EmailProvider for ResendEmailProvider {
         self.deliver(
             email,
             "New sign-in to your account",
-            templates::new_session_alert(session, locale),
+            templates::new_session_alert(session, locale)?,
         )
         .await
     }
@@ -168,7 +168,7 @@ impl EmailProvider for ResendEmailProvider {
         self.deliver(
             email,
             "You have been invited",
-            templates::invitation(invite, locale),
+            templates::invitation(invite, locale)?,
         )
         .await
     }

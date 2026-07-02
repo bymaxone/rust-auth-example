@@ -193,7 +193,7 @@ pub async fn stream_logs(
                 Ok(rows) => rows,
                 Err(error) => {
                     tracing::error!(?error, "audit stream poll failed");
-                    break;
+                    continue;
                 }
             };
             for row in rows {

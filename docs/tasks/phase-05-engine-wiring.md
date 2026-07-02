@@ -11,7 +11,7 @@
 
 Phase 4 delivered the persistence boundary: the Postgres migrations (`users`, `platform_users`, `tenants`, `invitations`, `audit_log`), the offline `.sqlx/` query cache, a `SqlxUserRepository` implementing all 11 `UserRepository` methods, a `SqlxPlatformUserRepository` implementing all 6 `PlatformUserRepository` methods (`Conflict → auth.email_already_exists`, missing row → `Ok(None)`), and the demo seed (`acme`/`globex` tenants + a platform admin). Phase 3 already booted the axum service — `main.rs` + `app.rs` compose a `Router` + `AppState`, a typed `AppError` wraps the library `AuthRejection`, the `PgPool` and `Arc<RedisStores>` resolve, and `tracing` is installed. What is missing is the `AuthEngine` itself and the HTTP auth surface: today nothing calls the repositories the library expects.
 
-This phase wires the engine and lights up the core auth surface. It picks an `AuthConfig` profile and `validate`s it fail-fast (5.1), assembles `AuthEngine::builder()` with real seams — the two sqlx repositories, the one `Arc<RedisStores>` store handle, the example `EmailProvider`, and the audit `AuthHooks` — storing it as `Arc<AuthEngine>` in `AppState` (5.2). It supplies a production-shaped email transport: a `lettre` SMTP provider that renders the 7 transactional templates and delivers to Mailpit (5.3), plus an opt-in `reqwest`/Resend provider and the `resolve_email_provider` selector (5.4). It writes an `AuditAuthHooks` impl that records every lifecycle hook to the `audit_log` table without ever persisting a token/code/secret (5.5). It mounts `bymax_auth_axum::auth_router(engine, AxumAuthConfig{…})` merged onto the example `Router` (5.6). It then adds the example-owned audit read-API (keyset `GET /audit/logs` + SSE `GET /audit/stream`) and the diagnostics endpoints (5.7).
+This phase wires the engine and lights up the core auth surface. It picks an `AuthConfig` profile and `validate`s it fail-fast (5.1), assembles `AuthEngine::builder()` with real seams — the two sqlx repositories, the one `Arc<RedisStores>` store handle, the example `EmailProvider`, and the audit `AuthHooks` — storing it as `Arc<AuthEngine>` in `AppState` (5.2). It supplies a production-shaped email transport: a `lettre` SMTP provider that renders the 7 transactional templates and delivers to Mailpit (5.3), plus a `reqwest`/Resend provider selected when `EMAIL_PROVIDER=resend` (which requires `RESEND_API_KEY`) and the `resolve_email_provider` selector (5.4). It writes an `AuditAuthHooks` impl that records every lifecycle hook to the `audit_log` table without ever persisting a token/code/secret (5.5). It mounts `bymax_auth_axum::auth_router(engine, AxumAuthConfig{…})` merged onto the example `Router` (5.6). It then adds the example-owned audit read-API (keyset `GET /audit/logs` + SSE `GET /audit/stream`) and the diagnostics endpoints (5.7).
 
 When P5 is done, the engine builds via `AuthEngine::builder()`; the mounted `/auth/*` surface answers `register`/`login`/`logout`/`refresh`/`me` + `verify-email` + the password-reset wizard over HTTP with the correct status codes and a `Retry-After` header on `429`; a programmatic `register → verify-email → login` renders and delivers the verification OTP to Mailpit and writes **masked** audit rows (no token/code) to Postgres; `GET /audit/{logs,stream}` and `POST /diagnostics/{hash-strength,force-lockout}` + `GET /diagnostics/hooks` surface the server-only primitives; and `cargo nextest run -p api` is green at 100% coverage. **OAuth (the TLS `HttpClient` + the `on_oauth_login` Create/Link policy), team invitations, the platform-admin journey + WebSocket, and any web UI are explicitly out of P5 — they land in P6, P7, and P8+ respectively; this phase only enables the `sessions` + `mfa` controller groups and the engine's platform service, not the OAuth/invitations/platform route groups.**
 
@@ -442,7 +442,7 @@ Completion Protocol (after you finish):
 
 #### Description
 
-Add a `reqwest`-based Resend `EmailProvider` (opt-in via `RESEND_API_KEY`), the `resolve_email_provider(settings)` selector, and the locale-aware finalized 7 transactional `.html` templates shared by both providers.
+Add a `reqwest`-based Resend `EmailProvider` (selected when `EMAIL_PROVIDER=resend`, which requires `RESEND_API_KEY`), the `resolve_email_provider(settings)` selector, and the locale-aware finalized 7 transactional `.html` templates shared by both providers.
 
 #### Acceptance criteria
 
@@ -531,8 +531,8 @@ DELIVERABLES
    use crate::config::Settings;
    use crate::email::{lettre::LettreEmailProvider, resend::ResendEmailProvider};
 
-   /// Selects the active provider: Resend when `RESEND_API_KEY` is set,
-   /// otherwise the zero-credential lettre → Mailpit transport.
+   /// Selects the active provider: Resend when `EMAIL_PROVIDER=resend` (requires
+   /// `RESEND_API_KEY`), otherwise the zero-credential lettre → Mailpit transport.
    #[must_use]
    pub fn resolve_email_provider(settings: &Settings) -> Arc<dyn EmailProvider> {
        match settings.resend_api_key.as_deref() {

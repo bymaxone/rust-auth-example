@@ -9,7 +9,7 @@
 use askama::Template;
 use time::format_description::well_known::Rfc3339;
 
-use bymax_auth_core::traits::email::{InviteData, SessionInfo};
+use bymax_auth_core::traits::email::{EmailError, InviteData, SessionInfo};
 
 /// The localized, structural copy shared by every template. The dynamic values
 /// (OTP/token/session details) are language-independent and supplied separately.
@@ -108,11 +108,10 @@ fn copy_for(locale: Option<&str>) -> &'static Copy {
     }
 }
 
-/// Render a template, logging and returning an empty body on the (compile-time
-/// improbable) render failure rather than silently swallowing it.
-fn log_render_error(error: askama::Error) -> String {
+/// Map an askama render error to the delivery error type so callers can propagate it.
+fn render_err(error: askama::Error) -> EmailError {
     tracing::error!(?error, "email template render failed");
-    String::new()
+    EmailError::Delivery(Box::new(error))
 }
 
 /// Email-verification OTP template.
@@ -199,7 +198,7 @@ struct Invitation<'a> {
 }
 
 /// Render the email-verification OTP body.
-pub(crate) fn verification_otp(otp: &str, locale: Option<&str>) -> String {
+pub(crate) fn verification_otp(otp: &str, locale: Option<&str>) -> Result<String, EmailError> {
     let c = copy_for(locale);
     VerificationOtp {
         heading: c.verify_heading,
@@ -209,11 +208,11 @@ pub(crate) fn verification_otp(otp: &str, locale: Option<&str>) -> String {
         footer: c.footer,
     }
     .render()
-    .unwrap_or_else(log_render_error)
+    .map_err(render_err)
 }
 
 /// Render the password-reset OTP body.
-pub(crate) fn password_reset_otp(otp: &str, locale: Option<&str>) -> String {
+pub(crate) fn password_reset_otp(otp: &str, locale: Option<&str>) -> Result<String, EmailError> {
     let c = copy_for(locale);
     PasswordResetOtp {
         heading: c.reset_otp_heading,
@@ -223,11 +222,14 @@ pub(crate) fn password_reset_otp(otp: &str, locale: Option<&str>) -> String {
         footer: c.footer,
     }
     .render()
-    .unwrap_or_else(log_render_error)
+    .map_err(render_err)
 }
 
 /// Render the password-reset link-token body.
-pub(crate) fn password_reset_token(token: &str, locale: Option<&str>) -> String {
+pub(crate) fn password_reset_token(
+    token: &str,
+    locale: Option<&str>,
+) -> Result<String, EmailError> {
     let c = copy_for(locale);
     PasswordResetToken {
         heading: c.reset_token_heading,
@@ -237,11 +239,11 @@ pub(crate) fn password_reset_token(token: &str, locale: Option<&str>) -> String 
         footer: c.footer,
     }
     .render()
-    .unwrap_or_else(log_render_error)
+    .map_err(render_err)
 }
 
 /// Render the MFA-enabled alert body.
-pub(crate) fn mfa_enabled(locale: Option<&str>) -> String {
+pub(crate) fn mfa_enabled(locale: Option<&str>) -> Result<String, EmailError> {
     let c = copy_for(locale);
     MfaEnabled {
         heading: c.mfa_enabled_heading,
@@ -249,11 +251,11 @@ pub(crate) fn mfa_enabled(locale: Option<&str>) -> String {
         footer: c.footer,
     }
     .render()
-    .unwrap_or_else(log_render_error)
+    .map_err(render_err)
 }
 
 /// Render the MFA-disabled alert body.
-pub(crate) fn mfa_disabled(locale: Option<&str>) -> String {
+pub(crate) fn mfa_disabled(locale: Option<&str>) -> Result<String, EmailError> {
     let c = copy_for(locale);
     MfaDisabled {
         heading: c.mfa_disabled_heading,
@@ -261,11 +263,14 @@ pub(crate) fn mfa_disabled(locale: Option<&str>) -> String {
         footer: c.footer,
     }
     .render()
-    .unwrap_or_else(log_render_error)
+    .map_err(render_err)
 }
 
 /// Render the new-session alert body from the session context.
-pub(crate) fn new_session_alert(session: &SessionInfo, locale: Option<&str>) -> String {
+pub(crate) fn new_session_alert(
+    session: &SessionInfo,
+    locale: Option<&str>,
+) -> Result<String, EmailError> {
     // `session.session_hash` is the library's display-only short hash (never the raw
     // refresh token), so rendering it into the email body carries no credential.
     let c = copy_for(locale);
@@ -281,11 +286,11 @@ pub(crate) fn new_session_alert(session: &SessionInfo, locale: Option<&str>) -> 
         footer: c.footer,
     }
     .render()
-    .unwrap_or_else(log_render_error)
+    .map_err(render_err)
 }
 
 /// Render the tenant-invitation body from the invite context.
-pub(crate) fn invitation(invite: &InviteData, locale: Option<&str>) -> String {
+pub(crate) fn invitation(invite: &InviteData, locale: Option<&str>) -> Result<String, EmailError> {
     let c = copy_for(locale);
     // `expires_at` is rendered as an RFC 3339 UTC string for a stable, locale-
     // independent format.
@@ -304,10 +309,15 @@ pub(crate) fn invitation(invite: &InviteData, locale: Option<&str>) -> String {
         footer: c.footer,
     }
     .render()
-    .unwrap_or_else(log_render_error)
+    .map_err(render_err)
 }
 
 #[cfg(test)]
+#[allow(
+    // Panicking is the idiomatic failure signal in tests.
+    clippy::unwrap_used,
+    clippy::expect_used
+)]
 mod tests {
     use super::*;
     use time::OffsetDateTime;
@@ -333,16 +343,20 @@ mod tests {
     fn otp_bodies_carry_the_code_and_default_to_english() {
         // The verification and reset OTP bodies embed the code and, with no locale, render
         // the English heading.
-        let body = verification_otp("123456", None);
+        let body = verification_otp("123456", None).unwrap();
         assert!(body.contains("123456"));
         assert!(body.contains("Verify your email"));
-        assert!(password_reset_otp("654321", Some("en-US")).contains("654321"));
+        assert!(
+            password_reset_otp("654321", Some("en-US"))
+                .unwrap()
+                .contains("654321")
+        );
     }
 
     #[test]
     fn spanish_locale_selects_localized_copy() {
         // A `es` primary subtag switches the copy while keeping the dynamic value intact.
-        let body = verification_otp("123456", Some("es-ES"));
+        let body = verification_otp("123456", Some("es-ES")).unwrap();
         assert!(body.contains("Verifica tu correo"));
         assert!(body.contains("123456"));
     }
@@ -350,12 +364,16 @@ mod tests {
     #[test]
     fn token_and_alert_bodies_render_their_context() {
         // The reset-token, MFA, session, and invitation bodies each render their fields.
-        assert!(password_reset_token("tok-abc", None).contains("tok-abc"));
-        assert!(mfa_enabled(None).contains("enabled"));
-        assert!(mfa_disabled(None).contains("disabled"));
-        let alert = new_session_alert(&session(), None);
+        assert!(
+            password_reset_token("tok-abc", None)
+                .unwrap()
+                .contains("tok-abc")
+        );
+        assert!(mfa_enabled(None).unwrap().contains("enabled"));
+        assert!(mfa_disabled(None).unwrap().contains("disabled"));
+        let alert = new_session_alert(&session(), None).unwrap();
         assert!(alert.contains("Chrome on macOS") && alert.contains("203.0.113.4"));
-        let inv = invitation(&invite(), Some("es"));
+        let inv = invitation(&invite(), Some("es")).unwrap();
         assert!(inv.contains("Acme") && inv.contains(&"0".repeat(64)));
     }
 }
