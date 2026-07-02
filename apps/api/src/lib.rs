@@ -23,3 +23,4 @@ pub mod repository;
 pub mod routes;
 pub mod stores;
 pub mod telemetry;
+pub mod ws;

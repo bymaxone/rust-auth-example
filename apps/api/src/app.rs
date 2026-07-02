@@ -80,12 +80,15 @@ pub fn build_router(state: AppState) -> Router {
 
 /// The example's own domain routes.
 ///
-/// The audit read-API (`/audit/*`) and diagnostics surface (`/diagnostics/*`) are
-/// development-only: they expose the full audit trail unauthenticated and allow
-/// force-locking any account, so they must not be reachable in production.
-/// Only the health probe mounts unconditionally.
+/// The health probe and the example WebSocket endpoint mount unconditionally: the WebSocket
+/// upgrade authenticates via a single-use ticket redeemed from an authenticated session, so
+/// it is safe in every environment. The audit read-API (`/audit/*`) and diagnostics surface
+/// (`/diagnostics/*`) are development-only: they expose the full audit trail unauthenticated
+/// and allow force-locking any account, so they must not be reachable in production.
 fn example_routes(app_env: RuntimeEnvironment) -> Router<AppState> {
-    let mut router = Router::new().merge(crate::routes::health::routes());
+    let mut router = Router::new()
+        .merge(crate::routes::health::routes())
+        .route("/ws/example", axum::routing::get(crate::ws::realtime));
     if app_env == RuntimeEnvironment::Development {
         router = router
             .merge(crate::audit::router())

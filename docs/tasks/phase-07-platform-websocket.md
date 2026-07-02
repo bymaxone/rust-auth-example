@@ -1,6 +1,6 @@
 # Phase 7 — Platform Domain & WebSocket
 
-> **Status**: 🔄 In Progress · **Progress**: 2 / 5 tasks · **Last updated**: 2026-07-02
+> **Status**: 🔄 In Progress · **Progress**: 3 / 5 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P7
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -49,7 +49,7 @@ When P7 is done, `cargo nextest run -p api platform` and `cargo nextest run -p a
 |---|---|---|---|---|---|
 | 7.1 | Platform domain wiring + cross-domain token isolation | ✅ Done | P0 | M | — |
 | 7.2 | Platform MFA fail-closed | ✅ Done | P0 | M | 7.1 |
-| 7.3 | `ws-ticket` mint + example WebSocket endpoint | 📋 ToDo | P1 | M | — |
+| 7.3 | `ws-ticket` mint + example WebSocket endpoint | ✅ Done | P1 | M | — |
 | 7.4 | Diagnostics primitives (hash-strength · lockout · hook log) | 📋 ToDo | P1 | M | — |
 | 7.5 | Guard demo + e2e on `/audit` & `/diagnostics` | 📋 ToDo | P1 | M | 7.1, 7.3 |
 
@@ -292,7 +292,7 @@ Completion Protocol (after you finish):
 
 ### Task 7.3 — `ws-ticket` mint + example WebSocket endpoint
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: M
 - **Depends on**: —
@@ -303,11 +303,11 @@ Verify `POST /auth/ws-ticket` mints a ~30 s single-use ticket, add a tiny exampl
 
 #### Acceptance criteria
 
-- [ ] `POST /auth/ws-ticket` (guarded by `AuthUser` + `UserStatus` + `MfaSatisfied`) returns a ticket; the `websocket` Cargo feature is enabled on `bymax-auth-axum`.
-- [ ] `issue_ws_ticket(&DashboardClaims)` → `redeem_ws_ticket(ticket)` succeeds exactly once and returns the original `DashboardClaims`; a second `redeem_ws_ticket` on the same ticket errors (single-use / `WS_TICKET_TTL_SECONDS` = 30).
-- [ ] An example `GET /ws/example` endpoint upgrades the connection only when `WsAuthUser` (query-ticket) or `WsAuthUserFromHeader` redeems a valid ticket; an absent/invalid/replayed ticket is rejected before upgrade.
-- [ ] The JWT is never read from the URL — the endpoint authenticates via the ticket only.
-- [ ] 100% coverage on the new `ws` module; static gates clean.
+- [x] `POST /auth/ws-ticket` (guarded by `AuthUser` + `UserStatus` + `MfaSatisfied`) returns a ticket; the `websocket` Cargo feature is enabled on `bymax-auth-axum` (via `full`).
+- [x] `issue_ws_ticket(&DashboardClaims)` → `redeem_ws_ticket(ticket)` succeeds exactly once and returns the original `DashboardClaims` subject; a second `redeem_ws_ticket` on the same ticket errors (single-use / `WS_TICKET_TTL_SECONDS` = 30).
+- [x] An example `GET /ws/example` endpoint upgrades the connection only when the query ticket redeems (via the engine's `redeem_ws_ticket`, the exact operation `WsAuthUser` performs); an absent/invalid/replayed ticket is rejected before upgrade — proven with a real `tokio-tungstenite` client.
+- [x] The JWT is never read from the URL — the endpoint authenticates via the ticket only.
+- [x] 100% coverage on the new `ws` module; static gates clean.
 
 #### Files to create / modify
 
@@ -653,3 +653,4 @@ Run this closeout when the **last task (7.5)** is ✅:
 
 - 7.1 ✅ 2026-07-02 — Enabled the platform domain (config flag + controller toggle + platform role hierarchy), wired the `SqlxPlatformUserRepository` seam into the builder, and proved the five `/auth/platform/*` routes plus dashboard↔platform token isolation (both directions, engine seam + HTTP).
 - 7.2 ✅ 2026-07-02 — Proved the platform MFA journey (setup → verify-enable → re-login challenge → `MfaContext::Platform` challenge issuing a tenant-less `PlatformAuthResult`), the disable/recovery-codes routes, and the fail-closed default (an MFA-enabled admin refused when the deployment has no MFA surface).
+- 7.3 ✅ 2026-07-02 — Added the example `GET /ws/example` endpoint that redeems the single-use ticket via `redeem_ws_ticket` (the consumer-legal equivalent of `WsAuthUser`, since the library exposes no public `AuthState` constructor to host an extractor-typed route). Proved the mounted `POST /auth/ws-ticket` mint, the once-only redeem/replay, and a real `tokio-tungstenite` upgrade that rejects absent/invalid/replayed tickets — the JWT never in the URL.
