@@ -104,7 +104,7 @@ jobs:
       - name: Build the sibling @bymax-one/rust-auth browser package
         working-directory: .sibling-rust-auth/packages/rust-auth
         run: |
-          pnpm install --no-frozen-lockfile
+          pnpm install --no-frozen-lockfile --ignore-workspace
           pnpm build:wasm
           pnpm build
       - run: pnpm install --frozen-lockfile
