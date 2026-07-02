@@ -23,16 +23,21 @@ use secrecy::SecretString;
 
 use bymax_auth_core::AuthEngine;
 use bymax_auth_core::config::Environment;
+use bymax_auth_core::testing::{InMemoryStores, InMemoryUserRepository, MockOAuthProvider};
 use bymax_auth_core::traits::email::{EmailError, EmailProvider, InviteData, SessionInfo};
+use bymax_auth_core::traits::oauth::OAuthProvider;
 use bymax_auth_redis::RedisStores;
 use sqlx::PgPool;
 
 use api::app::{self, AppState};
 use api::config::{EmailProviderKind, RuntimeEnvironment, Settings};
+use api::engine::build_engine;
 use api::engine::config::build_auth_config;
 use api::hooks::AuditAuthHooks;
 use api::layers::apply_global_layers;
 use api::repository::user::SqlxUserRepository;
+
+pub mod mailpit;
 
 /// A high-entropy JWT fixture that clears the length + entropy guards (dev-only).
 const TEST_JWT: &str = "iN7wQ2eR9tY4uI1oP6aS3dF8gH5jK0lZ2xC7vB4nM9qW1eR6tY3uI8oP5aS0dF7gH";
@@ -150,6 +155,9 @@ fn test_settings(database_url: String, redis_url: String) -> Settings {
         smtp_port: 1025,
         smtp_from: "no-reply@auth.local".to_owned(),
         resend_api_key: None,
+        oauth_google_client_id: None,
+        oauth_google_client_secret: None,
+        oauth_google_callback_url: None,
     }
 }
 
@@ -243,4 +251,225 @@ pub async fn spawn() -> Option<TestApp> {
         tenant_id,
         email,
     })
+}
+
+/// Spawn the example app through the real [`build_engine`] composition root, so the
+/// mounted OAuth and invitation surfaces come up exactly as production wires them (real
+/// lettre → Mailpit email included). `customize` mutates the base test settings (e.g. to
+/// configure Google OAuth). Returns `None` (a skip) when the test-stack env is unset.
+///
+/// The returned client does not follow redirects, so an OAuth `302` can be inspected; its
+/// `verification_otps` map stays empty (this path emails through Mailpit, not a capture).
+pub async fn spawn_engine(customize: impl FnOnce(&mut Settings)) -> Option<TestApp> {
+    let Ok(database_url) = std::env::var("DATABASE_URL_TEST") else {
+        eprintln!("skipping integration test: DATABASE_URL_TEST is not set");
+        return None;
+    };
+    let Ok(redis_url) = std::env::var("REDIS_URL") else {
+        eprintln!("skipping integration test: REDIS_URL is not set");
+        return None;
+    };
+    install_crypto();
+
+    let pool = PgPool::connect(&database_url)
+        .await
+        .expect("the test stack Postgres must be reachable");
+
+    static SEQ: AtomicU64 = AtomicU64::new(0);
+    let seq = SEQ.fetch_add(1, Ordering::Relaxed);
+    let pid = std::process::id();
+    let tenant_id = format!("tenant-eng-{pid}-{seq}");
+    let email = format!("user-eng-{pid}-{seq}@example.test");
+
+    sqlx::query("INSERT INTO tenants (id, name) VALUES ($1, $1) ON CONFLICT DO NOTHING")
+        .bind(&tenant_id)
+        .execute(&pool)
+        .await
+        .expect("seed the test tenant");
+
+    let mut settings = test_settings(database_url, redis_url);
+    customize(&mut settings);
+    let stores = Arc::new(
+        RedisStores::connect(&settings.redis_url, settings.redis_namespace.clone())
+            .expect("the redis handle builds"),
+    );
+    let engine = Arc::new(
+        build_engine(
+            &settings,
+            pool.clone(),
+            stores.clone(),
+            Environment::Development,
+        )
+        .expect("the engine builds from settings"),
+    );
+    let state = AppState::new(
+        pool.clone(),
+        stores,
+        engine,
+        RuntimeEnvironment::Development,
+    );
+    let router =
+        apply_global_layers(app::build_router(state), &settings).expect("global layers apply");
+
+    let listener = TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind the test app");
+    let addr = listener.local_addr().expect("the app address");
+    tokio::spawn(async move {
+        let _ = axum::serve(
+            listener,
+            router.into_make_service_with_connect_info::<SocketAddr>(),
+        )
+        .await;
+    });
+
+    let client = reqwest::Client::builder()
+        .redirect(reqwest::redirect::Policy::none())
+        .build()
+        .expect("the http client builds");
+
+    Some(TestApp {
+        base_url: format!("http://{addr}"),
+        client,
+        pool,
+        verification_otps: Arc::new(Mutex::new(HashMap::new())),
+        tenant_id,
+        email,
+    })
+}
+
+/// Configure Google OAuth on the test settings, pointing the provider at the local web
+/// origin. The credentials are fixtures — the mounted initiate route mints a real Google
+/// authorize URL from them without contacting Google.
+pub fn with_google_oauth(settings: &mut Settings) {
+    settings.oauth_google_client_id = Some("test-client-id.apps.googleusercontent.com".to_owned());
+    settings.oauth_google_client_secret = Some(SecretString::from("test-client-secret".to_owned()));
+    settings.oauth_google_callback_url =
+        Some("http://localhost:3000/api/auth/oauth/google/callback".to_owned());
+}
+
+/// A Postgres + Redis-backed engine wired with the example's real `AuditAuthHooks` and a
+/// controllable `MockOAuthProvider` (registered as `google`), for driving the
+/// `on_oauth_login` Create/Link/Reject policy end to end against the real audit log.
+pub struct OAuthPolicyStack {
+    /// The wired engine (OAuth controller on, mock provider + state store from Redis).
+    pub engine: AuthEngine,
+    /// The shared Postgres pool, for seeding and asserting on `users` / `audit_log`.
+    pub pool: PgPool,
+    /// A unique tenant provisioned for this run.
+    pub tenant_id: String,
+}
+
+/// Build an [`OAuthPolicyStack`] against the test stack, or `None` (a skip) when the env
+/// is unset. The engine uses the mock provider (canned profile `mock@example.com` /
+/// `mock-123`), so the callback is driven without any real HTTP.
+pub async fn oauth_policy_stack() -> Option<OAuthPolicyStack> {
+    use bymax_auth_core::testing::MockOAuthProvider;
+
+    let Ok(database_url) = std::env::var("DATABASE_URL_TEST") else {
+        eprintln!("skipping integration test: DATABASE_URL_TEST is not set");
+        return None;
+    };
+    let Ok(redis_url) = std::env::var("REDIS_URL") else {
+        eprintln!("skipping integration test: REDIS_URL is not set");
+        return None;
+    };
+    install_crypto();
+
+    let pool = PgPool::connect(&database_url)
+        .await
+        .expect("the test stack Postgres must be reachable");
+
+    static SEQ: AtomicU64 = AtomicU64::new(0);
+    let seq = SEQ.fetch_add(1, Ordering::Relaxed);
+    let pid = std::process::id();
+    let tenant_id = format!("tenant-oauth-{pid}-{seq}");
+    sqlx::query("INSERT INTO tenants (id, name) VALUES ($1, $1) ON CONFLICT DO NOTHING")
+        .bind(&tenant_id)
+        .execute(&pool)
+        .await
+        .expect("seed the test tenant");
+
+    let settings = test_settings(database_url, redis_url);
+    let mut config = build_auth_config(&settings, Environment::Development)
+        .expect("the base configuration validates");
+    // Enable the OAuth controller with the mock provider (no Google credentials needed).
+    config.controllers.oauth = true;
+    let stores = Arc::new(
+        RedisStores::connect(&settings.redis_url, settings.redis_namespace.clone())
+            .expect("the redis handle builds"),
+    );
+    let engine = AuthEngine::builder()
+        .config(config)
+        .environment(Environment::Development)
+        .user_repository(Arc::new(SqlxUserRepository::new(pool.clone())))
+        .redis_stores(stores.clone())
+        .hooks(Arc::new(AuditAuthHooks::new(pool.clone())))
+        .oauth_provider(Arc::new(MockOAuthProvider::new("google")))
+        .oauth_state_store(stores)
+        .build()
+        .expect("the mock-OAuth engine builds");
+
+    Some(OAuthPolicyStack {
+        engine,
+        pool,
+        tenant_id,
+    })
+}
+
+/// A hermetic engine assembled from the library `testing` doubles plus the example's real
+/// `AuditAuthHooks`, so the OAuth flow runs with no Redis, Postgres, or HTTP.
+pub struct TestingEngine {
+    /// The wired engine (OAuth on, in-memory stores + state store, mock provider).
+    pub engine: AuthEngine,
+    /// The in-memory user repository, for seeding and inspecting accounts.
+    pub users: Arc<InMemoryUserRepository>,
+    /// The in-memory store backend, for seeding a known invitation directly.
+    pub stores: Arc<InMemoryStores>,
+}
+
+/// Build a hermetic [`TestingEngine`] registered with the canned [`MockOAuthProvider`]
+/// (profile `mock@example.com` / `mock-123`).
+pub fn testing_engine() -> TestingEngine {
+    testing_engine_with(Arc::new(MockOAuthProvider::new("google")))
+}
+
+/// Build a hermetic [`TestingEngine`] over a caller-supplied OAuth `provider` (registered
+/// as `google`), so a test can inject a provider that returns, e.g., an unverified email.
+///
+/// The audit pool is a non-connecting lazy handle: the real `AuditAuthHooks` still runs,
+/// but its best-effort recording no-ops, so the decision path is exercised without a DB.
+pub fn testing_engine_with(provider: Arc<dyn OAuthProvider>) -> TestingEngine {
+    let settings = test_settings(
+        "postgres://127.0.0.1:1/unreachable".to_owned(),
+        "redis://127.0.0.1:6379".to_owned(),
+    );
+    let mut config =
+        build_auth_config(&settings, Environment::Test).expect("the base configuration validates");
+    // Enable the OAuth controller; the mock provider + in-memory state store back it.
+    config.controllers.oauth = true;
+
+    let users = Arc::new(InMemoryUserRepository::new());
+    let stores = Arc::new(InMemoryStores::new());
+    let dead_pool = sqlx::postgres::PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(200))
+        .connect_lazy("postgres://127.0.0.1:1/unreachable")
+        .expect("a well-formed url yields a lazy pool");
+
+    let engine = AuthEngine::builder()
+        .config(config)
+        .environment(Environment::Test)
+        .user_repository(users.clone())
+        .redis_stores(stores.clone())
+        .hooks(Arc::new(AuditAuthHooks::new(dead_pool)))
+        .oauth_provider(provider)
+        .oauth_state_store(stores.clone())
+        .build()
+        .expect("the testing engine builds");
+
+    TestingEngine {
+        engine,
+        users,
+        stores,
+    }
 }

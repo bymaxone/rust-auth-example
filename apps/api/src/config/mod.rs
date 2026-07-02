@@ -111,6 +111,28 @@ pub struct Settings {
     ///
     /// A secret: redacted in [`Debug`] and zeroized on drop.
     pub resend_api_key: Option<SecretString>,
+    /// Google OAuth client id (`OAUTH_GOOGLE_CLIENT_ID`). Enables Google sign-in only
+    /// when set together with the client secret and callback URL; otherwise OAuth stays
+    /// disabled.
+    pub oauth_google_client_id: Option<String>,
+    /// Google OAuth client secret (`OAUTH_GOOGLE_CLIENT_SECRET`). A secret: redacted in
+    /// [`Debug`] and zeroized on drop.
+    pub oauth_google_client_secret: Option<SecretString>,
+    /// Google OAuth callback URL (`OAUTH_GOOGLE_CALLBACK_URL`) — the absolute redirect
+    /// URI registered with Google.
+    pub oauth_google_callback_url: Option<String>,
+}
+
+/// The validated Google OAuth credentials, borrowed from [`Settings`]. Present only when
+/// all three `OAUTH_GOOGLE_*` variables are configured together.
+#[derive(Clone, Copy)]
+pub struct GoogleOAuthSettings<'a> {
+    /// The Google OAuth client id.
+    pub client_id: &'a str,
+    /// The Google OAuth client secret (still protected by [`SecretString`]).
+    pub client_secret: &'a SecretString,
+    /// The absolute callback URL registered with Google.
+    pub callback_url: &'a str,
 }
 
 /// Redacts secrets so the struct can be safely printed in logs.
@@ -144,6 +166,16 @@ impl fmt::Debug for Settings {
                 "resend_api_key",
                 &self.resend_api_key.as_ref().map(|_| "[REDACTED]"),
             )
+            .field("oauth_google_client_id", &self.oauth_google_client_id)
+            // Reveal only presence, never the client secret.
+            .field(
+                "oauth_google_client_secret",
+                &self
+                    .oauth_google_client_secret
+                    .as_ref()
+                    .map(|_| "[REDACTED]"),
+            )
+            .field("oauth_google_callback_url", &self.oauth_google_callback_url)
             .finish()
     }
 }
@@ -202,6 +234,13 @@ pub enum ConfigError {
     /// `EMAIL_PROVIDER` is `resend` but `RESEND_API_KEY` is absent.
     #[error("`EMAIL_PROVIDER` is `resend` but `RESEND_API_KEY` is not configured")]
     ResendKeyMissing,
+    /// Some but not all of the `OAUTH_GOOGLE_*` variables are set. Google sign-in
+    /// requires the client id, client secret, and callback URL together, or none at all.
+    #[error(
+        "OAUTH_GOOGLE_CLIENT_ID, OAUTH_GOOGLE_CLIENT_SECRET, and OAUTH_GOOGLE_CALLBACK_URL \
+         must be set together (or all left unset)"
+    )]
+    OAuthConfigIncomplete,
 }
 
 impl From<figment::Error> for ConfigError {
@@ -269,7 +308,42 @@ impl Settings {
         if self.email_provider == EmailProviderKind::Resend && self.resend_api_key.is_none() {
             return Err(ConfigError::ResendKeyMissing);
         }
+        // Google OAuth is all-or-nothing: a partially-configured provider (e.g. an id
+        // without a secret) would silently disable sign-in, so reject it fast at boot.
+        let google_fields = [
+            self.oauth_google_client_id.is_some(),
+            self.oauth_google_client_secret.is_some(),
+            self.oauth_google_callback_url.is_some(),
+        ];
+        let set = google_fields.iter().filter(|present| **present).count();
+        if set != 0 && set != google_fields.len() {
+            return Err(ConfigError::OAuthConfigIncomplete);
+        }
         Ok(())
+    }
+
+    /// The configured Google OAuth credentials, present only when all three
+    /// `OAUTH_GOOGLE_*` variables are set together. `None` leaves OAuth disabled — the
+    /// mounted `/auth/oauth/*` routes then answer `auth.oauth_failed`.
+    ///
+    /// [`Settings::validate`] rejects a partially-configured provider, so a `Some`
+    /// client id here structurally guarantees the secret and callback URL are present.
+    #[must_use]
+    pub fn google_oauth(&self) -> Option<GoogleOAuthSettings<'_>> {
+        match (
+            self.oauth_google_client_id.as_deref(),
+            self.oauth_google_client_secret.as_ref(),
+            self.oauth_google_callback_url.as_deref(),
+        ) {
+            (Some(client_id), Some(client_secret), Some(callback_url)) => {
+                Some(GoogleOAuthSettings {
+                    client_id,
+                    client_secret,
+                    callback_url,
+                })
+            }
+            _ => None,
+        }
     }
 }
 
@@ -294,6 +368,9 @@ pub(crate) fn dev_settings() -> Settings {
         smtp_port: 1025,
         smtp_from: "no-reply@auth.local".to_owned(),
         resend_api_key: None,
+        oauth_google_client_id: None,
+        oauth_google_client_secret: None,
+        oauth_google_callback_url: None,
     }
 }
 
@@ -453,6 +530,55 @@ mod tests {
             seed(jail);
             jail.set_env("MFA_ENCRYPTION_KEY", "not-valid-base64-!!");
             assert!(matches!(Settings::load(), Err(ConfigError::MfaKeyInvalid)));
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn rejects_partial_google_oauth_config() {
+        figment::Jail::expect_with(|jail| {
+            seed(jail);
+            // Only the client id is set; the secret and callback are missing.
+            jail.set_env("OAUTH_GOOGLE_CLIENT_ID", "id.apps.googleusercontent.com");
+            let err = Settings::load().expect_err("a partial google config must be rejected");
+            assert!(matches!(err, ConfigError::OAuthConfigIncomplete));
+            assert!(err.to_string().contains("OAUTH_GOOGLE_CLIENT_ID"));
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn full_google_oauth_config_loads_and_redacts_the_secret() {
+        figment::Jail::expect_with(|jail| {
+            seed(jail);
+            jail.set_env("OAUTH_GOOGLE_CLIENT_ID", "id.apps.googleusercontent.com");
+            jail.set_env("OAUTH_GOOGLE_CLIENT_SECRET", "top-secret-oauth-value");
+            jail.set_env(
+                "OAUTH_GOOGLE_CALLBACK_URL",
+                "http://localhost:3000/api/auth/oauth/google/callback",
+            );
+            let settings = Settings::load().expect("a full google config must load");
+            let google = settings.google_oauth().expect("google is configured");
+            assert_eq!(google.client_id, "id.apps.googleusercontent.com");
+            assert_eq!(
+                google.client_secret.expose_secret(),
+                "top-secret-oauth-value"
+            );
+            // The client secret is never rendered in the debug output.
+            let debug = format!("{settings:?}");
+            assert!(debug.contains("[REDACTED]"));
+            assert!(!debug.contains("top-secret-oauth-value"));
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn google_oauth_is_none_when_unset() {
+        // With no OAUTH_GOOGLE_* variables the accessor reports OAuth disabled.
+        figment::Jail::expect_with(|jail| {
+            seed(jail);
+            let settings = Settings::load().expect("valid env must load");
+            assert!(settings.google_oauth().is_none());
             Ok(())
         });
     }

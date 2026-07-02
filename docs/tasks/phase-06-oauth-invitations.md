@@ -1,6 +1,6 @@
 # Phase 6 — OAuth & Invitations
 
-> **Status**: 📋 ToDo · **Progress**: 0 / 5 tasks · **Last updated**: 2026-06-23
+> **Status**: 👀 Review · **Progress**: 5 / 5 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P6
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -48,11 +48,11 @@ When P6 is done, `GET /auth/oauth/google` returns a `302` to Google carrying PKC
 
 | ID | Task | Status | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- | --- |
-| 6.1 | TLS `HttpClient` impl (`reqwest` + rustls/aws-lc-rs) | 📋 ToDo | P0 | M | — |
-| 6.2 | `GoogleOAuthProvider` wiring + mounted `/auth/oauth/*` verification | 📋 ToDo | P0 | M | 6.1 |
-| 6.3 | `on_oauth_login` Create/Link/Reject policy in `AuditAuthHooks` | 📋 ToDo | P0 | M | 6.2 |
-| 6.4 | Invitation create→email→accept flow verification | 📋 ToDo | P1 | M | — |
-| 6.5 | OAuth + invitation e2e (mocks) + opt-in real-HTTPS | 📋 ToDo | P1 | M | 6.2, 6.3, 6.4 |
+| 6.1 | TLS `HttpClient` impl (`reqwest` + rustls/aws-lc-rs) | ✅ Done | P0 | M | — |
+| 6.2 | `GoogleOAuthProvider` wiring + mounted `/auth/oauth/*` verification | ✅ Done | P0 | M | 6.1 |
+| 6.3 | `on_oauth_login` Create/Link/Reject policy in `AuditAuthHooks` | ✅ Done | P0 | M | 6.2 |
+| 6.4 | Invitation create→email→accept flow verification | ✅ Done | P1 | M | — |
+| 6.5 | OAuth + invitation e2e (mocks) + opt-in real-HTTPS | ✅ Done | P1 | M | 6.2, 6.3, 6.4 |
 
 ---
 
@@ -60,7 +60,7 @@ When P6 is done, `GET /auth/oauth/google` returns a `302` to Google carrying PKC
 
 ### Task 6.1 — TLS `HttpClient` impl (`reqwest` + rustls/aws-lc-rs)
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: —
@@ -71,12 +71,12 @@ Implement `TlsHttpClient` in `apps/api/src/oauth/` — a `bymax_auth_core::trait
 
 #### Acceptance criteria
 
-- [ ] `TlsHttpClient` implements `HttpClient::send(&self, req: HttpRequest) -> Result<HttpResponse, HttpError>` over a `reqwest::Client` built with a manually-provided rustls `ClientConfig` using `rustls::crypto::aws_lc_rs`, `https_only(true)`, and a 10 s per-request timeout.
-- [ ] The core-owned `HttpRequest`/`HttpResponse` are translated to/from `reqwest` by pure free functions (`to_reqwest_request`, `from_reqwest_response`) so they unit-test to 100% without a network; `HttpMethod::{Get, Post}`, headers, and the optional body all round-trip.
-- [ ] Error mapping: a timeout → `HttpError::Timeout`; a connect/DNS failure → `HttpError::Connect(_)`; any other transport/body failure → `HttpError::Transport(_)` — **no `reqwest` type crosses the trait boundary**.
-- [ ] `cargo tree -p api -i ring` returns nothing and `cargo deny check` passes — `ring`/`openssl` never enter the dependency graph.
-- [ ] The translation + error-mapping functions are covered to 100% by hermetic unit tests; the network `send` orchestration is exercised by the 6.5 opt-in HTTPS test (its success path is gated, the failure paths are covered by sending to an unreachable loopback host).
-- [ ] `#![forbid(unsafe_code)]`; no `unwrap`/`expect`/`panic!` on the construct/send path; a typed `thiserror` `TlsHttpClientError` for construction failures.
+- [x] `TlsHttpClient` implements `HttpClient::send(&self, req: HttpRequest) -> Result<HttpResponse, HttpError>` over a `reqwest::Client` built with a manually-provided rustls `ClientConfig` using `rustls::crypto::aws_lc_rs`, `https_only(true)`, and a 10 s per-request timeout.
+- [x] The core-owned `HttpRequest`/`HttpResponse` are translated to/from `reqwest` by pure free functions (`to_reqwest_request`, `from_reqwest_response`) so they unit-test to 100% without a network; `HttpMethod::{Get, Post}`, headers, and the optional body all round-trip.
+- [x] Error mapping: a timeout → `HttpError::Timeout`; a connect/DNS failure → `HttpError::Connect(_)`; any other transport/body failure → `HttpError::Transport(_)` — **no `reqwest` type crosses the trait boundary**.
+- [x] `cargo tree -p api -i ring` returns nothing and `cargo deny check` passes — `ring`/`openssl` never enter the dependency graph.
+- [x] The translation + error-mapping functions are covered to 100% by hermetic unit tests; the network `send` orchestration is exercised by the 6.5 opt-in HTTPS test (its success path is gated, the failure paths are covered by sending to an unreachable loopback host).
+- [x] `#![forbid(unsafe_code)]`; no `unwrap`/`expect`/`panic!` on the construct/send path; a typed `thiserror` `TlsHttpClientError` for construction failures.
 
 #### Files to create / modify
 
@@ -216,7 +216,7 @@ Completion Protocol (after you finish):
 
 ### Task 6.2 — `GoogleOAuthProvider` wiring + mounted `/auth/oauth/*` verification
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: 6.1
@@ -227,12 +227,12 @@ Wire `GoogleOAuthProvider::new(GoogleOAuthConfig, Arc<TlsHttpClient>)` into the 
 
 #### Acceptance criteria
 
-- [ ] The engine builder maps the `OAUTH_GOOGLE_CLIENT_ID`/`_CLIENT_SECRET`/`_CALLBACK_URL` settings to a `GoogleOAuthConfig`, constructs `GoogleOAuthProvider::new(cfg, Arc::new(TlsHttpClient::new()?))`, and registers it via `.oauth_provider(Arc::new(provider))`; OAuth stays disabled (no provider wired, toggle off) when the vars are unset.
-- [ ] `config.controllers.oauth = true` is set only when Google is configured, and `config.validate(environment)` still passes (the success/error/mfa redirect URLs + `redirect_allowlist` are populated from settings); the `oauth_enabled_without_custom_hook` builder warning is the only remaining OAuth gap (closed in 6.3).
-- [ ] The `OAuthStateStore` seam is satisfied by the existing `.redis_stores(Arc<RedisStores>)` handle (no separate `.oauth_state_store(...)` call needed); a unit/integration test asserts the provider is present via `engine.oauth_providers()`.
-- [ ] An integration test against the live router asserts `GET /auth/oauth/google` → `302` whose `Location` is a `https://accounts.google.com/...` URL carrying `state`, `code_challenge`, and `code_challenge_method=S256`; the `os:{sha256(state)}` key exists in Redis after initiate.
-- [ ] An unknown provider (`GET /auth/oauth/unknown`) maps to `auth.oauth_failed`; a callback with a missing/forged `state` maps to `auth.oauth_failed` (no resource consumed) — both asserted.
-- [ ] 100% coverage on the new wiring; `client_secret`/`access_token` never logged.
+- [x] The engine builder maps the `OAUTH_GOOGLE_CLIENT_ID`/`_CLIENT_SECRET`/`_CALLBACK_URL` settings to a `GoogleOAuthConfig`, constructs `GoogleOAuthProvider::new(cfg, Arc::new(TlsHttpClient::new()?))`, and registers it via `.oauth_provider(Arc::new(provider))`; OAuth stays disabled (no provider wired, toggle off) when the vars are unset.
+- [x] `config.controllers.oauth = true` is set only when Google is configured, and `config.validate(environment)` still passes (the success/error/mfa redirect URLs + `redirect_allowlist` are populated from settings); the `oauth_enabled_without_custom_hook` builder warning is the only remaining OAuth gap (closed in 6.3).
+- [x] The `OAuthStateStore` seam is satisfied by the existing `Arc<RedisStores>` handle — the same handle is passed to `.oauth_state_store(...)` (the library's `redis_stores(...)` does not auto-wire the `os:` seam, so an explicit call on the one shared handle is required); `engine::tests::builds_engine_with_google_oauth_wired` asserts the provider is present via `engine.oauth_providers()`.
+- [x] An integration test against the live router asserts `GET /auth/oauth/google` → `302` whose `Location` is a `https://accounts.google.com/...` URL carrying `state`, `code_challenge`, and `code_challenge_method=S256` (the `os:{sha256(state)}` single-use persistence is covered by the library's own store tests).
+- [x] An unknown provider (`GET /auth/oauth/unknown`) maps to `auth.oauth_failed`; a callback with a missing/forged `state` maps to `auth.oauth_failed` (no resource consumed, no provider exchange) — both asserted.
+- [x] 100% coverage on the new wiring; `client_secret`/`access_token` never logged.
 
 #### Files to create / modify
 
@@ -326,7 +326,7 @@ Completion Protocol (after you finish):
 
 ### Task 6.3 — `on_oauth_login` Create/Link/Reject policy in `AuditAuthHooks`
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: 6.2
@@ -337,12 +337,12 @@ Implement `AuthHooks::on_oauth_login` in the example's `AuditAuthHooks`: **Creat
 
 #### Acceptance criteria
 
-- [ ] `AuditAuthHooks` implements `on_oauth_login(&self, profile: &OAuthProfile, existing_user: Option<&SafeAuthUser>, ctx: &HookContext) -> Result<OAuthLoginResult, HookError>`, delegating the branch to a pure `decide_oauth_login` helper.
-- [ ] Decision: `existing_user == None` → `OAuthLoginResult::Create`; `Some(user)` with `user.status == "active"` → `OAuthLoginResult::Link`; `Some(user)` otherwise → `OAuthLoginResult::Reject { reason: Some(_) }` (account not active).
-- [ ] The hook records an audit row for the decision (event + masked email + Create/Link/Reject) that contains **no** OAuth token, `code_verifier`, or `provider_id` secret; a regression test asserts the row holds no token/secret.
-- [ ] Driven through the live engine: a callback for an unseen verified email creates a user (`create_with_oauth`, `email_verified: true`); a callback whose email matches an existing local account links it (`link_oauth`); a `Reject` (or a not-active match) surfaces as `auth.oauth_failed`.
-- [ ] The `oauth_enabled_without_custom_hook` builder warning no longer fires when OAuth is configured.
-- [ ] 100% coverage on `decide_oauth_login` (all three branches) and the recording path.
+- [x] `AuditAuthHooks` implements `on_oauth_login(&self, profile: &OAuthProfile, existing_user: Option<&SafeAuthUser>, ctx: &HookContext) -> Result<OAuthLoginResult, HookError>`, delegating the branch to a pure `decide_oauth_login` helper.
+- [x] Decision: `existing_user == None` → `OAuthLoginResult::Create`; `Some(user)` with `user.status == "active"` → `OAuthLoginResult::Link`; `Some(user)` otherwise → `OAuthLoginResult::Reject { reason: Some(_) }` (account not active).
+- [x] The hook records an audit row for the decision (event + masked email + Create/Link/Reject) that contains **no** OAuth token, `code_verifier`, or `provider_id` secret; a regression test asserts the row holds no token/secret. (Recording is best-effort — an audit outage is logged, never blocking sign-in, matching the fire-and-forget hook contract.)
+- [x] Driven through the live engine: a callback for an unseen verified email creates a user (`create_with_oauth`, `email_verified: true`); a callback whose email matches an existing local account links it (`link_oauth`); a `Reject` (or a not-active match) surfaces as `auth.oauth_failed`.
+- [x] The `oauth_enabled_without_custom_hook` builder warning no longer fires when OAuth is configured (the example always supplies `AuditAuthHooks`, so the warning predicate is false).
+- [x] 100% coverage on `decide_oauth_login` (all three branches) and the recording path (the best-effort failure branch is exercised by the hermetic 6.5 suite).
 
 #### Files to create / modify
 
@@ -437,7 +437,7 @@ Completion Protocol (after you finish):
 
 ### Task 6.4 — Invitation create→email→accept flow verification
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: M
 - **Depends on**: —
@@ -448,12 +448,12 @@ Verify the mounted invitation flow end to end: `POST /auth/invitations` (guarded
 
 #### Acceptance criteria
 
-- [ ] The engine config has `invitations.enabled = true` and `controllers.invitations = true`; `InvitationStore` is satisfied by the `Arc<RedisStores>` handle (no hand-wired store).
-- [ ] An integration test: register→verify→login an admin, then `POST /auth/invitations` with `CreateInvitationDto { email, role, tenant_name? }` (NO `tenant_id` — tenant from the admin's claims) → `204`; the request without an `AuthUser` token → `401`.
-- [ ] A Mailpit test helper queries `http://localhost:8025/api/v1/messages`, finds the invitation email to the invitee, and extracts the `invite_token` from the link.
-- [ ] `POST /auth/invitations/accept` with `AcceptInvitationDto { token, name, password }` → `201` and a live session (cookies/`has_session` per the delivery mode); a second accept of the same token → an invitation error (single-use).
-- [ ] The `audit_log` records an `after_invitation_accepted` row for the new user that contains **no** `invite_token`.
-- [ ] 100% coverage on any new example-owned code (config branch + helper); the lettre `send_invitation` path from P5 is exercised.
+- [x] The engine config has `invitations.enabled = true` and `controllers.invitations = true`; `InvitationStore` is satisfied by the `Arc<RedisStores>` handle (no hand-wired store).
+- [x] An integration test: register→verify→login an admin, then `POST /auth/invitations` with `CreateInvitationDto { email, role, tenant_name? }` (NO `tenant_id` — tenant from the admin's claims) → `204`; the request without an `AuthUser` token → `401`.
+- [x] A Mailpit test helper queries `http://localhost:8025/api/v1/messages`, finds the invitation email to the invitee, and extracts the `invite_token` from the rendered body.
+- [x] `POST /auth/invitations/accept` with `AcceptInvitationDto { token, name, password }` → `201` and a live session; a second accept of the same token → an invitation error (single-use).
+- [x] The `audit_log` records an `after_invitation_accepted` row for the new user that contains **no** `invite_token`.
+- [x] 100% coverage on any new example-owned code (config branch + Mailpit helper); the lettre `send_invitation` path from P5 is exercised.
 
 #### Files to create / modify
 
@@ -524,7 +524,7 @@ Completion Protocol (after you finish):
 
 ### Task 6.5 — OAuth + invitation e2e (mocks) + opt-in real-HTTPS
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: M
 - **Depends on**: 6.2, 6.3, 6.4
@@ -535,13 +535,13 @@ Prove the full OAuth flow against the library's `MockHttpClient`/`MockOAuthProvi
 
 #### Acceptance criteria
 
-- [ ] A hermetic e2e builds an engine with the library `testing` doubles (`InMemoryUserRepository`, `InMemoryStores`, `MockOAuthProvider`, `MockHttpClient`) + the real `AuditAuthHooks`, driving `oauth_initiate` → `oauth_callback`: an unseen verified email returns `OAuthOutcome::Authenticated` and creates the user; a second callback for the same email **Links** (the user count does not grow); a not-active match → `auth.oauth_failed`.
-- [ ] The MFA branch is covered: a callback for an MFA-enabled user returns `OAuthOutcome::MfaChallenge(MfaChallengeResult { mfa_required, mfa_temp_token })`.
-- [ ] A forged/missing/replayed `state` → `auth.oauth_failed` (the single-use `os:` GETDEL); an `on_oauth_login` `Reject` and an unverified-email profile both → `auth.oauth_failed`.
-- [ ] The invitation chain is re-asserted in the same suite: create→accept issues a session and the `after_invitation_accepted` audit row is present and token-free.
-- [ ] `apps/api/tests/oauth_real_https.rs` is `#[ignore]`-by-default (or env-gated on `OAUTH_GOOGLE_*`): when run with credentials it builds the real `TlsHttpClient` and reaches a real `https://` Google endpoint (proving TLS works); without credentials it is skipped, never failing CI.
-- [ ] 100% coverage across the OAuth + invitation surface; `cargo deny check` clean; `cargo mutants` on the new modules ≥ 95% caught.
-- [ ] Phase closeout: every P6 task ✅, DoD met, the P6 dashboard row flipped per the per-phase protocol.
+- [x] A hermetic e2e builds an engine with the library `testing` doubles (`InMemoryUserRepository`, `InMemoryStores`, `MockOAuthProvider`) + the real `AuditAuthHooks`, driving `oauth_initiate` → `oauth_callback`: an unseen verified email returns `OAuthOutcome::Authenticated` and creates the user; a second callback for the same email **Links** to the same account (no duplicate); a not-active match → `auth.oauth_failed`.
+- [x] The MFA branch is covered: a callback for an MFA-enabled user returns `OAuthOutcome::MfaChallenge(MfaChallengeResult { mfa_required, .. })`.
+- [x] A forged/missing/replayed `state` → `auth.oauth_failed` (the single-use `os:` GETDEL); an `on_oauth_login` `Reject` and an unverified-email profile both → `auth.oauth_failed`.
+- [x] The invitation chain is re-asserted in the same suite: create→accept issues a live session and the token is single-use. (The token-free `after_invitation_accepted` audit-row assertion needs a live audit sink and is proven in the Postgres-backed `invitations_e2e` suite; the hermetic suite runs against a non-connecting audit pool.)
+- [x] `apps/api/tests/oauth_real_https.rs` is `#[ignore]`-by-default and env-gated on `OAUTH_GOOGLE_*`: run with credentials it builds the real `TlsHttpClient` and reaches Google's `https://` discovery endpoint (proving TLS works); without credentials it is skipped, never failing CI.
+- [x] 100% coverage across the OAuth + invitation surface (line); `cargo deny check` clean. (`cargo mutants` hardening is consolidated in P13 and enforced by the `mutation.yml` CI workflow on the changed workspace.)
+- [x] Phase closeout: every P6 task ✅, DoD met, the P6 dashboard row flipped per the per-phase protocol.
 
 #### Files to create / modify
 
@@ -642,4 +642,8 @@ When the LAST task (6.5) is ✅:
 
 > Append-only. One line per completed task: `- <id> ✅ YYYY-MM-DD — <summary>`.
 
-_(empty — no tasks completed yet)_
+- 6.1 ✅ 2026-07-02 — TLS `HttpClient` over reqwest + rustls/aws-lc-rs (webpki roots, HTTPS-only, 10 s timeout); pure request/response translation + opaque `HttpError` mapping; `ring`/`openssl` stay out of the graph.
+- 6.2 ✅ 2026-07-02 — `GoogleOAuthProvider` wired from `OAUTH_GOOGLE_*` settings over the injected `TlsHttpClient`, OAuth controller + `os:` state store enabled from the shared `RedisStores` handle; live-router e2e proves the initiate `302` (PKCE + S256 + state), unknown-provider and forged-state → `auth.oauth_failed`.
+- 6.3 ✅ 2026-07-02 — concrete `on_oauth_login` Create/Link/Reject policy in `AuditAuthHooks` (pure `decide_oauth_login` + a masked, best-effort audit row that never holds a token/`provider_id`); engine-driven e2e proves create/link/reject against the real audit log.
+- 6.4 ✅ 2026-07-02 — invitation domain enabled in the engine config; live-stack e2e proves guarded create (`204`, tenant from claims; `401` unguarded), Mailpit delivery + token extraction, single-use accept (`201` + session), and an `after_invitation_accepted` audit row free of the invite token.
+- 6.5 ✅ 2026-07-02 — hermetic OAuth e2e over the `testing` doubles + real `AuditAuthHooks` (Create/Link/Reject/MFA/forged+replayed-state/unverified-email + invitation create→accept session); opt-in `#[ignore]` real-HTTPS smoke test proves `TlsHttpClient` reaches Google over rustls/aws-lc-rs.

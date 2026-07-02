@@ -25,8 +25,8 @@ const MFA_TOTP_WINDOW: u8 = 1;
 /// Picks the `nest_compat_defaults` profile (or `secure_defaults` under the
 /// `argon2` feature), injects the HS256 secret, seals TOTP secrets with the
 /// configured AES-256-GCM key, sets the dashboard role hierarchy, and enables the
-/// `sessions` + `mfa` controller groups. The `oauth`/`invitations`/`platform`
-/// route groups stay off until their seams are wired.
+/// `sessions` + `mfa` + `invitations` controller groups. OAuth is enabled from settings
+/// when Google is configured; the `platform` group stays off until its seam is wired.
 ///
 /// # Errors
 ///
@@ -72,15 +72,31 @@ pub fn build_auth_config(
     // added; enabling it here would auto-promote the platform controller group in `build`.
     config.platform.enabled = false;
 
-    // Enable only the sessions and MFA controller groups; the oauth/invitations/platform
-    // route groups stay off until their seams are wired.
+    // Enable the sessions and MFA controller groups; the platform route group stays off
+    // until its seam is wired.
     config.controllers = ControllerToggles {
         sessions: true,
         mfa: true,
         ..config.controllers
     };
 
-    // Fail-fast: rejects a weak/low-entropy secret, an empty role hierarchy, or a bad key.
+    // Enable the team-invitation domain. Its `inv:` single-use store is satisfied by the
+    // shared `RedisStores` handle, and the controller group is turned on here (the builder
+    // also auto-promotes it from `invitations.enabled`).
+    config.invitations.enabled = true;
+    config.controllers.invitations = true;
+
+    // Wire the OAuth surface from settings: when Google is configured, populate the
+    // provider credentials, the operator-configured redirect targets, and the host
+    // allow-list, and enable the OAuth controller group. Otherwise OAuth stays off and
+    // the mounted routes answer `auth.oauth_failed`.
+    config.oauth = crate::engine::oauth::oauth_config(settings);
+    if config.oauth.google.is_some() {
+        config.controllers.oauth = true;
+    }
+
+    // Fail-fast: rejects a weak/low-entropy secret, an empty role hierarchy, a bad key,
+    // or an unsafe OAuth redirect configuration.
     config.validate(environment)?;
     Ok(config)
 }
@@ -122,6 +138,9 @@ mod tests {
             smtp_port: 1025,
             smtp_from: "no-reply@auth.local".to_owned(),
             resend_api_key: None,
+            oauth_google_client_id: None,
+            oauth_google_client_secret: None,
+            oauth_google_callback_url: None,
         }
     }
 
@@ -136,11 +155,32 @@ mod tests {
         assert!(config.controllers.sessions);
         assert!(config.controllers.mfa);
         assert!(!config.controllers.oauth);
-        assert!(!config.controllers.invitations);
+        assert!(config.controllers.invitations);
+        assert!(config.invitations.enabled);
         assert!(!config.controllers.platform);
         assert!(!config.platform.enabled);
         assert!(config.mfa.is_some());
         assert!(config.roles.hierarchy.contains_key("admin"));
+    }
+
+    #[test]
+    fn google_configured_enables_the_oauth_controller() {
+        // Configuring Google turns on the OAuth controller group and wires the provider
+        // credentials + redirect config, and the result still validates.
+        let mut settings = settings_with_secret(TEST_JWT);
+        settings.oauth_google_client_id = Some("client-id".to_owned());
+        settings.oauth_google_client_secret = Some(SecretString::from("client-secret".to_owned()));
+        settings.oauth_google_callback_url =
+            Some("http://localhost:3000/api/auth/oauth/google/callback".to_owned());
+        let config = build_auth_config(&settings, Environment::Development)
+            .expect("a configured OAuth profile must build");
+        assert!(config.controllers.oauth);
+        assert!(config.oauth.google.is_some());
+        assert!(config.oauth.success_redirect_url.is_some());
+        assert_eq!(
+            config.oauth.redirect_allowlist,
+            vec!["localhost".to_owned()]
+        );
     }
 
     #[test]

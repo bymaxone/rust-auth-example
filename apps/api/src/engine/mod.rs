@@ -7,6 +7,7 @@
 //! the process opens exactly one Redis connection pool.
 
 pub mod config;
+pub mod oauth;
 
 use std::sync::Arc;
 
@@ -19,6 +20,7 @@ use crate::config::Settings;
 use crate::email::resolve_email_provider;
 use crate::engine::config::build_auth_config;
 use crate::hooks::AuditAuthHooks;
+use crate::oauth::TlsHttpClientError;
 use crate::repository::user::SqlxUserRepository;
 
 /// Failure assembling the engine from settings.
@@ -30,6 +32,9 @@ pub enum EngineError {
     /// The email provider could not be constructed from settings.
     #[error("email provider construction failed: {0}")]
     Email(#[from] bymax_auth_core::traits::email::EmailError),
+    /// The OAuth HTTPS transport could not be constructed.
+    #[error("oauth transport construction failed: {0}")]
+    OauthTransport(#[from] TlsHttpClientError),
 }
 
 /// Builds the production-shaped [`AuthEngine`]: the real sqlx user repository, the
@@ -53,14 +58,22 @@ pub fn build_engine(
 ) -> Result<AuthEngine, EngineError> {
     let config = build_auth_config(settings, environment)?;
 
-    let engine = AuthEngine::builder()
+    let mut builder = AuthEngine::builder()
         .config(config)
         .environment(environment)
         .user_repository(Arc::new(SqlxUserRepository::new(pool.clone())))
-        .redis_stores(stores)
+        .redis_stores(Arc::clone(&stores))
         .email_provider(resolve_email_provider(settings)?)
-        .hooks(Arc::new(AuditAuthHooks::new(pool)))
-        .build()?;
+        .hooks(Arc::new(AuditAuthHooks::new(pool)));
+
+    // Wire the Google OAuth provider (over the example's TLS transport) and the single-use
+    // `state` + PKCE store — both satisfied by the one shared `Arc<RedisStores>` handle —
+    // only when Google is configured; otherwise the OAuth controller stays disabled.
+    if let Some(provider) = oauth::google_provider(settings)? {
+        builder = builder.oauth_provider(provider).oauth_state_store(stores);
+    }
+
+    let engine = builder.build()?;
     Ok(engine)
 }
 
@@ -98,6 +111,23 @@ mod tests {
             Environment::Development,
         );
         assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn builds_engine_with_google_oauth_wired() {
+        // With Google configured the engine registers the `google` provider (over the TLS
+        // transport) and satisfies the OAuth state-store seam from the shared handle, so
+        // the assembled engine exposes it via `oauth_providers()`.
+        let (pool, stores) = lazy_handles();
+        let mut settings = crate::config::dev_settings();
+        settings.oauth_google_client_id = Some("client-id".to_owned());
+        settings.oauth_google_client_secret =
+            Some(secrecy::SecretString::from("client-secret".to_owned()));
+        settings.oauth_google_callback_url =
+            Some("http://localhost:3000/api/auth/oauth/google/callback".to_owned());
+        let engine = build_engine(&settings, pool, stores, Environment::Development)
+            .expect("an OAuth-enabled engine assembles");
+        assert!(engine.oauth_providers().contains_key("google"));
     }
 
     #[tokio::test]
