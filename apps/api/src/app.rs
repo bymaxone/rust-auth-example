@@ -9,6 +9,7 @@
 use std::sync::Arc;
 
 use axum::Router;
+use bymax_auth_axum::{AuthRouter, AxumAuthConfig, ClientIpSource, RateLimitConfig};
 use bymax_auth_core::AuthEngine;
 use bymax_auth_redis::RedisStores;
 use sqlx::PgPool;
@@ -46,14 +47,32 @@ impl AppState {
     }
 }
 
-/// Compose the example's own router.
+/// Compose the full example `Router`: the mounted library auth surface plus the
+/// example's own domain routes, sharing one `Arc<AuthEngine>`.
 ///
-/// Later layers merge their route groups and the mounted authentication router
-/// onto the value returned here before the global middleware stack wraps it.
+/// The library router is derived from the engine's resolved `ControllerToggles`, so
+/// only the enabled groups (`auth`, `password_reset`, `sessions`, `mfa`) mount. The
+/// example's own routes are merged onto the same value before the global middleware
+/// stack wraps it.
 pub fn build_router(state: AppState) -> Router {
-    Router::new()
-        .merge(crate::routes::health::routes())
-        .with_state(state)
+    let auth = AuthRouter::from_engine(
+        Arc::clone(&state.engine),
+        AxumAuthConfig {
+            route_prefix: "auth".to_owned(),
+            rate_limits: RateLimitConfig::default(),
+            client_ip_source: ClientIpSource::PeerAddr,
+            ..Default::default()
+        },
+    )
+    .into_router();
+
+    example_routes().with_state(state).merge(auth)
+}
+
+/// The example's own domain routes (health today; the audit read-API and the
+/// diagnostics surface merge in alongside).
+fn example_routes() -> Router<AppState> {
+    Router::new().merge(crate::routes::health::routes())
 }
 
 #[cfg(test)]

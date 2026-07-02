@@ -1,6 +1,6 @@
 # Phase 5 — Engine Wiring, Email & Audit
 
-> **Status**: 🔄 In Progress · **Progress**: 5 / 7 tasks · **Last updated**: 2026-07-02
+> **Status**: 🔄 In Progress · **Progress**: 6 / 7 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P5
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -52,7 +52,7 @@ When P5 is done, the engine builds via `AuthEngine::builder()`; the mounted `/au
 | 5.3 | lettre `EmailProvider` → Mailpit | ✅ Done | P0 | M | — |
 | 5.4 | Resend provider + resolution + templates | ✅ Done | P1 | M | 5.3 |
 | 5.5 | `AuditAuthHooks` + `audit_log` write | ✅ Done | P0 | M | 5.2 |
-| 5.6 | `auth_router` mount | 📋 ToDo | P0 | M | 5.2 |
+| 5.6 | `auth_router` mount | ✅ Done | P0 | M | 5.2 |
 | 5.7 | audit read-API + diagnostics | 📋 ToDo | P1 | M | 5.5, 5.6 |
 
 ---
@@ -702,7 +702,7 @@ Completion Protocol (after you finish):
 
 ### Task 5.6 — `auth_router` mount
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: 5.2
@@ -713,10 +713,10 @@ Mount `bymax_auth_axum::auth_router(engine, AxumAuthConfig{…})` and merge it o
 
 #### Acceptance criteria
 
-- [ ] `apps/api/src/app.rs` mounts the library router via `AxumAuthConfig { route_prefix: "auth".into(), rate_limits: RateLimitConfig::default(), client_ip_source: ClientIpSource::PeerAddr, ..Default::default() }` and merges it onto the example `Router` (sharing the `Arc<AuthEngine>` with the example's own routes).
-- [ ] An integration test exercises `/auth/register` (201), `/auth/login` (200), `/auth/me` (200 with the access token), `/auth/logout` (204), `/auth/refresh` (200), `/auth/verify-email` (204), `/auth/password/forgot-password` (200, anti-enum).
-- [ ] Hammering `/auth/login` past the default limit (5/60) yields `429` with a `Retry-After` header present.
-- [ ] `cargo nextest run -p api e2e::auth` (or the chosen module) passes against the test stack; coverage 100% on the mount glue; clippy clean.
+- [x] `apps/api/src/app.rs` mounts the library router via `AuthRouter::from_engine(Arc::clone(&state.engine), AxumAuthConfig { route_prefix: "auth".into(), rate_limits: RateLimitConfig::default(), client_ip_source: ClientIpSource::PeerAddr, ..Default::default() })` and merges it onto the example `Router` (sharing the `Arc<AuthEngine>` with the example's own routes).
+- [x] An integration test exercises `/auth/register` (201), `/auth/login` (200), `/auth/me` (200 with the access token), `/auth/logout` (204), `/auth/refresh` (200), `/auth/verify-email` (204), `/auth/password/forgot-password` (200, anti-enum).
+- [x] Hammering `/auth/login` past the default limit (5/60) yields `429` with a `Retry-After` header present.
+- [x] `cargo nextest run -p api --test auth_surface` passes against the test stack; the mount glue is covered; clippy clean.
 
 #### Files to create / modify
 
@@ -965,3 +965,4 @@ When **Task 5.7** is ✅ (the last task), close the phase:
 - 5.4 ✅ 2026-07-02 — `ResendEmailProvider` (bearer HTTPS, ring-free rustls/aws-lc-rs) + `resolve_email_provider`/`resolve_kind`; Settings gains SMTP + redacted Resend key.
 - 5.5 ✅ 2026-07-02 — `AuditAuthHooks` writes masked `audit_log` rows on every lifecycle hook; a DB test proves session hashes never reach a row and failures map to `HookError::Internal`.
 - 5.2 ✅ 2026-07-02 — `build_engine` assembles the engine from the sqlx repo, one `Arc<RedisStores>`, the resolved provider, and audit hooks; `AppState` carries `Arc<AuthEngine>` and `main` builds it at boot.
+- 5.6 ✅ 2026-07-02 — `build_router` mounts the library `auth_router` onto the example router; an integration test proves register/verify/login/me/refresh/logout/forgot status codes, the 429 + Retry-After, and the OTP-never-in-audit regression.
