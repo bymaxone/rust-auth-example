@@ -7,9 +7,10 @@
 
 'use client';
 
+import type { ComponentProps } from 'react';
 import { Toaster as SonnerToaster } from 'sonner';
 
-type ToasterProps = React.ComponentProps<typeof SonnerToaster>;
+type ToasterProps = ComponentProps<typeof SonnerToaster>;
 
 /**
  * App-wide toast container styled for the dark design system.
