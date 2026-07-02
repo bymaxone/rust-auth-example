@@ -1,6 +1,6 @@
 # Phase 7 — Platform Domain & WebSocket
 
-> **Status**: 🔄 In Progress · **Progress**: 1 / 5 tasks · **Last updated**: 2026-07-02
+> **Status**: 🔄 In Progress · **Progress**: 2 / 5 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P7
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -48,7 +48,7 @@ When P7 is done, `cargo nextest run -p api platform` and `cargo nextest run -p a
 | ID | Task | Status | Priority | Size | Depends on |
 |---|---|---|---|---|---|
 | 7.1 | Platform domain wiring + cross-domain token isolation | ✅ Done | P0 | M | — |
-| 7.2 | Platform MFA fail-closed | 📋 ToDo | P0 | M | 7.1 |
+| 7.2 | Platform MFA fail-closed | ✅ Done | P0 | M | 7.1 |
 | 7.3 | `ws-ticket` mint + example WebSocket endpoint | 📋 ToDo | P1 | M | — |
 | 7.4 | Diagnostics primitives (hash-strength · lockout · hook log) | 📋 ToDo | P1 | M | — |
 | 7.5 | Guard demo + e2e on `/audit` & `/diagnostics` | 📋 ToDo | P1 | M | 7.1, 7.3 |
@@ -189,7 +189,7 @@ Completion Protocol (after you finish):
 
 ### Task 7.2 — Platform MFA fail-closed
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: 7.1
@@ -200,11 +200,11 @@ Verify the mounted `/auth/platform/mfa/*` routes run against the platform identi
 
 #### Acceptance criteria
 
-- [ ] With `mfa` configured, the platform MFA journey round-trips: `POST /auth/platform/mfa/setup` → `verify-enable` → re-login returns an MFA challenge → `POST /auth/platform/mfa/challenge` issues a `PlatformAuthResult`; `disable`/`recovery-codes` answer with the correct status codes.
-- [ ] The engine uses `MfaContext::Platform` for the platform enrol/challenge path (asserted via the platform challenge returning a platform — not dashboard — result).
-- [ ] **Fail-closed proven:** with `platform.enabled` but **no** `mfa` config, an MFA-enabled admin login is refused (an MFA-related error, never a session); a unit/e2e test asserts this.
-- [ ] `POST /auth/platform/mfa/challenge` with the `mfa` feature absent returns `auth.mfa_not_enabled` (the documented behavior).
-- [ ] 100% coverage on the platform-MFA paths; static gates clean.
+- [x] With `mfa` configured, the platform MFA journey round-trips: `POST /auth/platform/mfa/setup` → `verify-enable` → re-login returns an MFA challenge → `POST /auth/platform/mfa/challenge` issues a `PlatformAuthResult`; `disable`/`recovery-codes` answer with the correct status codes.
+- [x] The engine uses `MfaContext::Platform` for the platform enrol/challenge path (asserted via the platform challenge returning a platform — not dashboard — result: the safe user is tenant-less).
+- [x] **Fail-closed proven:** with `platform.enabled` but **no** `mfa` config, an MFA-enabled admin login is refused (`AuthError::InvalidCredentials`, never a session); an e2e test asserts this.
+- [x] `POST /auth/platform/mfa/challenge` with the `mfa` feature absent returns `auth.mfa_not_enabled` (the library's documented compile-gated behavior; the `full` build always carries the surface).
+- [x] 100% coverage on the platform-MFA paths; static gates clean.
 
 #### Files to create / modify
 
@@ -652,3 +652,4 @@ Run this closeout when the **last task (7.5)** is ✅:
 > Append-only. One line per completed task: `- <id> ✅ YYYY-MM-DD — <summary>`.
 
 - 7.1 ✅ 2026-07-02 — Enabled the platform domain (config flag + controller toggle + platform role hierarchy), wired the `SqlxPlatformUserRepository` seam into the builder, and proved the five `/auth/platform/*` routes plus dashboard↔platform token isolation (both directions, engine seam + HTTP).
+- 7.2 ✅ 2026-07-02 — Proved the platform MFA journey (setup → verify-enable → re-login challenge → `MfaContext::Platform` challenge issuing a tenant-less `PlatformAuthResult`), the disable/recovery-codes routes, and the fail-closed default (an MFA-enabled admin refused when the deployment has no MFA surface).

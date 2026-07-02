@@ -459,6 +459,73 @@ pub async fn dashboard_access_token_with_role(app: &TestApp, email: &str, role: 
         .to_owned()
 }
 
+/// Mark the seeded platform admin as MFA-enabled directly in the row (a sealed-secret
+/// placeholder), so the fail-closed default can be exercised: an MFA-enabled admin whose
+/// deployment has no MFA surface must be refused a session. Returns `(id, email)`.
+pub async fn seed_platform_admin_mfa_enabled(pool: &PgPool) -> (String, String) {
+    let (id, email) = seed_platform_admin(pool).await;
+    sqlx::query(
+        "UPDATE platform_users SET mfa_enabled = true, mfa_secret = 'sealed-placeholder' \
+         WHERE id = $1",
+    )
+    .bind(&id)
+    .execute(pool)
+    .await
+    .expect("enable the admin MFA flag");
+    (id, email)
+}
+
+/// Compute the 6-digit TOTP code for a Base32 secret at `now + offset_secs`. Distinct
+/// offsets within the configured drift window yield distinct codes, so a test can perform
+/// several TOTP-gated operations without the per-step anti-replay rejecting a reused code.
+pub fn totp_code(secret_b32: &str, offset_secs: i64) -> String {
+    let raw = bymax_auth_crypto::totp::decode_secret_base32(secret_b32)
+        .expect("the enrolment secret is valid Base32");
+    let base = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    let now = i64::try_from(base)
+        .unwrap_or(i64::MAX)
+        .saturating_add(offset_secs);
+    let now = u64::try_from(now).unwrap_or(0);
+    format!("{:06}", bymax_auth_crypto::totp::totp(&raw, now, 30, 6))
+}
+
+/// Build a platform-enabled engine whose MFA surface is unconfigured (`mfa = None`,
+/// `controllers.mfa = false`), so the fail-closed platform-login default can be exercised.
+/// Returns the engine + pool, or `None` (a skip) when the test-stack env is unset.
+pub async fn platform_engine_without_mfa() -> Option<(Arc<AuthEngine>, PgPool)> {
+    let database_url = std::env::var("DATABASE_URL_TEST").ok()?;
+    let redis_url = std::env::var("REDIS_URL").ok()?;
+    install_crypto();
+    let pool = PgPool::connect(&database_url)
+        .await
+        .expect("the test stack Postgres must be reachable");
+    let settings = test_settings(database_url, redis_url);
+    let mut config = build_auth_config(&settings, Environment::Development)
+        .expect("the base configuration validates");
+    // Strip the MFA surface so the platform login has no challenge flow to route to.
+    config.mfa = None;
+    config.controllers.mfa = false;
+    let stores = Arc::new(
+        RedisStores::connect(&settings.redis_url, settings.redis_namespace.clone())
+            .expect("the redis handle builds"),
+    );
+    let engine = Arc::new(
+        AuthEngine::builder()
+            .config(config)
+            .environment(Environment::Development)
+            .user_repository(Arc::new(SqlxUserRepository::new(pool.clone())))
+            .platform_user_repository(Arc::new(SqlxPlatformUserRepository::new(pool.clone())))
+            .redis_stores(stores)
+            .hooks(Arc::new(AuditAuthHooks::new(pool.clone())))
+            .build()
+            .expect("the no-MFA platform engine builds"),
+    );
+    Some((engine, pool))
+}
+
 /// A Postgres + Redis-backed engine wired with the example's real `AuditAuthHooks` and a
 /// controllable `MockOAuthProvider` (registered as `google`), for driving the
 /// `on_oauth_login` Create/Link/Reject policy end to end against the real audit log.
