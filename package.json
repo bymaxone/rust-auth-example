@@ -31,6 +31,7 @@
     "infra:down": "docker compose down -v",
     "infra:test:up": "docker compose -f docker-compose.test.yml up -d --wait",
     "infra:test:down": "docker compose -f docker-compose.test.yml down -v",
+    "//": "db:migrate requires a live DATABASE_URL (export from .env after pnpm infra:up). The DATABASE_URL in .cargo/config.toml is a compile-time offline placeholder only.",
     "db:migrate": "sqlx migrate run --source apps/api/migrations",
     "db:prepare": "pnpm db:migrate && cargo sqlx prepare --workspace",
     "audit:exports": "node scripts/audit-library-exports.mjs --report",

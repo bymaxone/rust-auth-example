@@ -33,7 +33,7 @@ env:
   # A syntactically valid placeholder so cargo builds and tests run without a
   # live database connection.
   DATABASE_URL: postgres://postgres:postgres@localhost:5432/ci_placeholder
-  # Build the sqlx query macros from the committed `apps/api/.sqlx/` cache rather
+  # Build the sqlx query macros from the committed `.sqlx/` cache rather
   # than connecting to a database; every job that compiles the API relies on it.
   SQLX_OFFLINE: 'true'
 
@@ -246,6 +246,22 @@ jobs:
     needs: install
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: example_app_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL_TEST: postgres://postgres:postgres@localhost:5432/example_app_test
     steps:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
@@ -257,10 +273,11 @@ jobs:
       - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
       - uses: taiki-e/install-action@16b05812d776ae1dfaabc8277e421fb6d2506419 # v2
         with:
-          tool: cargo-nextest
-      # Integration tests run against the high-port test stack; with no
-      # integration tests present the suite passes with nothing to run.
-      - run: cargo nextest run --no-tests=pass
+          tool: cargo-nextest,sqlx-cli
+      - name: Apply migrations
+        run: sqlx migrate run --source apps/api/migrations
+      - name: Run api tests against Postgres service
+        run: cargo nextest run -p api --no-tests=pass --test-threads 4
 
   e2e-web:
     name: e2e-web

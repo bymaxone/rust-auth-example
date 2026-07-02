@@ -43,7 +43,10 @@ mod tests {
     /// Connect to the test Postgres and ensure the schema exists, or return `None`
     /// when `DATABASE_URL_TEST` is unset so the suite stays green without a database.
     async fn test_pool() -> Option<PgPool> {
-        let url = std::env::var("DATABASE_URL_TEST").ok()?;
+        let Ok(url) = std::env::var("DATABASE_URL_TEST") else {
+            eprintln!("skipping DB-backed test: DATABASE_URL_TEST unset");
+            return None;
+        };
         let pool = PgPool::connect(&url)
             .await
             .expect("connect to test database");

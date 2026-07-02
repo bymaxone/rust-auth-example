@@ -1,11 +1,13 @@
 # cargo-audit configuration.
 #
-# `sqlx-postgres` declares `rsa` as an OPTIONAL dependency; the feature that would
-# enable it is off, so `rsa` is never compiled into any target (`cargo tree -i rsa`
-# is empty across all targets). Cargo.lock still records the optional crate, and
-# cargo-audit is lock-based (not feature-aware), so it reports the Marvin-attack
-# advisory against a crate that is not built and whose code paths are unreachable.
-# cargo-deny, which resolves features, does not flag it. This ignore is limited to
-# that single unreachable advisory; drop it if `rsa` ever enters the build graph.
+# `sqlx-macros-core` pulls in `sqlx-mysql` as a dependency; `sqlx-mysql` declares
+# `rsa` as an OPTIONAL dependency gated on its own mysql feature. This app uses
+# postgres only — the mysql feature is never enabled — so `rsa` is never compiled
+# into any target (`cargo tree -i rsa` is empty across all targets and features).
+# Cargo.lock still records the optional crate, and cargo-audit is lock-based (not
+# feature-aware), so it reports the Marvin-attack advisory against a crate that is
+# not built and whose code paths are unreachable. cargo-deny, which resolves
+# features, does not flag it. This ignore is limited to that single unreachable
+# advisory; drop it if `rsa` ever enters the build graph.
 [advisories]
 ignore = ["RUSTSEC-2023-0071"]
