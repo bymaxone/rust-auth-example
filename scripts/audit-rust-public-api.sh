@@ -24,5 +24,7 @@ fi
 
 # The consumed public surface exists; snapshot it so a reviewer can diff the
 # referenced items. Enforcement of the reference set lands with the audit wiring.
-cargo public-api --manifest-path "${ROOT}/apps/api/Cargo.toml" >/dev/null
-echo "audit:public-api — consumed crates present; public-API snapshot generated."
+SNAPSHOT="${ROOT}/target/public-api-snapshot.txt"
+mkdir -p "$(dirname "${SNAPSHOT}")"
+cargo public-api --manifest-path "${ROOT}/apps/api/Cargo.toml" | tee "${SNAPSHOT}"
+echo "audit:public-api — consumed crates present; public-API snapshot written to ${SNAPSHOT}."
