@@ -32,6 +32,10 @@ allow = [
     "Unicode-3.0",
     "Zlib",
     "BSL-1.0",
+    # Community Data License Agreement Permissive 2.0 — a permissive, non-copyleft
+    # data license carried by `webpki-roots` (Mozilla's trusted CA bundle behind the
+    # sqlx rustls TLS root store). Server-only; never on the wasm edge path.
+    "CDLA-Permissive-2.0",
 ]
 confidence-threshold = 0.9
 
@@ -45,7 +49,14 @@ deny = [
     { crate = "openssl-sys", reason = "C OpenSSL bindings are banned — zero-native-binding posture." },
     { crate = "ring", reason = "ring breaks the wasm32 edge build; RustCrypto is the crypto policy." },
 ]
-skip = []
+# Duplicate leaves pulled only by the sqlx persistence stack (server-only, never on
+# the wasm edge / crypto path). Each is a transitive version the ecosystem has not
+# yet unified; skipping the specific version keeps the gate honest for the
+# first-party graph without masking a duplicate elsewhere.
+skip = [
+    { crate = "hashbrown@0.17.1", reason = "sqlx-core → indexmap 2.x; server-only persistence dep." },
+    { crate = "windows-sys@0.48.0", reason = "sqlx-postgres → etcetera home-dir lookup; server-only, Windows-only leaf." },
+]
 # The rate-limiter and WebSocket transport bring their own `rand`/`getrandom`/
 # `hashbrown` majors and pull `thiserror 1`; skipping their subtrees keeps the
 # duplicate count from those leaves out of the gate without masking a duplicate

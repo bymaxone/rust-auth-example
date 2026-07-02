@@ -19,3 +19,9 @@ paths = [
   '''(^|/)docs/.*\.md$''',
   '''(^|/)[^/]*\.env\.example$''',
 ]
+# The AES-256-GCM dev key (base64 of "dev_only_local_32_byte_key_00000") is a
+# documented non-secret fixture used inline in unit/integration tests. It is
+# allow-listed by its exact value, so a real credential elsewhere is still caught.
+regexes = [
+  '''ZGV2X29ubHlfbG9jYWxfMzJfYnl0ZV9rZXlfMDAwMDA=''',
+]

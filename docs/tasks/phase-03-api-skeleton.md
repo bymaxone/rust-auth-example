@@ -1,6 +1,6 @@
 # Phase 3 — API Skeleton
 
-> **Status**: 📋 ToDo · **Progress**: 0 / 6 tasks · **Last updated**: 2026-06-23
+> **Status**: 👀 Review · **Progress**: 6 / 6 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P3
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -95,12 +95,12 @@ in P4.
 
 | ID | Task | Status | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- | --- |
-| 3.1 | tokio + axum bootstrap (`main.rs` + `AppState`) | 📋 ToDo | P0 | M | — |
-| 3.2 | CORS + tower-http global layers | 📋 ToDo | P0 | S | 3.1 |
-| 3.3 | `GET /health` (version probe) | 📋 ToDo | P1 | S | 3.1 |
-| 3.4 | Typed `AppError` → `IntoResponse` | 📋 ToDo | P0 | M | 3.1 |
-| 3.5 | sqlx `PgPool` provider | 📋 ToDo | P0 | M | 3.1 |
-| 3.6 | `RedisStores` handle + JSON telemetry | 📋 ToDo | P0 | M | 3.1 |
+| 3.1 | tokio + axum bootstrap (`main.rs` + `AppState`) | ✅ Done | P0 | M | — |
+| 3.2 | CORS + tower-http global layers | ✅ Done | P0 | S | 3.1 |
+| 3.3 | `GET /health` (version probe) | ✅ Done | P1 | S | 3.1 |
+| 3.4 | Typed `AppError` → `IntoResponse` | ✅ Done | P0 | M | 3.1 |
+| 3.5 | sqlx `PgPool` provider | ✅ Done | P0 | M | 3.1 |
+| 3.6 | `RedisStores` handle + JSON telemetry | ✅ Done | P0 | M | 3.1 |
 
 ---
 
@@ -108,7 +108,7 @@ in P4.
 
 ### Task 3.1 — tokio + axum bootstrap (`main.rs` + `AppState`)
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: —
@@ -121,18 +121,18 @@ beyond a fallback yet.
 
 #### Acceptance criteria
 
-- [ ] `apps/api/src/main.rs` exists with `#[tokio::main] async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>>`
+- [x] `apps/api/src/main.rs` exists with `#[tokio::main] async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>>`
   that loads `config::Settings`, builds `AppState`, builds the router, binds `127.0.0.1:{settings.api_port}`, and serves
   via `router.into_make_service_with_connect_info::<SocketAddr>()` with `.with_graceful_shutdown(shutdown_signal())`.
-- [ ] `shutdown_signal()` resolves on Ctrl-C **or** (on Unix) SIGTERM, using no `unwrap`/`expect` (the non-Unix arm and
+- [x] `shutdown_signal()` resolves on Ctrl-C **or** (on Unix) SIGTERM, using no `unwrap`/`expect` (the non-Unix arm and
   the signal-install-failure arm fall back to `std::future::pending()`).
-- [ ] `apps/api/src/app.rs` exports a `#[derive(Clone)] AppState` (with `Default`) and `pub fn build_router(state: AppState) -> Router`
+- [x] `apps/api/src/app.rs` exports a `#[derive(Clone)] AppState` (with `Default`) and `pub fn build_router(state: AppState) -> Router`
   returning a `Router` with `.with_state(state)`; the struct carries `version: &'static str = env!("CARGO_PKG_VERSION")`
   and a rustdoc note that the database pool, the Redis store handle, and the wired `AuthEngine` are attached here as those
   layers are introduced.
-- [ ] A unit test proves `build_router(AppState::default())` produces a service that answers (e.g. a fallback `404`) via
+- [x] A unit test proves `build_router(AppState::default())` produces a service that answers (e.g. a fallback `404`) via
   `tower::ServiceExt::oneshot` — no live port bound in the test.
-- [ ] `cargo build --locked` succeeds; `cargo run -p api` binds the port and shuts down cleanly on Ctrl-C.
+- [x] `cargo build --locked` succeeds; `cargo run -p api` binds the port and shuts down cleanly on Ctrl-C.
 
 #### Files to create / modify
 
@@ -284,7 +284,7 @@ Completion Protocol (after you finish):
 
 ### Task 3.2 — CORS + tower-http global layers
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: S
 - **Depends on**: 3.1
@@ -297,18 +297,19 @@ router.
 
 #### Acceptance criteria
 
-- [ ] `apps/api/src/layers.rs` exports `cors_layer(settings: &Settings) -> Result<CorsLayer, AppError>` building a CORS
+- [x] `apps/api/src/layers.rs` exports `cors_layer(settings: &Settings) -> Result<CorsLayer, AppError>` building a CORS
   layer with `allow_origin(WEB_ORIGIN parsed to HeaderValue)`, `allow_credentials(true)`, methods
   `GET/POST/DELETE/OPTIONS`, request headers including `content-type`, `authorization`, and `x-tenant-id`, and
   `expose_headers([RETRY_AFTER])`.
-- [ ] `apps/api/src/layers.rs` exports `apply_global_layers(router: Router, settings: &Settings) -> Result<Router, AppError>`
+- [x] `apps/api/src/layers.rs` exports `apply_global_layers(router: Router, settings: &Settings) -> Result<Router, AppError>`
   composing, **outermost-first**, `TraceLayer::new_for_http()` → the CORS layer → security response headers
   (`x-content-type-options: nosniff`, `x-frame-options: DENY`, `referrer-policy: no-referrer`) →
-  `RequestBodyLimitLayer::new(MAX_BODY_BYTES)` (1 MiB) via a `tower::ServiceBuilder`.
-- [ ] `main.rs` wraps the router: `let app = layers::apply_global_layers(app::build_router(state), &settings)?;`.
-- [ ] A unit test proves: an `OPTIONS` preflight with `Origin: <WEB_ORIGIN>` echoes `access-control-allow-origin`, lists
-  `x-tenant-id` in `access-control-allow-headers`, and `retry-after` in `access-control-expose-headers`; a plain `GET`
-  carries `x-content-type-options: nosniff`. 100% coverage on `layers.rs`.
+  `RequestBodyLimitLayer::new(MAX_BODY_BYTES)` (1 MiB) as chained `Router::layer` calls (`RequestBodyLimitLayer` changes
+  the request body type, so axum requires it applied directly to the router rather than composed in a `ServiceBuilder`).
+- [x] `main.rs` wraps the router: `let app = layers::apply_global_layers(app::build_router(state), &settings)?;`.
+- [x] A unit test proves: an `OPTIONS` preflight with `Origin: <WEB_ORIGIN>` echoes `access-control-allow-origin` and
+  lists `x-tenant-id` in `access-control-allow-headers`; an actual cross-origin `GET` exposes `retry-after` in
+  `access-control-expose-headers` and carries `x-content-type-options: nosniff`. 100% coverage on `layers.rs`.
 
 #### Files to create / modify
 
@@ -428,7 +429,7 @@ Completion Protocol (after you finish):
 
 ### Task 3.3 — `GET /health` (version probe)
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: S
 - **Depends on**: 3.1
@@ -440,13 +441,13 @@ and merge it onto the example's router, with a unit test.
 
 #### Acceptance criteria
 
-- [ ] `apps/api/src/routes/health.rs` exports a `health` handler returning `200` + `Json(HealthResponse { status: "ok", version })`,
+- [x] `apps/api/src/routes/health.rs` exports a `health` handler returning `200` + `Json(HealthResponse { status: "ok", version })`,
   where `version` comes from `AppState` (which holds `env!("CARGO_PKG_VERSION")`), plus a `pub fn routes() -> Router<AppState>`
   mounting `GET /health`.
-- [ ] `routes/mod.rs` declares `pub mod health;`; `app::build_router` merges `routes::health::routes()` before
+- [x] `routes/mod.rs` declares `pub mod health;`; `app::build_router` merges `routes::health::routes()` before
   `.with_state(state)`.
-- [ ] `HealthResponse` derives `Serialize` (and `Debug`); the body is exactly `{"status":"ok","version":"<crate version>"}`.
-- [ ] A unit test asserts `GET /health` ⇒ `200`, `status == "ok"`, and `version == env!("CARGO_PKG_VERSION")`. 100%
+- [x] `HealthResponse` derives `Serialize` (and `Debug`); the body is exactly `{"status":"ok","version":"<crate version>"}`.
+- [x] A unit test asserts `GET /health` ⇒ `200`, `status == "ok"`, and `version == env!("CARGO_PKG_VERSION")`. 100%
   coverage on `routes/health.rs`.
 
 #### Files to create / modify
@@ -538,7 +539,7 @@ Completion Protocol (after you finish):
 
 ### Task 3.4 — Typed `AppError` → `IntoResponse`
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: 3.1
@@ -551,16 +552,16 @@ the inner string.
 
 #### Acceptance criteria
 
-- [ ] `apps/api/src/error.rs` exports `#[derive(Debug, thiserror::Error)] pub enum AppError` with at least
+- [x] `apps/api/src/error.rs` exports `#[derive(Debug, thiserror::Error)] pub enum AppError` with at least
   `Auth(#[from] AuthError)`, `Database(#[source] sqlx::Error)`, and `Internal(#[source] Box<dyn Error + Send + Sync>)`,
   plus `impl From<sqlx::Error> for AppError`.
-- [ ] `impl IntoResponse for AppError` renders `Auth(err)` via `bymax_auth_axum::error_response(&err)`, and renders both
+- [x] `impl IntoResponse for AppError` renders `Auth(err)` via `bymax_auth_axum::error_response(&err)`, and renders both
   `Database` and `Internal` by wrapping the source in `AuthError::Internal(..)` and delegating to `error_response` — so
   the body uses the generic `auth.internal` client message and the source string is **never** serialized.
-- [ ] A unit test proves: `AppError::from(AuthError::InvalidCredentials).into_response()` ⇒ status `401` and body
+- [x] A unit test proves: `AppError::from(AuthError::InvalidCredentials).into_response()` ⇒ status `401` and body
   `{"error":{"code":"auth.invalid_credentials",...}}`; an `AppError::Internal` carrying a secret marker string ⇒ status
   `500`, body `code == "auth.internal"`, and the body does **not** contain the secret marker.
-- [ ] 100% coverage on `error.rs`.
+- [x] 100% coverage on `error.rs`.
 
 #### Files to create / modify
 
@@ -664,7 +665,7 @@ Completion Protocol (after you finish):
 
 ### Task 3.5 — sqlx `PgPool` provider
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: 3.1
@@ -676,14 +677,14 @@ failure — and attach the pool to `AppState`.
 
 #### Acceptance criteria
 
-- [ ] `apps/api/src/db.rs` exports `async fn connect_pool(database_url: &str, max_connections: u32) -> Result<PgPool, AppError>`
+- [x] `apps/api/src/db.rs` exports `async fn connect_pool(database_url: &str, max_connections: u32) -> Result<PgPool, AppError>`
   using `PgPoolOptions` with a bounded `acquire_timeout`, eagerly establishing the first connection so a misconfigured /
   unreachable database fails at boot; the `sqlx::Error` maps to `AppError::Database`.
-- [ ] `AppState` gains a `pub pool: PgPool` field; `AppState::new` (or a new `AppState::with_pool`) accepts it; `main.rs`
+- [x] `AppState` gains a `pub pool: PgPool` field; `AppState::new` (or a new `AppState::with_pool`) accepts it; `main.rs`
   calls `connect_pool(&settings.database_url, ...)` before building the router and aborts (logs + non-zero exit) on `Err`.
-- [ ] A unit test proves the failure path: `connect_pool("postgres://nobody:nobody@127.0.0.1:1/none", 1)` returns
-  `Err(AppError::Database(_))` (a closed port → fast, deterministic failure).
-- [ ] An integration test against the **test stack** (`DATABASE_URL_TEST`, `docker-compose.test.yml`) proves the success
+- [x] A unit test proves the failure path: `connect_pool` against a closed port returns
+  `Err(AppError::Database(_))` (a closed port → deterministic failure).
+- [x] An integration test against the **test stack** (`DATABASE_URL_TEST`, `docker-compose.test.yml`) proves the success
   path: `connect_pool` returns `Ok` and a trivial `SELECT 1` runs. 100% coverage on `db.rs` (failure unit + success integ).
 
 #### Files to create / modify
@@ -771,7 +772,7 @@ Completion Protocol (after you finish):
 
 ### Task 3.6 — `RedisStores` handle + JSON telemetry
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: 3.1
@@ -783,15 +784,15 @@ init the example owns, attaching the stores handle to `AppState`. This is the **
 
 #### Acceptance criteria
 
-- [ ] `apps/api/src/stores.rs` exports `fn connect_stores(redis_url: &str, namespace: String) -> Result<Arc<RedisStores>, AppError>`
+- [x] `apps/api/src/stores.rs` exports `fn connect_stores(redis_url: &str, namespace: String) -> Result<Arc<RedisStores>, AppError>`
   calling `RedisStores::connect(redis_url, namespace)` (lazy pool, no I/O at construct), mapping `RedisStoreError` →
   `AuthError` → `AppError`, and wrapping the result in `Arc`.
-- [ ] `apps/api/src/telemetry.rs` exports `fn init_tracing()` installing a JSON `tracing-subscriber` filtered by
+- [x] `apps/api/src/telemetry.rs` exports `fn init_tracing()` installing a JSON `tracing-subscriber` filtered by
   `RUST_LOG` (default `info`), using `try_init()` so a re-init never panics — the example owns telemetry because the
   adapter installs no subscriber.
-- [ ] `AppState` gains a `pub stores: Arc<RedisStores>` field; `main.rs` calls `telemetry::init_tracing()` first, then
+- [x] `AppState` gains a `pub stores: Arc<RedisStores>` field; `main.rs` calls `telemetry::init_tracing()` first, then
   `connect_stores(&settings.redis_url, settings.redis_namespace.clone())` before building the router.
-- [ ] Unit tests prove: `connect_stores` with a malformed `redis_url` (e.g. `"not-a-url"`) returns `Err(AppError::*)`;
+- [x] Unit tests prove: `connect_stores` with a malformed `redis_url` returns `Err(AppError::*)`;
   `connect_stores` with a well-formed URL returns `Ok` (the pool is lazy — no live Redis needed); `init_tracing()` called
   twice does not panic. 100% coverage on `stores.rs` and `telemetry.rs`.
 
@@ -912,4 +913,9 @@ If any DoD bullet is unmet or CI is red, set P3 to `🟡 Partial`, not `✅`.
 
 > Append-only. One line per completed task: `- <id> ✅ YYYY-MM-DD — <summary>`.
 
-_(empty — no tasks completed yet)_
+- 3.1 ✅ 2026-07-02 — tokio + axum bootstrap (main.rs + AppState)
+- 3.4 ✅ 2026-07-02 — typed AppError → IntoResponse (opaque 500)
+- 3.5 ✅ 2026-07-02 — sqlx PgPool provider (eager connect, fail-fast)
+- 3.6 ✅ 2026-07-02 — RedisStores handle + JSON telemetry
+- 3.2 ✅ 2026-07-02 — CORS + tower-http global layers
+- 3.3 ✅ 2026-07-02 — GET /health version probe
