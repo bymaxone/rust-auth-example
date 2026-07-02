@@ -1,6 +1,6 @@
 # Phase 3 — API Skeleton
 
-> **Status**: 🔄 In Progress · **Progress**: 5 / 6 tasks · **Last updated**: 2026-07-02
+> **Status**: 🔄 In Progress · **Progress**: 6 / 6 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P3
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -97,7 +97,7 @@ in P4.
 | --- | --- | --- | --- | --- | --- |
 | 3.1 | tokio + axum bootstrap (`main.rs` + `AppState`) | ✅ Done | P0 | M | — |
 | 3.2 | CORS + tower-http global layers | ✅ Done | P0 | S | 3.1 |
-| 3.3 | `GET /health` (version probe) | 📋 ToDo | P1 | S | 3.1 |
+| 3.3 | `GET /health` (version probe) | ✅ Done | P1 | S | 3.1 |
 | 3.4 | Typed `AppError` → `IntoResponse` | ✅ Done | P0 | M | 3.1 |
 | 3.5 | sqlx `PgPool` provider | ✅ Done | P0 | M | 3.1 |
 | 3.6 | `RedisStores` handle + JSON telemetry | ✅ Done | P0 | M | 3.1 |
@@ -429,7 +429,7 @@ Completion Protocol (after you finish):
 
 ### Task 3.3 — `GET /health` (version probe)
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: S
 - **Depends on**: 3.1
@@ -441,13 +441,13 @@ and merge it onto the example's router, with a unit test.
 
 #### Acceptance criteria
 
-- [ ] `apps/api/src/routes/health.rs` exports a `health` handler returning `200` + `Json(HealthResponse { status: "ok", version })`,
+- [x] `apps/api/src/routes/health.rs` exports a `health` handler returning `200` + `Json(HealthResponse { status: "ok", version })`,
   where `version` comes from `AppState` (which holds `env!("CARGO_PKG_VERSION")`), plus a `pub fn routes() -> Router<AppState>`
   mounting `GET /health`.
-- [ ] `routes/mod.rs` declares `pub mod health;`; `app::build_router` merges `routes::health::routes()` before
+- [x] `routes/mod.rs` declares `pub mod health;`; `app::build_router` merges `routes::health::routes()` before
   `.with_state(state)`.
-- [ ] `HealthResponse` derives `Serialize` (and `Debug`); the body is exactly `{"status":"ok","version":"<crate version>"}`.
-- [ ] A unit test asserts `GET /health` ⇒ `200`, `status == "ok"`, and `version == env!("CARGO_PKG_VERSION")`. 100%
+- [x] `HealthResponse` derives `Serialize` (and `Debug`); the body is exactly `{"status":"ok","version":"<crate version>"}`.
+- [x] A unit test asserts `GET /health` ⇒ `200`, `status == "ok"`, and `version == env!("CARGO_PKG_VERSION")`. 100%
   coverage on `routes/health.rs`.
 
 #### Files to create / modify
@@ -918,3 +918,4 @@ If any DoD bullet is unmet or CI is red, set P3 to `🟡 Partial`, not `✅`.
 - 3.5 ✅ 2026-07-02 — sqlx PgPool provider (eager connect, fail-fast)
 - 3.6 ✅ 2026-07-02 — RedisStores handle + JSON telemetry
 - 3.2 ✅ 2026-07-02 — CORS + tower-http global layers
+- 3.3 ✅ 2026-07-02 — GET /health version probe

@@ -46,7 +46,9 @@ impl AppState {
 /// Later layers merge their route groups and the mounted authentication router
 /// onto the value returned here before the global middleware stack wraps it.
 pub fn build_router(state: AppState) -> Router {
-    Router::new().with_state(state)
+    Router::new()
+        .merge(crate::routes::health::routes())
+        .with_state(state)
 }
 
 #[cfg(test)]
