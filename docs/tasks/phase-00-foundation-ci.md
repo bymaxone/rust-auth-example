@@ -1,6 +1,6 @@
 # Phase 0 — Foundation, Tooling & CI Skeleton
 
-> **Status**: 🔄 In Progress · **Progress**: 3 / 7 tasks · **Last updated**: 2026-07-01
+> **Status**: 🔄 In Progress · **Progress**: 4 / 7 tasks · **Last updated**: 2026-07-01
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P0
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -48,7 +48,7 @@ When P0 is done: `cargo build --locked`, `cargo fmt --all --check`, and `cargo c
 | 0.1 | Cargo + pnpm dual workspace + toolchains | ✅ Done | P0 | M | — |
 | 0.2 | Rust lint/supply-chain + commit governance | ✅ Done | P0 | S | 0.1 |
 | 0.3 | Mandatory repo & community-health files | ✅ Done | P1 | S | 0.1 |
-| 0.4 | GitHub config & Copilot review | 📋 ToDo | P0 | M | 0.1 |
+| 0.4 | GitHub config & Copilot review | ✅ Done | P0 | M | 0.1 |
 | 0.5 | Core CI workflow + audit-script stubs | 📋 ToDo | P0 | M | 0.1, 0.2 |
 | 0.6 | Security & supply-chain workflows | 📋 ToDo | P0 | M | 0.5 |
 | 0.7 | Mutation/release skeletons + Dockerfiles | 📋 ToDo | P1 | M | 0.5 |
@@ -413,7 +413,7 @@ Completion Protocol (after you finish):
 
 ### Task 0.4 — GitHub config & Copilot review
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: 0.1
@@ -424,12 +424,12 @@ Add the GitHub configuration — issue/PR templates, `CODEOWNERS`, the dependenc
 
 #### Acceptance criteria
 
-- [ ] `.github/ISSUE_TEMPLATE/{bug_report.yml,feature_request.yml,config.yml}` exist; `config.yml` links security reports to the SECURITY.md email (not a public issue).
-- [ ] `.github/PULL_REQUEST_TEMPLATE.md` + `.github/CODEOWNERS` exist.
-- [ ] `.github/dependabot.yml` and/or `renovate.json` cover the `cargo`, `npm`, and `github-actions` ecosystems, weekly, PRs only (never auto-merge).
-- [ ] The four Copilot files exist: `.github/copilot-instructions.md`, `.github/instructions/code.instructions.md`, `.github/instructions/tests.instructions.md`, `.github/agents/agent-code-reviewer.agent.md`.
-- [ ] Each `*.instructions.md` file is < 4000 characters; the reviewer agent carries a Rust + TS Blockers checklist (unsafe / unwrap / expect / panic, secrets-in-logs, the controller-maps-the-error rule, never-log-secrets, an undemonstrated export, a `#[allow]` / `@ts-ignore` without justification).
-- [ ] No phase/task references appear in any of the four Copilot files.
+- [x] `.github/ISSUE_TEMPLATE/{bug_report.yml,feature_request.yml,config.yml}` exist; `config.yml` links security reports to the SECURITY.md email (not a public issue).
+- [x] `.github/PULL_REQUEST_TEMPLATE.md` + `.github/CODEOWNERS` exist.
+- [x] `.github/dependabot.yml` and/or `renovate.json` cover the `cargo`, `npm`, and `github-actions` ecosystems, weekly, PRs only (never auto-merge).
+- [x] The four Copilot files exist: `.github/copilot-instructions.md`, `.github/instructions/code.instructions.md`, `.github/instructions/tests.instructions.md`, `.github/agents/agent-code-reviewer.agent.md`.
+- [x] Each `*.instructions.md` file is < 4000 characters; the reviewer agent carries a Rust + TS Blockers checklist (unsafe / unwrap / expect / panic, secrets-in-logs, the controller-maps-the-error rule, never-log-secrets, an undemonstrated export, a `#[allow]` / `@ts-ignore` without justification).
+- [x] No phase/task references appear in any of the four Copilot files.
 
 #### Files to create / modify
 
@@ -865,3 +865,4 @@ Run this only when the LAST task (0.7) is ✅:
 - 0.1 ✅ 2026-07-01 — Dual cargo + pnpm workspace, pinned toolchains, compiling `apps/api` stub, TS-strict base; `Cargo.lock` + `pnpm-lock.yaml` committed.
 - 0.2 ✅ 2026-07-01 — Rust lint/supply-chain policy (`rustfmt.toml`, `clippy.toml`, `deny.toml` + workspace deny-lints) and cross-stack commit governance (commitlint, husky hooks, lint-staged, ESLint flat, Prettier, editor/git dotfiles).
 - 0.3 ✅ 2026-07-01 — Mandatory governance + community-health files: MIT `LICENSE`, badge-header `README.md` with ASCII diagram + docs table, `CHANGELOG.md`, `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, and the `CLAUDE.md`/`AGENTS.md` invariants.
+- 0.4 ✅ 2026-07-01 — GitHub config: issue templates + `config.yml` (security → advisory), PR template, `CODEOWNERS`, `dependabot.yml` (cargo/npm/actions), and the four Rust+TS Copilot review files (instruction files < 4000 chars, no planning-stage references).
