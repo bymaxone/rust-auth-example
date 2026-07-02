@@ -1,6 +1,6 @@
 # Phase 1 — Local Stack & Environment
 
-> **Status**: 🔄 In Progress · **Progress**: 0 / 5 tasks · **Last updated**: 2026-07-02
+> **Status**: 🔄 In Progress · **Progress**: 1 / 5 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P1
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -80,7 +80,7 @@ axum bootstrap, no routes, no `RedisStores::connect`, and no `AuthEngine` wiring
 
 | ID | Task | Status | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- | --- |
-| 1.1 | docker-compose dev stack | 📋 ToDo | P0 | M | — |
+| 1.1 | docker-compose dev stack | ✅ Done | P0 | M | — |
 | 1.2 | Test + prod compose | 📋 ToDo | P1 | S | 1.1 |
 | 1.3 | Init scripts + infra commands | 📋 ToDo | P1 | S | 1.1 |
 | 1.4 | Environment contract (`.env.example`) | 📋 ToDo | P0 | S | — |
@@ -92,7 +92,7 @@ axum bootstrap, no routes, no `RedisStores::connect`, and no `AuthEngine` wiring
 
 ### Task 1.1 — docker-compose dev stack
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: —
@@ -105,13 +105,13 @@ with one command.
 
 #### Acceptance criteria
 
-- [ ] `docker-compose.yml` defines `name: rust-auth-example` and three services on a `local-dev` bridge network:
+- [x] `docker-compose.yml` defines `name: rust-auth-example` and three services on a `local-dev` bridge network:
   `postgres:18-alpine` (`127.0.0.1:5432`, `pg-data` volume + `docker/postgres/init.sql`, `pg_isready` healthcheck),
   `redis:7-alpine` (`127.0.0.1:6379`, `redis-data` volume + `docker/redis/redis.conf`, `redis-cli ping` healthcheck),
   and `axllent/mailpit` **digest-pinned** (`127.0.0.1:1025`/`8025`, `wget` healthcheck).
-- [ ] Postgres reads `POSTGRES_USER`/`POSTGRES_PASSWORD`/`POSTGRES_DB` with `:-` dev defaults (`postgres`/`postgres`/
+- [x] Postgres reads `POSTGRES_USER`/`POSTGRES_PASSWORD`/`POSTGRES_DB` with `:-` dev defaults (`postgres`/`postgres`/
   `example_app`); `restart: unless-stopped` on every service.
-- [ ] `docker-compose.override.yml` (`name: rust-auth-example`) adds `json-file` log caps (`max-size: 10m`,
+- [x] `docker-compose.override.yml` (`name: rust-auth-example`) adds `json-file` log caps (`max-size: 10m`,
   `max-file: 3`) to all three services and nothing prod-specific.
 - [ ] `docker compose up --wait` returns `0` only when all three containers are healthy; the Mailpit UI answers at
   `http://localhost:8025`.
@@ -902,4 +902,4 @@ If any DoD bullet is unmet or CI is red, set P1 to `🟡 Partial`, not `✅`.
 
 > Append-only. One line per completed task: `- <id> ✅ YYYY-MM-DD — <summary>`.
 
-_(empty — no tasks completed yet)_
+- 1.1 ✅ 2026-07-02 — docker-compose dev stack (pg + redis + mailpit)
