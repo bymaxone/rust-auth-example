@@ -1,6 +1,6 @@
 # Phase 2 — Library Consumption & Export Audits
 
-> **Status**: 🔄 In Progress · **Progress**: 2 / 4 tasks · **Last updated**: 2026-07-02
+> **Status**: 🔄 In Progress · **Progress**: 3 / 4 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P2
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -49,7 +49,7 @@ When P2 is done, `cargo build --locked` links all three library crates into `app
 | --- | --- | --- | --- | --- | --- |
 | 2.1 | Rust `path` deps + consumed-symbol probe | ✅ Done | P0 | M | — |
 | 2.2 | npm package build + `file:` link | ✅ Done | P0 | M | — |
-| 2.3 | npm export-usage audit | 📋 ToDo | P1 | M | 2.2 |
+| 2.3 | npm export-usage audit | ✅ Done | P1 | M | 2.2 |
 | 2.4 | `cargo public-api` audit | 📋 ToDo | P1 | M | 2.1 |
 
 ---
@@ -297,7 +297,7 @@ Completion Protocol (after you finish):
 
 ### Task 2.3 — npm export-usage audit
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: M
 - **Depends on**: 2.2
@@ -308,12 +308,12 @@ Finalize `scripts/audit-library-exports.mjs` so it parses the built `dist/**/*.d
 
 #### Acceptance criteria
 
-- [ ] The script discovers subpaths dynamically from `apps/web/node_modules/@bymax-one/rust-auth/dist/` and parses each subpath's `index.d.ts` for exported symbols (named exports, `export { … }`, `export type { … }`, skipping `from '<external>'` re-exports).
-- [ ] It word-boundary-searches the `apps/web` corpus (skipping `node_modules`, `.next`, `dist`, `coverage`) and reports every unreferenced symbol grouped by subpath.
-- [ ] It reads `.audit-ignore.json` (`"<subpath>.<symbol>": "reason"`) and exits 1 on any unreferenced symbol not in the ignore map; exit 0 otherwise.
-- [ ] A root `audit:exports` script runs it (`node scripts/audit-library-exports.mjs`); the `.audit-ignore.json` carries only genuinely-internal leaked symbols with reasons — NOT `extract_claims` / `verify_password` (those are absent from the `.d.ts`).
-- [ ] A self-check proves the parser: a known export (`createAuthClient`) is extracted from `/client` and a deliberately-fake symbol is reported missing.
-- [ ] On the current `apps/web` stub the audit passes trivially (report mode); CI flips to strict enforcement in the docs/release phase per DEVELOPMENT_PLAN Appendix C.
+- [x] The script discovers subpaths dynamically from `apps/web/node_modules/@bymax-one/rust-auth/dist/` and parses each subpath's `index.d.ts` for exported symbols (named exports, `export { … }`, `export type { … }`, skipping `from '<external>'` re-exports).
+- [x] It word-boundary-searches the `apps/web` corpus (skipping `node_modules`, `.next`, `dist`, `coverage`) and reports every unreferenced symbol grouped by subpath.
+- [x] It reads `.audit-ignore.json` (`"<subpath>.<symbol>": "reason"`) and exits 1 on any unreferenced symbol not in the ignore map; exit 0 otherwise.
+- [x] A root `audit:exports` script runs it (`node scripts/audit-library-exports.mjs`); the `.audit-ignore.json` carries only genuinely-internal leaked symbols with reasons — NOT `extract_claims` / `verify_password` (those are absent from the `.d.ts`).
+- [x] A self-check proves the parser: a known export (`createAuthClient`) is extracted from `/client` and a deliberately-fake symbol is reported missing.
+- [x] On the current `apps/web` stub the audit passes trivially (report mode); CI flips to strict enforcement in the docs/release phase per DEVELOPMENT_PLAN Appendix C.
 
 #### Files to create / modify
 
@@ -517,3 +517,4 @@ Run this closeout when the LAST task (2.4) is ✅:
 
 - 2.1 ✅ 2026-07-02 — Added bymax-auth-axum/-core/-redis path deps (version 0.0.0) to apps/api/Cargo.toml; created probe.rs naming AuthEngine/AxumAuthConfig/RedisStores to link all three; updated deny.toml skip-tree for governor+tungstenite duplicates; cargo build --locked, +1.90 check, fmt, clippy all green.
 - 2.2 ✅ 2026-07-02 — Created scripts/link-library.sh and scripts/unlink-library.sh; created minimal Next.js skeleton (package.json, next.config.mjs, tsconfig.json, app/layout.tsx, app/page.tsx) with file: link to @bymax-one/rust-auth; pnpm install resolved the link; all four subpath d.ts files present; pnpm -C apps/web build succeeds.
+- 2.3 ✅ 2026-07-02 — Finalized audit-library-exports.mjs with DIST=apps/web/node_modules/...; parseExports handles named exports + brace exports (local re-exports included, external re-exports skipped); --report and --self-test flags; .audit-ignore.json = {}; self-test passes; report mode exits 0 on stub; strict mode exits 1 correctly.
