@@ -275,7 +275,7 @@ jobs:
         with:
           tool: cargo-nextest,sqlx-cli
       - name: Apply migrations
-        run: sqlx migrate run --source apps/api/migrations
+        run: sqlx migrate run --source apps/api/migrations --database-url "$DATABASE_URL_TEST"
       - name: Run api tests against Postgres service
         run: cargo nextest run -p api --no-tests=pass --test-threads 4
 
