@@ -1,6 +1,6 @@
 # Phase 1 — Local Stack & Environment
 
-> **Status**: 🔄 In Progress · **Progress**: 2 / 5 tasks · **Last updated**: 2026-07-02
+> **Status**: 🔄 In Progress · **Progress**: 3 / 5 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P1
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -82,7 +82,7 @@ axum bootstrap, no routes, no `RedisStores::connect`, and no `AuthEngine` wiring
 | --- | --- | --- | --- | --- | --- |
 | 1.1 | docker-compose dev stack | ✅ Done | P0 | M | — |
 | 1.2 | Test + prod compose | ✅ Done | P1 | S | 1.1 |
-| 1.3 | Init scripts + infra commands | 📋 ToDo | P1 | S | 1.1 |
+| 1.3 | Init scripts + infra commands | ✅ Done | P1 | S | 1.1 |
 | 1.4 | Environment contract (`.env.example`) | 📋 ToDo | P0 | S | — |
 | 1.5 | figment `Settings` loader + validation | 📋 ToDo | P0 | M | 1.4 |
 
@@ -400,7 +400,7 @@ Completion Protocol (after you finish):
 
 ### Task 1.3 — Init scripts + infra commands
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: S
 - **Depends on**: 1.1
@@ -413,12 +413,12 @@ clean teardown down.
 
 #### Acceptance criteria
 
-- [ ] `docker/postgres/init.sql` idempotently creates database `example_app` (UTF8, `\gexec` guard, `WHERE NOT EXISTS`)
+- [x] `docker/postgres/init.sql` idempotently creates database `example_app` (UTF8, `\gexec` guard, `WHERE NOT EXISTS`)
   with a comment explaining the entrypoint runs it only on first boot.
-- [ ] `docker/redis/redis.conf` enables AOF (`appendonly yes`, `appendfsync everysec`), disables RDB (`save ""`), sets
+- [x] `docker/redis/redis.conf` enables AOF (`appendonly yes`, `appendfsync everysec`), disables RDB (`save ""`), sets
   `maxmemory 256mb` + `maxmemory-policy volatile-lru`, `protected-mode no` (for the Docker-NAT host connect), with a
   comment warning it is dev-only (no `requirepass`/`bind`).
-- [ ] Root `package.json` wires `infra:up` → `docker compose up --wait` and `infra:down` → `docker compose down -v`
+- [x] Root `package.json` wires `infra:up` → `docker compose up --wait` and `infra:down` → `docker compose down -v`
   (plus, optionally, `infra:test:up`/`infra:test:down` against `-f docker-compose.test.yml`).
 - [ ] `pnpm infra:up` returns only when all three are healthy and creates the `example_app` database; `pnpm infra:down`
   removes the containers and named volumes.
@@ -904,3 +904,4 @@ If any DoD bullet is unmet or CI is red, set P1 to `🟡 Partial`, not `✅`.
 
 - 1.1 ✅ 2026-07-02 — docker-compose dev stack (pg + redis + mailpit)
 - 1.2 ✅ 2026-07-02 — test (high-port tmpfs) + prod (GHCR) compose
+- 1.3 ✅ 2026-07-02 — postgres init.sql + redis.conf + infra:up/down
