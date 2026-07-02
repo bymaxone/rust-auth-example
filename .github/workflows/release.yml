@@ -38,6 +38,17 @@ jobs:
         with:
           persist-credentials: false
 
+      # The web image is only built once the apps/web workspace exists; until then
+      # the release skeleton publishes the API image alone and stays runnable.
+      - name: Detect web workspace
+        id: detect-web
+        run: |
+          if [ -f apps/web/package.json ]; then
+            echo "present=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "present=false" >> "${GITHUB_OUTPUT}"
+          fi
+
       # Log in first so the existence checks below can query the private registry.
       - name: Log in to GHCR
         uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
@@ -46,10 +57,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # The published image tag is the semver without the leading `v`: the git tag
+      # is `v1.2.3`, but docker/metadata-action publishes `1.2.3`. Query the same
+      # tag that gets pushed so the idempotency check actually matches.
       - name: Check if API image already exists
         id: api-exists
         run: |
-          if docker manifest inspect "ghcr.io/bymaxone/rust-auth-example-api:${TAG_NAME}" > /dev/null 2>&1; then
+          VERSION="${TAG_NAME#v}"
+          if docker manifest inspect "ghcr.io/bymaxone/rust-auth-example-api:${VERSION}" > /dev/null 2>&1; then
             echo "exists=true" >> "${GITHUB_OUTPUT}"
           else
             echo "exists=false" >> "${GITHUB_OUTPUT}"
@@ -57,8 +72,10 @@ jobs:
 
       - name: Check if web image already exists
         id: web-exists
+        if: steps.detect-web.outputs.present == 'true'
         run: |
-          if docker manifest inspect "ghcr.io/bymaxone/rust-auth-example-web:${TAG_NAME}" > /dev/null 2>&1; then
+          VERSION="${TAG_NAME#v}"
+          if docker manifest inspect "ghcr.io/bymaxone/rust-auth-example-web:${VERSION}" > /dev/null 2>&1; then
             echo "exists=true" >> "${GITHUB_OUTPUT}"
           else
             echo "exists=false" >> "${GITHUB_OUTPUT}"
@@ -87,7 +104,7 @@ jobs:
 
       - name: Generate web image metadata
         id: web-meta
-        if: steps.web-exists.outputs.exists != 'true'
+        if: steps.detect-web.outputs.present == 'true' && steps.web-exists.outputs.exists != 'true'
         uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
         with:
           images: ghcr.io/bymaxone/rust-auth-example-web
@@ -97,7 +114,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
 
       - name: Build and push web image
-        if: steps.web-exists.outputs.exists != 'true'
+        if: steps.detect-web.outputs.present == 'true' && steps.web-exists.outputs.exists != 'true'
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
@@ -130,10 +147,18 @@ jobs:
             echo "Tag ${TAG_NAME} already recorded — skipping."
             exit 0
           fi
+          VERSION="${TAG_NAME#v}"
           LIB_VERSION="$(grep -oE 'bymax-auth-core.*version *= *"=?[0-9.]+"' apps/api/Cargo.toml | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)"
           LIB_VERSION="${LIB_VERSION:-0.0.0 (path)}"
           DATE="$(date -u +%Y-%m-%d)"
-          ROW="| \`${TAG_NAME}\` | ${LIB_VERSION} | ${DATE} | ghcr.io/bymaxone/rust-auth-example-{api,web}:${TAG_NAME} |"
+          # Only claim a web image tag when the web workspace exists on the release
+          # tree; otherwise the release publishes the API image alone.
+          if [ -f apps/web/package.json ]; then
+            IMAGES="ghcr.io/bymaxone/rust-auth-example-{api,web}:${VERSION}"
+          else
+            IMAGES="ghcr.io/bymaxone/rust-auth-example-api:${VERSION}"
+          fi
+          ROW="| \`${TAG_NAME}\` | ${LIB_VERSION} | ${DATE} | ${IMAGES} |"
           awk -v row="${ROW}" '{ print } /<!-- releases:insert -->/ { print row }' docs/RELEASES.md > docs/RELEASES.md.tmp
           mv docs/RELEASES.md.tmp docs/RELEASES.md
 
