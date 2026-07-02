@@ -52,7 +52,7 @@ template, reconciled with the current vault standard and adapted to the Rust/axu
 ## Progress
 
 - **Overall progress:** 3 / 15 phases · 16 / 86 tasks done (19%)
-- **Active phase:** P3 (Database Migrations & Schema)
+- **Active phase:** P2 (Library Consumption & Export Audits)
 - **Blocked:** none
 
 > All 15 Layer-3 task files are scaffolded under [`docs/tasks/`](./tasks/) (86 tasks total). Execute one phase at a time

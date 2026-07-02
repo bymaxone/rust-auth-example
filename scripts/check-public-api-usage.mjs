@@ -79,10 +79,16 @@ function parseSnapshot(snapshot) {
     if (!trimmed.startsWith('pub ')) continue;
     // Strip the leading `pub fn ` / `pub struct ` / `pub enum ` etc. keyword,
     // including optional modifiers like `unsafe`, `async`, `#[…]` decorators.
-    const withoutPub = trimmed.replace(
+    let withoutPub = trimmed.replace(
       /^pub\s+(?:unsafe\s+)?(?:async\s+)?(?:fn|struct|enum|trait|type|const|static|macro|mod|impl|use)\s+/,
       '',
     );
+    // If no keyword matched (e.g. enum variant / associated item lines of the
+    // form `pub crate::Module::Variant`), strip just the `pub ` prefix so the
+    // path is extracted correctly rather than treating `pub` as the identifier.
+    if (withoutPub === trimmed) {
+      withoutPub = trimmed.slice('pub '.length);
+    }
     // Match the fully-qualified path: one or more `identifier` segments joined
     // by `::`. Stop at any character that cannot be part of a Rust path
     // (`(`, `<`, ` `, `[`, `:` when not followed by `:`).

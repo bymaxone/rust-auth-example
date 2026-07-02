@@ -168,6 +168,12 @@ if (selfTest) {
   );
 
   // Verify a fabricated symbol is not in the corpus (it must not appear in apps/web).
+  if (!existsSync(CORPUS_DIR)) {
+    process.stderr.write(
+      `audit:exports self-test — ${CORPUS_DIR} not found; cannot verify corpus; run from the repo root with apps/web present\n`,
+    );
+    process.exit(1);
+  }
   const fakeSymbol = '__definitely_not_exported__';
   const corpus = buildCorpus(walkTs(CORPUS_DIR));
   if (isUsed(corpus, fakeSymbol)) {

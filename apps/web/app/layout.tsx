@@ -3,6 +3,7 @@
  */
 
 import type { Metadata } from 'next';
+import type { ReactNode } from 'react';
 
 export const metadata: Metadata = {
   title: 'rust-auth-example',
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 interface RootLayoutProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 /**

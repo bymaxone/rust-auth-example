@@ -10,7 +10,8 @@ runs:
     - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       with:
         repository: bymaxone/rust-auth
-        ref: main
+        # Pinned to current rust-auth main HEAD — bump this SHA when intentionally updating the consumed library.
+        ref: fc5e2b344feb5c5852e4a82dc9ad6c4518188487
         persist-credentials: false
         path: .sibling-rust-auth
 

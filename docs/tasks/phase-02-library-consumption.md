@@ -391,7 +391,7 @@ Author `scripts/audit-rust-public-api.sh` that runs `cargo public-api` over the 
 #### Acceptance criteria
 
 - [x] `scripts/audit-rust-public-api.sh` runs `cargo public-api --manifest-path` for `bymax-auth-axum` (`--features full`), `bymax-auth-core` (`--features full`), and `bymax-auth-redis` (`--features mfa,oauth,platform`), writing `apps/api/public-api/<crate>.txt`.
-- [x] On re-run with a committed snapshot present, the script diffs and fails on undocumented drift; a `--bless` mode regenerates the snapshots.
+- [x] The script regenerates and blesses committed snapshots by default; a `--check` flag regenerates to a temp dir and diffs against committed snapshots, exiting non-zero on drift.
 - [x] A reference check (`scripts/check-public-api-usage.mjs`) word-boundary-searches `apps/api` (`src` + `tests`) for each `pub` item short name and reads `apps/api/public-api/allow.json`; four catalog-only error types (`ConfigError`, `RepositoryError`, `RedisStoreError`, `AuthRejection`) are allow-listed with reasons. (Spec-named `TokenExpired`/`TokenRevoked`/`TokenMissing`/`PasswordResetTokenExpired` live in the transitive `bymax-auth-types` crate and do not appear in the three crate snapshots.)
 - [x] The reference check supports a `--report` mode (exit 0, used by this phase's CI) and a strict mode (exit 1) that the docs/release phase enables once `apps/api` demonstrates the full surface.
 - [x] A root `audit:public-api` script invokes the snapshot generator; `check:public-api` invokes the usage checker; both pass trivially on the current stub (report mode).
