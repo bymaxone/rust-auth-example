@@ -52,7 +52,7 @@ template, reconciled with the current vault standard and adapted to the Rust/axu
 ## Progress
 
 - **Overall progress:** 0 / 15 phases · 0 / 86 tasks done (0%)
-- **Active phase:** — (P0 ready to start)
+- **Active phase:** P0
 - **Blocked:** none
 
 > All 15 Layer-3 task files are scaffolded under [`docs/tasks/`](./tasks/) (86 tasks total). Execute one phase at a time
@@ -64,7 +64,7 @@ template, reconciled with the current vault standard and adapted to the Rust/axu
 
 | ID | Phase | Tasks file | Status | Progress | Size | Last updated |
 | --- | --- | --- | --- | --- | --- | --- |
-| P0 | Foundation, Tooling & CI Skeleton | `phase-00-foundation-ci.md` | 📋 | 0 / 7 | L | — |
+| P0 | Foundation, Tooling & CI Skeleton | `phase-00-foundation-ci.md` | 🔄 | 0 / 7 | L | 2026-07-01 |
 | P1 | Local Stack & Environment | `phase-01-local-stack.md` | 📋 | 0 / 5 | M | — |
 | P2 | Library Consumption & Export Audits | `phase-02-library-consumption.md` | 📋 | 0 / 4 | M | — |
 | P3 | API Skeleton | `phase-03-api-skeleton.md` | 📋 | 0 / 6 | M | — |
