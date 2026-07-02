@@ -1,6 +1,6 @@
 # Phase 1 — Local Stack & Environment
 
-> **Status**: 🔄 In Progress · **Progress**: 1 / 5 tasks · **Last updated**: 2026-07-02
+> **Status**: 🔄 In Progress · **Progress**: 2 / 5 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P1
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -81,7 +81,7 @@ axum bootstrap, no routes, no `RedisStores::connect`, and no `AuthEngine` wiring
 | ID | Task | Status | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- | --- |
 | 1.1 | docker-compose dev stack | ✅ Done | P0 | M | — |
-| 1.2 | Test + prod compose | 📋 ToDo | P1 | S | 1.1 |
+| 1.2 | Test + prod compose | ✅ Done | P1 | S | 1.1 |
 | 1.3 | Init scripts + infra commands | 📋 ToDo | P1 | S | 1.1 |
 | 1.4 | Environment contract (`.env.example`) | 📋 ToDo | P0 | S | — |
 | 1.5 | figment `Settings` loader + validation | 📋 ToDo | P0 | M | 1.4 |
@@ -243,7 +243,7 @@ Completion Protocol (after you finish):
 
 ### Task 1.2 — Test + prod compose
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: S
 - **Depends on**: 1.1
@@ -256,16 +256,16 @@ GHCR images), so CI and a prod smoke test each have a dedicated, non-colliding s
 
 #### Acceptance criteria
 
-- [ ] `docker-compose.test.yml` defines `name: rust-auth-example-test`, binds Postgres `127.0.0.1:55432:5432`, Redis
+- [x] `docker-compose.test.yml` defines `name: rust-auth-example-test`, binds Postgres `127.0.0.1:55432:5432`, Redis
   `127.0.0.1:56379:6379`, Mailpit `127.0.0.1:51025:1025`/`58025:8025`, uses `tmpfs` (no named volumes), sets
   `POSTGRES_DB: example_app_test`, tighter `3s` healthcheck intervals, and a `ci` bridge network.
-- [ ] The test Redis runs inline flags mirroring dev eviction (`--save '' --appendonly no --maxmemory 256mb
+- [x] The test Redis runs inline flags mirroring dev eviction (`--save '' --appendonly no --maxmemory 256mb
   --maxmemory-policy volatile-lru --protected-mode no`) — no `redis.conf` bind, since `tmpfs` is ephemeral.
-- [ ] `docker-compose.prod.yml` (`name: rust-auth-example-prod`) wires `postgres` + `redis` (requirepass) + `api`
+- [x] `docker-compose.prod.yml` (`name: rust-auth-example-prod`) wires `postgres` + `redis` (requirepass) + `api`
   (`ghcr.io/bymaxone/rust-auth-example-api:${IMAGE_TAG:-latest}`) + `web`
   (`ghcr.io/bymaxone/rust-auth-example-web:${IMAGE_TAG:-latest}`), each with `depends_on … condition: service_healthy`
   and a healthcheck; no Mailpit (prod uses `EMAIL_PROVIDER=resend`).
-- [ ] Both files pass `docker compose -f <file> config`.
+- [x] Both files pass `docker compose -f <file> config`.
 
 #### Files to create / modify
 
@@ -903,3 +903,4 @@ If any DoD bullet is unmet or CI is red, set P1 to `🟡 Partial`, not `✅`.
 > Append-only. One line per completed task: `- <id> ✅ YYYY-MM-DD — <summary>`.
 
 - 1.1 ✅ 2026-07-02 — docker-compose dev stack (pg + redis + mailpit)
+- 1.2 ✅ 2026-07-02 — test (high-port tmpfs) + prod (GHCR) compose
