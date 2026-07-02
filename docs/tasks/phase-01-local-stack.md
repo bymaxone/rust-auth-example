@@ -113,7 +113,7 @@ with one command.
   `example_app`); `restart: unless-stopped` on every service.
 - [x] `docker-compose.override.yml` (`name: rust-auth-example`) adds `json-file` log caps (`max-size: 10m`,
   `max-file: 3`) to all three services and nothing prod-specific.
-- [ ] `docker compose up --wait` returns `0` only when all three containers are healthy; the Mailpit UI answers at
+- [x] `docker compose up -d --wait` returns `0` only when all three containers are healthy; the Mailpit UI answers at
   `http://localhost:8025`.
 
 #### Files to create / modify
@@ -418,9 +418,9 @@ clean teardown down.
 - [x] `docker/redis/redis.conf` enables AOF (`appendonly yes`, `appendfsync everysec`), disables RDB (`save ""`), sets
   `maxmemory 256mb` + `maxmemory-policy volatile-lru`, `protected-mode no` (for the Docker-NAT host connect), with a
   comment warning it is dev-only (no `requirepass`/`bind`).
-- [x] Root `package.json` wires `infra:up` → `docker compose up --wait` and `infra:down` → `docker compose down -v`
+- [x] Root `package.json` wires `infra:up` → `docker compose up -d --wait` and `infra:down` → `docker compose down -v`
   (plus, optionally, `infra:test:up`/`infra:test:down` against `-f docker-compose.test.yml`).
-- [ ] `pnpm infra:up` returns only when all three are healthy and creates the `example_app` database; `pnpm infra:down`
+- [x] `pnpm infra:up` returns only when all three are healthy and creates the `example_app` database; `pnpm infra:down`
   removes the containers and named volumes.
 
 #### Files to create / modify
@@ -646,9 +646,10 @@ and `MFA_ENCRYPTION_KEY` base64-32 hard guards, and is unit-tested to prove each
 
 #### Acceptance criteria
 
-- [x] `apps/api/src/config/mod.rs` defines `Settings` (one field per `OVERVIEW.md §9` api variable) deserialized via
-  `figment` (built-in defaults layered under `Env::raw()`), declared `mod config;` in `main.rs`, with `figment`,
-  `serde`, `thiserror`, and `base64` added to `apps/api/Cargo.toml`.
+- [x] `apps/api/src/config/mod.rs` defines `Settings` (covering the configuration variables the current API surface
+  needs; later-phase variables such as SMTP host/port, OAuth credentials, and `DATABASE_URL_TEST` are absent by design)
+  deserialized via `figment` (built-in defaults layered under `Env::raw()`), declared `mod config;` (private) in
+  `main.rs`, with `figment`, `serde`, `thiserror`, and `base64` added to `apps/api/Cargo.toml`.
 - [x] `Settings::load() -> Result<Settings, ConfigError>` layers defaults → env, extracts, then `validate()`s; it is
   **panic-free** (no `unwrap`/`expect`) and returns a typed error.
 - [x] `ConfigError` is a `thiserror` enum with at least `Extract(Box<figment::Error>)`, `JwtSecretTooShort { got }`,
