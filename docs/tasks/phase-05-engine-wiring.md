@@ -1,6 +1,6 @@
 # Phase 5 — Engine Wiring, Email & Audit
 
-> **Status**: 🔄 In Progress · **Progress**: 0 / 7 tasks · **Last updated**: 2026-07-02
+> **Status**: 🔄 In Progress · **Progress**: 1 / 7 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P5
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -47,7 +47,7 @@ When P5 is done, the engine builds via `AuthEngine::builder()`; the mounted `/au
 
 | ID | Task | Status | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- | --- |
-| 5.1 | AuthConfig profile + validate | 📋 ToDo | P0 | M | — |
+| 5.1 | AuthConfig profile + validate | ✅ Done | P0 | M | — |
 | 5.2 | `AuthEngine::builder()` wiring | 📋 ToDo | P0 | L | 5.1 |
 | 5.3 | lettre `EmailProvider` → Mailpit | 📋 ToDo | P0 | M | — |
 | 5.4 | Resend provider + resolution + templates | 📋 ToDo | P1 | M | 5.3 |
@@ -61,7 +61,7 @@ When P5 is done, the engine builds via `AuthEngine::builder()`; the mounted `/au
 
 ### Task 5.1 — AuthConfig profile + validate
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: —
@@ -72,11 +72,11 @@ Build the example's `AuthConfig` from the validated `Settings`: pick a profile (
 
 #### Acceptance criteria
 
-- [ ] `build_auth_config(settings, environment) -> Result<AuthConfig, ConfigError>` exists in `apps/api/src/engine/config.rs`.
-- [ ] It selects `AuthConfig::nest_compat_defaults()` by default and `AuthConfig::secure_defaults()` under the `argon2` feature.
-- [ ] It sets `config.jwt.secret`, `config.platform.enabled = false` (platform is deferred — setting it `true` would auto-promote the platform controller group in `build()`), and `ControllerToggles { sessions: true, mfa: true, ..config.controllers }`, so P5 enables only `sessions` + `mfa`; `oauth`/`invitations`/`platform` stay off.
-- [ ] It calls `config.validate(environment)?` so a `JWT_SECRET` shorter than 64 chars / low-entropy or an empty role hierarchy returns a `ConfigError` (covered by a unit test).
-- [ ] `cargo nextest run -p api engine::config` passes; `src/engine/config.rs` is 100% covered; clippy is clean; no phase/task strings in the file.
+- [x] `build_auth_config(settings, environment) -> Result<AuthConfig, ConfigError>` exists in `apps/api/src/engine/config.rs`.
+- [x] It selects `AuthConfig::nest_compat_defaults()` by default and `AuthConfig::secure_defaults()` under the `argon2` feature.
+- [x] It sets `config.jwt.secret`, `config.platform.enabled = false` (platform is deferred — setting it `true` would auto-promote the platform controller group in `build()`), and `ControllerToggles { sessions: true, mfa: true, ..config.controllers }`, so P5 enables only `sessions` + `mfa`; `oauth`/`invitations`/`platform` stay off.
+- [x] It calls `config.validate(environment)?` so a `JWT_SECRET` shorter than 64 chars / low-entropy or an empty role hierarchy returns a `ConfigError` (covered by a unit test).
+- [x] `cargo nextest run -p api engine::config` passes; `src/engine/config.rs` is 100% covered; clippy is clean; no phase/task strings in the file.
 
 #### Files to create / modify
 
@@ -960,4 +960,4 @@ When **Task 5.7** is ✅ (the last task), close the phase:
 
 > Append-only. One line per completed task: `- <id> ✅ YYYY-MM-DD — <summary>`.
 
-_(empty — no tasks completed yet)_
+- 5.1 ✅ 2026-07-02 — `build_auth_config` assembles the profile (Both delivery, role hierarchy, sealed MFA config, sessions+mfa toggles) and validates fail-fast.
