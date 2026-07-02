@@ -13,6 +13,8 @@ use bymax_auth_core::AuthEngine;
 use bymax_auth_redis::RedisStores;
 use sqlx::PgPool;
 
+use crate::config::RuntimeEnvironment;
+
 /// Shared, cheaply-cloneable handles every request needs.
 ///
 /// It carries the running crate version for the health probe, the shared Postgres
@@ -24,6 +26,8 @@ use sqlx::PgPool;
 pub struct AppState {
     /// The running crate version, surfaced by the health probe.
     pub version: &'static str,
+    /// Deployment environment; controls which route groups mount at startup.
+    pub app_env: RuntimeEnvironment,
     /// The shared Postgres connection pool the example's own routes draw from.
     pub pool: PgPool,
     /// The shared Redis store handle backing every store seam of the engine.
@@ -33,12 +37,18 @@ pub struct AppState {
 }
 
 impl AppState {
-    /// Build the state from the connected handles, the wired engine, and compile-time
-    /// metadata.
+    /// Build the state from the connected handles, the wired engine, compile-time
+    /// metadata, and the deployment environment.
     #[must_use]
-    pub fn new(pool: PgPool, stores: Arc<RedisStores>, engine: Arc<AuthEngine>) -> Self {
+    pub fn new(
+        pool: PgPool,
+        stores: Arc<RedisStores>,
+        engine: Arc<AuthEngine>,
+        app_env: RuntimeEnvironment,
+    ) -> Self {
         Self {
             version: env!("CARGO_PKG_VERSION"),
+            app_env,
             pool,
             stores,
             engine,
@@ -65,16 +75,23 @@ pub fn build_router(state: AppState) -> Router {
     )
     .into_router();
 
-    example_routes().with_state(state).merge(auth)
+    example_routes(state.app_env).with_state(state).merge(auth)
 }
 
-/// The example's own domain routes: the health probe, the audit read-API, and the
-/// diagnostics surface.
-fn example_routes() -> Router<AppState> {
-    Router::new()
-        .merge(crate::routes::health::routes())
-        .merge(crate::audit::router())
-        .merge(crate::diagnostics::router())
+/// The example's own domain routes.
+///
+/// The audit read-API (`/audit/*`) and diagnostics surface (`/diagnostics/*`) are
+/// development-only: they expose the full audit trail unauthenticated and allow
+/// force-locking any account, so they must not be reachable in production.
+/// Only the health probe mounts unconditionally.
+fn example_routes(app_env: RuntimeEnvironment) -> Router<AppState> {
+    let mut router = Router::new().merge(crate::routes::health::routes());
+    if app_env == RuntimeEnvironment::Development {
+        router = router
+            .merge(crate::audit::router())
+            .merge(crate::diagnostics::router());
+    }
+    router
 }
 
 #[cfg(test)]
@@ -108,7 +125,7 @@ impl AppState {
             )
             .expect("the dev settings fixture yields a valid engine"),
         );
-        Self::new(pool, stores, engine)
+        Self::new(pool, stores, engine, RuntimeEnvironment::Development)
     }
 }
 
@@ -146,5 +163,33 @@ mod tests {
         // The state reports the compile-time crate version verbatim. This runs in a
         // Tokio context because building the lazy pool requires the runtime.
         assert_eq!(AppState::for_test().version, env!("CARGO_PKG_VERSION"));
+    }
+
+    #[tokio::test]
+    async fn audit_and_diagnostics_are_absent_outside_development() {
+        // In non-Development environments the audit and diagnostics routes must not
+        // mount — every such path resolves to 404, proving they are unreachable in
+        // production without any authentication bypass needed.
+        let mut state = AppState::for_test();
+        state.app_env = RuntimeEnvironment::Production;
+        let router = build_router(state);
+        for uri in [
+            "/audit/logs",
+            "/audit/stream",
+            "/diagnostics/hash-strength",
+            "/diagnostics/force-lockout",
+            "/diagnostics/hooks",
+        ] {
+            let response = router
+                .clone()
+                .oneshot(Request::builder().uri(uri).body(Body::empty()).unwrap())
+                .await
+                .unwrap();
+            assert_eq!(
+                response.status(),
+                StatusCode::NOT_FOUND,
+                "{uri} must be absent outside Development"
+            );
+        }
     }
 }

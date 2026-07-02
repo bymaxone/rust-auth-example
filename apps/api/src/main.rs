@@ -32,7 +32,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         Arc::clone(&stores),
         settings.app_env.as_core(),
     )?);
-    let state = app::AppState::new(pool, stores, engine);
+    let state = app::AppState::new(pool, stores, engine, settings.app_env);
     let app = layers::apply_global_layers(app::build_router(state), &settings)?;
 
     let addr = SocketAddr::from(([127, 0, 0, 1], settings.api_port));

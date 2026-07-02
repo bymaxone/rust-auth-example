@@ -13,6 +13,7 @@
 
 use std::collections::HashMap;
 use std::net::SocketAddr;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
@@ -169,12 +170,12 @@ pub async fn spawn() -> Option<TestApp> {
         .await
         .expect("the test stack Postgres must be reachable");
 
-    let unique = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|d| d.as_nanos())
-        .unwrap_or_default();
-    let tenant_id = format!("tenant-{unique}");
-    let email = format!("user-{unique}@example.test");
+    // A process-wide counter guarantees collision-free tenant/email markers within a
+    // test run without relying on wall-clock time (which can repeat under fast clocks).
+    static SEQ: AtomicU64 = AtomicU64::new(0);
+    let seq = SEQ.fetch_add(1, Ordering::Relaxed);
+    let tenant_id = format!("tenant-{seq}");
+    let email = format!("user-{seq}@example.test");
 
     // The user FK requires the tenant to exist; provision an isolated one for this run.
     sqlx::query("INSERT INTO tenants (id, name) VALUES ($1, $1) ON CONFLICT DO NOTHING")
@@ -207,7 +208,12 @@ pub async fn spawn() -> Option<TestApp> {
             .expect("the engine builds from the test seams"),
     );
 
-    let state = AppState::new(pool.clone(), stores, engine);
+    let state = AppState::new(
+        pool.clone(),
+        stores,
+        engine,
+        RuntimeEnvironment::Development,
+    );
     let router =
         apply_global_layers(app::build_router(state), &settings).expect("global layers apply");
 

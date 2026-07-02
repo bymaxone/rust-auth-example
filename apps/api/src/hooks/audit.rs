@@ -163,7 +163,7 @@ impl AuthHooks for AuditAuthHooks {
 mod tests {
     use super::*;
     use std::collections::BTreeMap;
-    use std::time::{SystemTime, UNIX_EPOCH};
+    use std::sync::atomic::{AtomicU64, Ordering};
     use time::OffsetDateTime;
 
     /// A session hash marker that must never end up in an audit row.
@@ -171,13 +171,11 @@ mod tests {
     /// An evicted-session hash marker that must never end up in an audit row.
     const EVICTED_HASH_MARKER: &str = "EVICTEDHASHcafef00dMARKER";
 
-    /// A unique tenant marker so a run's rows are isolated from prior rows.
+    /// A deterministic, collision-free tenant marker scoped to this process run.
     fn unique_marker() -> String {
-        let nanos = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .map(|d| d.as_nanos())
-            .unwrap_or_default();
-        format!("audit-test-{nanos}")
+        static SEQ: AtomicU64 = AtomicU64::new(0);
+        let seq = SEQ.fetch_add(1, Ordering::Relaxed);
+        format!("audit-test-{seq}")
     }
 
     fn ctx(marker: &str) -> HookContext {
