@@ -78,11 +78,13 @@ function loadIgnore() {
     return new Set((parsed.exports ?? []).map((e) => e.symbol));
   } catch (error) {
     // An absent file is fine (nothing to allow-list). A present-but-invalid file
-    // must be surfaced: swallowing it would silently disable the whole allow-list.
+    // must fail the audit hard: silently continuing with an empty set would
+    // disable the whole allow-list and let the audit pass under false pretenses.
     if (existsSync(IGNORE_FILE)) {
       process.stderr.write(
         `audit:exports — failed to parse .audit-ignore.json: ${String(error)}\n`,
       );
+      process.exit(1);
     }
     return new Set();
   }
