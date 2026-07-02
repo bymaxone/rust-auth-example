@@ -1,6 +1,6 @@
 # Phase 4 — Schema & Repositories
 
-> **Status**: 🔄 In Progress · **Progress**: 5 / 6 tasks · **Last updated**: 2026-07-02
+> **Status**: 🔄 In Progress · **Progress**: 6 / 6 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P4
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -89,7 +89,7 @@ routes, no email or audit (all P5), and no business logic inside the repositorie
 | 4.3 | `SqlxUserRepository` (11 methods) | ✅ Done | P0 | L | 4.1, 4.2 |
 | 4.4 | `SqlxPlatformUserRepository` (6 methods) | ✅ Done | P0 | M | 4.1, 4.2 |
 | 4.5 | `RepositoryError` mapping (Conflict / `Ok(None)`) | ✅ Done | P1 | S | 4.3, 4.4 |
-| 4.6 | Seed data (acme/globex + demo admin) | 📋 ToDo | P1 | S | 4.1 |
+| 4.6 | Seed data (acme/globex + demo admin) | ✅ Done | P1 | S | 4.1 |
 
 ---
 
@@ -879,7 +879,7 @@ Completion Protocol (after you finish):
 
 ### Task 4.6 — Seed data (acme/globex + demo admin)
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: S
 - **Depends on**: 4.1
@@ -892,14 +892,14 @@ run the per-phase completion protocol after it.
 
 #### Acceptance criteria
 
-- [ ] A seed runnable via a single command (`cargo run -p api --bin seed`, or an equivalent `db:seed` script) inserts
+- [x] A seed runnable via a single command (`cargo run -p api --bin seed`) inserts
       `acme`/`globex` into `tenants` and a demo admin into `platform_users`.
-- [ ] The demo admin's `password_hash` is produced by `bymax_auth_crypto::password::hash` (a real PHC string), not a
-      hand-written literal.
-- [ ] The seed is idempotent: running it twice leaves the row counts unchanged (`ON CONFLICT DO NOTHING`).
-- [ ] The demo credentials are documented (e.g. in `.env.example`/`GETTING_STARTED.md`) and are clearly local-only
-      fixtures (no real secret committed).
-- [ ] `cargo run -p api --bin seed` succeeds against the dev stack and the rows are present.
+- [x] The demo admin's `password_hash` is produced by `bymax_auth_crypto::password::hash` (a real `$scrypt$` PHC
+      string), not a hand-written literal.
+- [x] The seed is idempotent: running it twice leaves the row counts unchanged (`ON CONFLICT DO NOTHING`).
+- [x] The demo credentials are documented in `.env.example` and are clearly local-only fixtures (no real secret
+      committed).
+- [x] `cargo run -p api --bin seed` succeeds against the dev stack and the rows are present.
 
 #### Files to create / modify
 
@@ -1032,3 +1032,4 @@ When Task 4.6 is ✅ (the LAST task), close the phase:
 - 4.3 ✅ 2026-07-02 — `SqlxUserRepository` implements all 11 `UserRepository` methods over compile-checked `query!`/`query_as!`, mapping rows to `AuthUser` with `Ok(None)` for missing/cross-tenant reads and `Conflict`/`Backend` error mapping; held in `AppState` as `Arc<dyn UserRepository>`; committed `.sqlx/` cache; 100% line coverage against the test stack.
 - 4.4 ✅ 2026-07-02 — `SqlxPlatformUserRepository` implements all 6 tenant-less `PlatformUserRepository` methods, mapping rows to `AuthPlatformUser` (non-optional `password_hash`, `platform_id`, `updated_at`); every mutation bumps `updated_at`; held in `AppState`; cache regenerated; `platform_user.rs` at 100% coverage.
 - 4.5 ✅ 2026-07-02 — Extracted the `sqlx::Error → RepositoryError` mapping into `repository/error.rs` (single definition, re-exported), proving 23505 → `Conflict`, other errors → `Backend`, missing row → `Ok(None)`, and the `auth.email_already_exists` wire rendering; `error.rs` at 100% line coverage.
+- 4.6 ✅ 2026-07-02 — Added `apps/api/src/bin/seed.rs`, an idempotent `cargo run -p api --bin seed` that inserts the acme/globex tenants and a demo platform admin whose password is hashed with the library's scrypt KDF (`$scrypt$` PHC); `ON CONFLICT DO NOTHING` keeps re-runs a no-op; demo credentials documented in `.env.example`.

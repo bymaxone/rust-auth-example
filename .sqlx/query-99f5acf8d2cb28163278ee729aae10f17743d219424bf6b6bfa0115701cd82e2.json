@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO tenants (id, name) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": ["Text", "Text"]
+    },
+    "nullable": []
+  },
+  "hash": "99f5acf8d2cb28163278ee729aae10f17743d219424bf6b6bfa0115701cd82e2"
+}

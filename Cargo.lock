@@ -61,6 +61,7 @@ dependencies = [
  "base64",
  "bymax-auth-axum",
  "bymax-auth-core",
+ "bymax-auth-crypto",
  "bymax-auth-redis",
  "bymax-auth-types",
  "figment",

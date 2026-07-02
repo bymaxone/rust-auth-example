@@ -10,10 +10,12 @@ publish = false
 # boundary. The `bymax-auth` facade is a stub (no `pub use`), so depend on the
 # concrete crates directly; `-types`/`-crypto`/`-jwt` arrive transitively.
 [dependencies]
-bymax-auth-axum  = { path = "../../../rust-auth/crates/bymax-auth-axum",  version = "0.0.0", features = ["full"] }
-bymax-auth-core  = { path = "../../../rust-auth/crates/bymax-auth-core",  version = "0.0.0", features = ["full"] }
-bymax-auth-redis = { path = "../../../rust-auth/crates/bymax-auth-redis", version = "0.0.0", features = ["mfa", "oauth", "platform"] }
-bymax-auth-types = { path = "../../../rust-auth/crates/bymax-auth-types", version = "0.0.0" }
+bymax-auth-axum   = { path = "../../../rust-auth/crates/bymax-auth-axum",   version = "0.0.0", features = ["full"] }
+bymax-auth-core   = { path = "../../../rust-auth/crates/bymax-auth-core",   version = "0.0.0", features = ["full"] }
+# The demo seed hashes its admin password with the library's scrypt KDF.
+bymax-auth-crypto = { path = "../../../rust-auth/crates/bymax-auth-crypto", version = "0.0.0", features = ["scrypt"] }
+bymax-auth-redis  = { path = "../../../rust-auth/crates/bymax-auth-redis",  version = "0.0.0", features = ["mfa", "oauth", "platform"] }
+bymax-auth-types  = { path = "../../../rust-auth/crates/bymax-auth-types",  version = "0.0.0" }
 # The repository traits (`UserRepository`, `PlatformUserRepository`) are `#[async_trait]`.
 async-trait = "0.1"
 axum = "0.8"
