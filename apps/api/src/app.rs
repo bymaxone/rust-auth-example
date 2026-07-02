@@ -83,8 +83,9 @@ pub fn build_router(state: AppState) -> Router {
 /// The health probe and the example WebSocket endpoint mount unconditionally: the WebSocket
 /// upgrade authenticates via a single-use ticket redeemed from an authenticated session, so
 /// it is safe in every environment. The audit read-API (`/audit/*`) and diagnostics surface
-/// (`/diagnostics/*`) are development-only: they expose the full audit trail unauthenticated
-/// and allow force-locking any account, so they must not be reachable in production.
+/// (`/diagnostics/*`) are development-only and sit behind the platform admin guard: they
+/// expose the full audit trail and allow force-locking any account, so they stay gated to
+/// Development and must not be reachable in production.
 fn example_routes(app_env: RuntimeEnvironment) -> Router<AppState> {
     let mut router = Router::new()
         .merge(crate::routes::health::routes())

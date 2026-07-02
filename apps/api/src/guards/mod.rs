@@ -27,10 +27,11 @@ const AUDIT_ADMIN_ROLE: &str = "admin";
 /// string is never consulted — a credential never travels in the URL.
 fn bearer_token(parts: &Parts) -> Option<String> {
     let value = parts.headers.get(AUTHORIZATION)?.to_str().ok()?;
-    let token = value
-        .strip_prefix("Bearer ")
-        .or_else(|| value.strip_prefix("bearer "))?
-        .trim();
+    let (scheme, rest) = value.split_once(' ')?;
+    if !scheme.eq_ignore_ascii_case("Bearer") {
+        return None;
+    }
+    let token = rest.trim();
     if token.is_empty() {
         None
     } else {

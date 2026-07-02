@@ -32,7 +32,8 @@ pub struct TicketQuery {
 /// # Errors
 ///
 /// Returns [`AppError`] (rendered as the library's `401` envelope) when the ticket is
-/// missing, invalid, expired, or already redeemed.
+/// invalid, expired, or already redeemed. A request without the `ticket` query parameter
+/// is rejected during extraction (`400`) before this handler runs.
 pub async fn realtime(
     State(state): State<AppState>,
     Query(query): Query<TicketQuery>,
