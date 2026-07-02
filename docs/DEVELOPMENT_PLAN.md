@@ -66,7 +66,7 @@ template, reconciled with the current vault standard and adapted to the Rust/axu
 | --- | --- | --- | --- | --- | --- | --- |
 | P0 | Foundation, Tooling & CI Skeleton | `phase-00-foundation-ci.md` | ✅ | 7 / 7 | L | 2026-07-01 |
 | P1 | Local Stack & Environment | `phase-01-local-stack.md` | ✅ | 5 / 5 | M | 2026-07-02 |
-| P2 | Library Consumption & Export Audits | `phase-02-library-consumption.md` | 🔄 | 1 / 4 | M | 2026-07-02 |
+| P2 | Library Consumption & Export Audits | `phase-02-library-consumption.md` | 🔄 | 2 / 4 | M | 2026-07-02 |
 | P3 | API Skeleton | `phase-03-api-skeleton.md` | 📋 | 0 / 6 | M | — |
 | P4 | Schema & Repositories | `phase-04-schema-repositories.md` | 📋 | 0 / 6 | L | — |
 | P5 | Engine Wiring, Email & Audit | `phase-05-engine-wiring.md` | 📋 | 0 / 7 | L | — |

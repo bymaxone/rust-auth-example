@@ -1,6 +1,6 @@
 # Phase 2 — Library Consumption & Export Audits
 
-> **Status**: 🔄 In Progress · **Progress**: 1 / 4 tasks · **Last updated**: 2026-07-02
+> **Status**: 🔄 In Progress · **Progress**: 2 / 4 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P2
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -48,7 +48,7 @@ When P2 is done, `cargo build --locked` links all three library crates into `app
 | ID | Task | Status | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- | --- |
 | 2.1 | Rust `path` deps + consumed-symbol probe | ✅ Done | P0 | M | — |
-| 2.2 | npm package build + `file:` link | 📋 ToDo | P0 | M | — |
+| 2.2 | npm package build + `file:` link | ✅ Done | P0 | M | — |
 | 2.3 | npm export-usage audit | 📋 ToDo | P1 | M | 2.2 |
 | 2.4 | `cargo public-api` audit | 📋 ToDo | P1 | M | 2.1 |
 
@@ -171,7 +171,7 @@ Completion Protocol (after you finish):
 
 ### Task 2.2 — npm package build + `file:` link
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: —
@@ -182,12 +182,12 @@ Author `scripts/link-library.sh` / `scripts/unlink-library.sh` that build the up
 
 #### Acceptance criteria
 
-- [ ] `scripts/link-library.sh` builds the upstream package at `../../../rust-auth/packages/rust-auth` (`pnpm install --frozen-lockfile=false && pnpm build:wasm && pnpm build`, refusing to run when `CI=true`) and then runs `pnpm install` in this repo so the `file:` link resolves; `scripts/unlink-library.sh` reverses it cleanly.
-- [ ] `apps/web/package.json` depends on `"@bymax-one/rust-auth": "file:../../../rust-auth/packages/rust-auth"`.
-- [ ] `apps/web/next.config.mjs` sets `serverExternalPackages: ['@bymax-one/rust-auth']` and `outputFileTracingRoot: path.join(import.meta.dirname, '../..')`.
-- [ ] After `bash scripts/link-library.sh`, the four subpath declaration files exist under `apps/web/node_modules/@bymax-one/rust-auth/dist/{client,react,nextjs,shared}/index.d.ts`.
-- [ ] `pnpm -C apps/web build` resolves the `file:`-linked package and completes.
-- [ ] No `.gitkeep` / empty-directory placeholders are created; both scripts are executable (`chmod +x`).
+- [x] `scripts/link-library.sh` builds the upstream package at `../../../rust-auth/packages/rust-auth` (`pnpm install --frozen-lockfile=false && pnpm build:wasm && pnpm build`, refusing to run when `CI=true`) and then runs `pnpm install` in this repo so the `file:` link resolves; `scripts/unlink-library.sh` reverses it cleanly.
+- [x] `apps/web/package.json` depends on `"@bymax-one/rust-auth": "file:../../../rust-auth/packages/rust-auth"`.
+- [x] `apps/web/next.config.mjs` sets `serverExternalPackages: ['@bymax-one/rust-auth']` and `outputFileTracingRoot: path.join(import.meta.dirname, '../..')`.
+- [x] After `bash scripts/link-library.sh`, the four subpath declaration files exist under `apps/web/node_modules/@bymax-one/rust-auth/dist/{client,react,nextjs,shared}/index.d.ts`.
+- [x] `pnpm -C apps/web build` resolves the `file:`-linked package and completes.
+- [x] No `.gitkeep` / empty-directory placeholders are created; both scripts are executable (`chmod +x`).
 
 #### Files to create / modify
 
@@ -516,3 +516,4 @@ Run this closeout when the LAST task (2.4) is ✅:
 > Append-only. One line per completed task: `- <id> ✅ YYYY-MM-DD — <summary>`.
 
 - 2.1 ✅ 2026-07-02 — Added bymax-auth-axum/-core/-redis path deps (version 0.0.0) to apps/api/Cargo.toml; created probe.rs naming AuthEngine/AxumAuthConfig/RedisStores to link all three; updated deny.toml skip-tree for governor+tungstenite duplicates; cargo build --locked, +1.90 check, fmt, clippy all green.
+- 2.2 ✅ 2026-07-02 — Created scripts/link-library.sh and scripts/unlink-library.sh; created minimal Next.js skeleton (package.json, next.config.mjs, tsconfig.json, app/layout.tsx, app/page.tsx) with file: link to @bymax-one/rust-auth; pnpm install resolved the link; all four subpath d.ts files present; pnpm -C apps/web build succeeds.
