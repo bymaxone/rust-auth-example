@@ -51,8 +51,8 @@ template, reconciled with the current vault standard and adapted to the Rust/axu
 
 ## Progress
 
-- **Overall progress:** 7 / 15 phases · 45 / 86 tasks done (52%)
-- **Active phase:** P7 (Platform Domain & WebSocket) — code complete, in review
+- **Overall progress:** 8 / 15 phases · 50 / 86 tasks done (58%)
+- **Active phase:** P8 (Web Skeleton & Design System) — code complete, in review
 - **Blocked:** none
 
 > All 15 Layer-3 task files are scaffolded under [`docs/tasks/`](./tasks/) (86 tasks total). Execute one phase at a time
@@ -71,8 +71,8 @@ template, reconciled with the current vault standard and adapted to the Rust/axu
 | P4 | Schema & Repositories | `phase-04-schema-repositories.md` | ✅ | 6 / 6 | L | 2026-07-02 |
 | P5 | Engine Wiring, Email & Audit | `phase-05-engine-wiring.md` | ✅ | 7 / 7 | L | 2026-07-02 |
 | P6 | OAuth & Invitations | `phase-06-oauth-invitations.md` | ✅ | 5 / 5 | M | 2026-07-02 |
-| P7 | Platform Domain & WebSocket | `phase-07-platform-websocket.md` | 👀 | 5 / 5 | M | 2026-07-02 |
-| P8 | Web Skeleton & Design System | `phase-08-web-skeleton.md` | 📋 | 0 / 6 | M | — |
+| P7 | Platform Domain & WebSocket | `phase-07-platform-websocket.md` | ✅ | 5 / 5 | M | 2026-07-02 |
+| P8 | Web Skeleton & Design System | `phase-08-web-skeleton.md` | 👀 | 6 / 6 | M | 2026-07-02 |
 | P9 | Public Auth Pages | `phase-09-public-auth-pages.md` | 📋 | 0 / 6 | M | — |
 | P10 | Dashboard Console | `phase-10-dashboard-console.md` | 📋 | 0 / 7 | L | — |
 | P11 | Platform Console | `phase-11-platform-console.md` | 📋 | 0 / 4 | M | — |
