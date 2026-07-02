@@ -34,15 +34,7 @@ export default tseslint.config(
     languageOptions: {
       globals: { ...globals.node },
       parserOptions: {
-        // A dedicated program (not `projectService`) so the typed rules resolve
-        // `@bymax-one/rust-auth/*` through the sibling library's TypeScript
-        // source rather than its built `dist`. The `dist` is git-ignored and is
-        // only materialised for the jobs that download the build artifact, so
-        // without this the type-checked lint would see the imports as `any` and
-        // report false `no-unsafe-*` violations. `tsconfig.eslint.json` layers
-        // the source `paths` on top of the app config used by `tsc`/`next build`,
-        // which stay untouched.
-        project: ['./apps/web/tsconfig.eslint.json'],
+        projectService: true,
         tsconfigRootDir: import.meta.dirname,
       },
     },
