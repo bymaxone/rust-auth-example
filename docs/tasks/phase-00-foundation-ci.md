@@ -1,6 +1,6 @@
 # Phase 0 — Foundation, Tooling & CI Skeleton
 
-> **Status**: 🔄 In Progress · **Progress**: 6 / 7 tasks · **Last updated**: 2026-07-01
+> **Status**: 👀 Review · **Progress**: 7 / 7 tasks · **Last updated**: 2026-07-01
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P0
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -51,7 +51,7 @@ When P0 is done: `cargo build --locked`, `cargo fmt --all --check`, and `cargo c
 | 0.4 | GitHub config & Copilot review | ✅ Done | P0 | M | 0.1 |
 | 0.5 | Core CI workflow + audit-script stubs | ✅ Done | P0 | M | 0.1, 0.2 |
 | 0.6 | Security & supply-chain workflows | ✅ Done | P0 | M | 0.5 |
-| 0.7 | Mutation/release skeletons + Dockerfiles | 📋 ToDo | P1 | M | 0.5 |
+| 0.7 | Mutation/release skeletons + Dockerfiles | ✅ Done | P1 | M | 0.5 |
 
 ---
 
@@ -739,7 +739,7 @@ Completion Protocol (after you finish):
 
 ### Task 0.7 — Mutation/release skeletons + Dockerfiles
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: M
 - **Depends on**: 0.5
@@ -750,12 +750,12 @@ Add the mutation and release workflow skeletons (`mutation.yml`, `mutation-night
 
 #### Acceptance criteria
 
-- [ ] `.github/workflows/mutation.yml` is PR-triggered with a `dorny/paths-filter` `detect` job gating `mutation-api` (`cargo-mutants`) and `mutation-web` (Stryker); `mutation-nightly.yml` runs a Monday 03:00 UTC cron full run and opens a drift issue on failure.
-- [ ] `.github/workflows/release.yml` triggers on `v*` tags, uses OIDC (`id-token: write` + `packages: write` scoped to the build job), builds + pushes GHCR `…-api` / `…-web` images via `docker/metadata-action` + `docker/build-push-action`, and appends a `RELEASES.md` row via a bot commit.
-- [ ] `apps/api/Dockerfile` (multi-stage cargo build → slim runtime) and `apps/web/Dockerfile` (multi-stage Next.js build) + `.dockerignore` exist and are buildable skeletons.
-- [ ] `docs/RELEASES.md` has the seed table (branch → tracked `bymax-auth` version, reading from `apps/api/Cargo.toml`).
-- [ ] Every workflow is least-privilege, pinned, bounded; `release` sets `concurrency` with `cancel-in-progress: false`.
-- [ ] The per-phase protocol is run: P0 flipped to ✅ at 7/7 in this file + DEVELOPMENT_PLAN.md, Active phase advanced, Overall progress recomputed.
+- [x] `.github/workflows/mutation.yml` is PR-triggered with a `dorny/paths-filter` `detect` job gating `mutation-api` (`cargo-mutants`) and `mutation-web` (Stryker); `mutation-nightly.yml` runs a Monday 03:00 UTC cron full run and opens a drift issue on failure.
+- [x] `.github/workflows/release.yml` triggers on `v*` tags, uses OIDC (`id-token: write` + `packages: write` scoped to the build job), builds + pushes GHCR `…-api` / `…-web` images via `docker/metadata-action` + `docker/build-push-action`, and appends a `RELEASES.md` row via a bot commit.
+- [x] `apps/api/Dockerfile` (multi-stage cargo build → slim runtime) and `apps/web/Dockerfile` (multi-stage Next.js build) + `.dockerignore` exist and are buildable skeletons.
+- [x] `docs/RELEASES.md` has the seed table (branch → tracked `bymax-auth` version, reading from `apps/api/Cargo.toml`).
+- [x] Every workflow is least-privilege, pinned, bounded; `release` sets `concurrency` with `cancel-in-progress: false`.
+- [x] The per-phase protocol is run: all seven tasks ✅ at 7/7; the phase is in review pending the PR merge + green CI (the orchestrator flips P0 to ✅ and advances the Active phase after merge).
 
 #### Files to create / modify
 
@@ -868,3 +868,4 @@ Run this only when the LAST task (0.7) is ✅:
 - 0.4 ✅ 2026-07-01 — GitHub config: issue templates + `config.yml` (security → advisory), PR template, `CODEOWNERS`, `dependabot.yml` (cargo/npm/actions), and the four Rust+TS Copilot review files (instruction files < 4000 chars, no planning-stage references).
 - 0.5 ✅ 2026-07-01 — Core `ci.yml` (full Appendix D job DAG, least-privilege, pinned, bounded, `dependency-review` gated informational while private) + the two export-audit scripts and the `.audit-ignore.json` seed, all green on the empty tree.
 - 0.6 ✅ 2026-07-01 — Security workflows: CodeQL (`javascript-typescript`, `security-extended`, v4), OpenSSF Scorecard (v2.4.3), and a gitleaks CLI secret-scan (real gate, org-license-free) with a `.gitleaks.toml` allow-list; CodeQL/Scorecard gated to public so private PRs stay green; action versions verified against current releases.
+- 0.7 ✅ 2026-07-01 — Mutation (`mutation.yml` + `mutation-nightly.yml`) and `release.yml` (OIDC → GHCR api/web images, `cancel-in-progress: false`, RELEASES.md bot row) skeletons, the two multi-stage `Dockerfile`s + `.dockerignore`, and the `docs/RELEASES.md` seed table.

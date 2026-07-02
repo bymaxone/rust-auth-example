@@ -1,0 +1,71 @@
+# Mutation testing — weekly full run. Runs a complete (cold) mutation pass on
+# both workspaces every Monday at 03:00 UTC to catch drift the per-PR incremental
+# cache might mask, and opens a `mutation-drift` issue on failure. Also runnable
+# on demand. The runs are enabled once the test suites exist.
+
+name: mutation-nightly
+
+on:
+  schedule:
+    - cron: '0 3 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mutation-nightly-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  full-api:
+    name: full-api
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.96.0
+      - uses: Swatinem/rust-cache@v2
+      - name: Full mutation run (api)
+        run: echo "full-api — cold cargo-mutants run enabled once the API test suite exists."
+
+  full-web:
+    name: full-web
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.8.1
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Full mutation run (web)
+        run: echo "full-web — cold Stryker run enabled once the web test suite exists."
+
+  drift-issue:
+    name: drift-issue
+    needs: [full-api, full-web]
+    if: failure()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Open a mutation-drift issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const today = new Date().toISOString().slice(0, 10);
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `mutation drift detected (${today})`,
+              labels: ['mutation-drift'],
+              body: 'The nightly full mutation run failed. Investigate surviving mutants before the next merge.',
+            });

@@ -1,0 +1,84 @@
+# Mutation testing — pull-request gate. A paths-filter detects which workspace
+# changed, then the matching mutation job runs. The API job runs cargo-mutants
+# (capped --jobs for memory safety) and gates on caught / (caught + missed) >=
+# 0.95; the web job runs Stryker incrementally with break >= 95. The runs are
+# enabled once the corresponding test suites exist; until then the jobs validate
+# the pipeline shape.
+
+name: mutation
+
+on:
+  pull_request:
+    paths:
+      - 'apps/api/src/**'
+      - 'apps/web/app/**'
+      - 'apps/web/lib/**'
+      - 'apps/web/components/**'
+      - '**/Cargo.toml'
+      - '**/Cargo.lock'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/mutation.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mutation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  detect:
+    name: detect
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      api: ${{ steps.filter.outputs.api }}
+      web: ${{ steps.filter.outputs.web }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            api:
+              - 'apps/api/src/**'
+              - '**/Cargo.toml'
+              - '**/Cargo.lock'
+            web:
+              - 'apps/web/app/**'
+              - 'apps/web/lib/**'
+              - 'apps/web/components/**'
+              - 'pnpm-lock.yaml'
+
+  mutation-api:
+    name: mutation-api
+    needs: detect
+    if: needs.detect.outputs.api == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.96.0
+      - uses: Swatinem/rust-cache@v2
+      - name: Mutation testing (api)
+        run: echo "mutation-api — cargo-mutants gate enabled once the API test suite exists."
+
+  mutation-web:
+    name: mutation-web
+    needs: detect
+    if: needs.detect.outputs.web == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.8.1
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Mutation testing (web)
+        run: echo "mutation-web — Stryker gate enabled once the web test suite exists."
