@@ -3,7 +3,22 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
+mod config;
+
+use config::Settings;
+
 /// Process entry point for the API binary.
 fn main() {
-    println!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
+    match Settings::load() {
+        Ok(s) => println!(
+            "{} {} configuration loaded (API port {})",
+            env!("CARGO_PKG_NAME"),
+            env!("CARGO_PKG_VERSION"),
+            s.api_port
+        ),
+        Err(e) => {
+            eprintln!("configuration error: {e}");
+            std::process::exit(1);
+        }
+    }
 }

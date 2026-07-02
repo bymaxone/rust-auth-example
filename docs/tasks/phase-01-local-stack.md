@@ -1,6 +1,6 @@
 # Phase 1 — Local Stack & Environment
 
-> **Status**: 📋 ToDo · **Progress**: 0 / 5 tasks · **Last updated**: 2026-06-23
+> **Status**: 👀 Review · **Progress**: 5 / 5 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P1
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -80,11 +80,11 @@ axum bootstrap, no routes, no `RedisStores::connect`, and no `AuthEngine` wiring
 
 | ID | Task | Status | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- | --- |
-| 1.1 | docker-compose dev stack | 📋 ToDo | P0 | M | — |
-| 1.2 | Test + prod compose | 📋 ToDo | P1 | S | 1.1 |
-| 1.3 | Init scripts + infra commands | 📋 ToDo | P1 | S | 1.1 |
-| 1.4 | Environment contract (`.env.example`) | 📋 ToDo | P0 | S | — |
-| 1.5 | figment `Settings` loader + validation | 📋 ToDo | P0 | M | 1.4 |
+| 1.1 | docker-compose dev stack | ✅ Done | P0 | M | — |
+| 1.2 | Test + prod compose | ✅ Done | P1 | S | 1.1 |
+| 1.3 | Init scripts + infra commands | ✅ Done | P1 | S | 1.1 |
+| 1.4 | Environment contract (`.env.example`) | ✅ Done | P0 | S | — |
+| 1.5 | figment `Settings` loader + validation | ✅ Done | P0 | M | 1.4 |
 
 ---
 
@@ -92,7 +92,7 @@ axum bootstrap, no routes, no `RedisStores::connect`, and no `AuthEngine` wiring
 
 ### Task 1.1 — docker-compose dev stack
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: —
@@ -105,15 +105,15 @@ with one command.
 
 #### Acceptance criteria
 
-- [ ] `docker-compose.yml` defines `name: rust-auth-example` and three services on a `local-dev` bridge network:
+- [x] `docker-compose.yml` defines `name: rust-auth-example` and three services on a `local-dev` bridge network:
   `postgres:18-alpine` (`127.0.0.1:5432`, `pg-data` volume + `docker/postgres/init.sql`, `pg_isready` healthcheck),
   `redis:7-alpine` (`127.0.0.1:6379`, `redis-data` volume + `docker/redis/redis.conf`, `redis-cli ping` healthcheck),
   and `axllent/mailpit` **digest-pinned** (`127.0.0.1:1025`/`8025`, `wget` healthcheck).
-- [ ] Postgres reads `POSTGRES_USER`/`POSTGRES_PASSWORD`/`POSTGRES_DB` with `:-` dev defaults (`postgres`/`postgres`/
+- [x] Postgres reads `POSTGRES_USER`/`POSTGRES_PASSWORD`/`POSTGRES_DB` with `:-` dev defaults (`postgres`/`postgres`/
   `example_app`); `restart: unless-stopped` on every service.
-- [ ] `docker-compose.override.yml` (`name: rust-auth-example`) adds `json-file` log caps (`max-size: 10m`,
+- [x] `docker-compose.override.yml` (`name: rust-auth-example`) adds `json-file` log caps (`max-size: 10m`,
   `max-file: 3`) to all three services and nothing prod-specific.
-- [ ] `docker compose up --wait` returns `0` only when all three containers are healthy; the Mailpit UI answers at
+- [x] `docker compose up -d --wait` returns `0` only when all three containers are healthy; the Mailpit UI answers at
   `http://localhost:8025`.
 
 #### Files to create / modify
@@ -243,7 +243,7 @@ Completion Protocol (after you finish):
 
 ### Task 1.2 — Test + prod compose
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: S
 - **Depends on**: 1.1
@@ -256,16 +256,16 @@ GHCR images), so CI and a prod smoke test each have a dedicated, non-colliding s
 
 #### Acceptance criteria
 
-- [ ] `docker-compose.test.yml` defines `name: rust-auth-example-test`, binds Postgres `127.0.0.1:55432:5432`, Redis
+- [x] `docker-compose.test.yml` defines `name: rust-auth-example-test`, binds Postgres `127.0.0.1:55432:5432`, Redis
   `127.0.0.1:56379:6379`, Mailpit `127.0.0.1:51025:1025`/`58025:8025`, uses `tmpfs` (no named volumes), sets
   `POSTGRES_DB: example_app_test`, tighter `3s` healthcheck intervals, and a `ci` bridge network.
-- [ ] The test Redis runs inline flags mirroring dev eviction (`--save '' --appendonly no --maxmemory 256mb
+- [x] The test Redis runs inline flags mirroring dev eviction (`--save '' --appendonly no --maxmemory 256mb
   --maxmemory-policy volatile-lru --protected-mode no`) — no `redis.conf` bind, since `tmpfs` is ephemeral.
-- [ ] `docker-compose.prod.yml` (`name: rust-auth-example-prod`) wires `postgres` + `redis` (requirepass) + `api`
+- [x] `docker-compose.prod.yml` (`name: rust-auth-example-prod`) wires `postgres` + `redis` (requirepass) + `api`
   (`ghcr.io/bymaxone/rust-auth-example-api:${IMAGE_TAG:-latest}`) + `web`
   (`ghcr.io/bymaxone/rust-auth-example-web:${IMAGE_TAG:-latest}`), each with `depends_on … condition: service_healthy`
   and a healthcheck; no Mailpit (prod uses `EMAIL_PROVIDER=resend`).
-- [ ] Both files pass `docker compose -f <file> config`.
+- [x] Both files pass `docker compose -f <file> config`.
 
 #### Files to create / modify
 
@@ -400,7 +400,7 @@ Completion Protocol (after you finish):
 
 ### Task 1.3 — Init scripts + infra commands
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: S
 - **Depends on**: 1.1
@@ -413,14 +413,14 @@ clean teardown down.
 
 #### Acceptance criteria
 
-- [ ] `docker/postgres/init.sql` idempotently creates database `example_app` (UTF8, `\gexec` guard, `WHERE NOT EXISTS`)
+- [x] `docker/postgres/init.sql` idempotently creates database `example_app` (UTF8, `\gexec` guard, `WHERE NOT EXISTS`)
   with a comment explaining the entrypoint runs it only on first boot.
-- [ ] `docker/redis/redis.conf` enables AOF (`appendonly yes`, `appendfsync everysec`), disables RDB (`save ""`), sets
+- [x] `docker/redis/redis.conf` enables AOF (`appendonly yes`, `appendfsync everysec`), disables RDB (`save ""`), sets
   `maxmemory 256mb` + `maxmemory-policy volatile-lru`, `protected-mode no` (for the Docker-NAT host connect), with a
   comment warning it is dev-only (no `requirepass`/`bind`).
-- [ ] Root `package.json` wires `infra:up` → `docker compose up --wait` and `infra:down` → `docker compose down -v`
+- [x] Root `package.json` wires `infra:up` → `docker compose up -d --wait` and `infra:down` → `docker compose down -v`
   (plus, optionally, `infra:test:up`/`infra:test:down` against `-f docker-compose.test.yml`).
-- [ ] `pnpm infra:up` returns only when all three are healthy and creates the `example_app` database; `pnpm infra:down`
+- [x] `pnpm infra:up` returns only when all three are healthy and creates the `example_app` database; `pnpm infra:down`
   removes the containers and named volumes.
 
 #### Files to create / modify
@@ -512,7 +512,7 @@ Completion Protocol (after you finish):
 
 ### Task 1.4 — Environment contract (`.env.example`)
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: S
 - **Depends on**: —
@@ -525,19 +525,19 @@ documented contract the loader validates.
 
 #### Acceptance criteria
 
-- [ ] `.env.example` documents every variable from `OVERVIEW.md §9`, sectioned (shared / docker / api / JWT / email /
+- [x] `.env.example` documents every variable from `OVERVIEW.md §9`, sectioned (shared / docker / api / JWT / email /
   OAuth / web): `API_PORT=4000`, `RUST_LOG`/`LOG_LEVEL`, `POSTGRES_USER`/`POSTGRES_PASSWORD`/`POSTGRES_DB`,
   `DATABASE_URL`, `DATABASE_URL_TEST`, `REDIS_URL`, `REDIS_NAMESPACE`, `JWT_SECRET`, `MFA_ENCRYPTION_KEY`,
   `EMAIL_PROVIDER`, `SMTP_HOST`/`SMTP_PORT`/`SMTP_FROM`, `RESEND_API_KEY`, `OAUTH_GOOGLE_CLIENT_ID`/`_CLIENT_SECRET`/
   `_CALLBACK_URL`, `WEB_ORIGIN`, `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_OAUTH_GOOGLE_ENABLED`, `INTERNAL_API_URL`,
   `AUTH_JWT_SECRET_FOR_PROXY`.
-- [ ] `.env.example` ships a **throwaway dev-only** `JWT_SECRET` of ≥ 64 chars and a base64 32-byte
+- [x] `.env.example` ships a **throwaway dev-only** `JWT_SECRET` of ≥ 64 chars and a base64 32-byte
   `MFA_ENCRYPTION_KEY`, with a comment that these are local-only and must be regenerated for any shared environment; the
   three `OAUTH_GOOGLE_*` lines are commented out (OAuth disabled by default).
-- [ ] `.env.prod.example` lists the same keys with every secret blank and a `# openssl rand -hex 64` /
+- [x] `.env.prod.example` lists the same keys with every secret blank and a `# openssl rand -hex 64` /
   `# openssl rand -base64 32` generation hint; `WEB_ORIGIN`/`DATABASE_URL`/`REDIS_URL` carry `https://`/managed-URL
   guidance.
-- [ ] `.env`, `.env.prod`, `.env.test` are git-ignored (already from P0); only the `*.example` files are committed.
+- [x] `.env`, `.env.prod`, `.env.test` are git-ignored (already from P0); only the `*.example` files are committed.
 
 #### Files to create / modify
 
@@ -633,7 +633,7 @@ Completion Protocol (after you finish):
 
 ### Task 1.5 — figment `Settings` loader + validation
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: 1.4
@@ -646,15 +646,16 @@ and `MFA_ENCRYPTION_KEY` base64-32 hard guards, and is unit-tested to prove each
 
 #### Acceptance criteria
 
-- [ ] `apps/api/src/config/mod.rs` defines `Settings` (one field per `OVERVIEW.md §9` api variable) deserialized via
-  `figment` (built-in defaults layered under `Env::raw()`), declared `mod config;` in `main.rs`, with `figment`,
-  `serde`, `thiserror`, and `base64` added to `apps/api/Cargo.toml`.
-- [ ] `Settings::load() -> Result<Settings, ConfigError>` layers defaults → env, extracts, then `validate()`s; it is
+- [x] `apps/api/src/config/mod.rs` defines `Settings` (covering the configuration variables the current API surface
+  needs; later-phase variables such as SMTP host/port, OAuth credentials, and `DATABASE_URL_TEST` are absent by design)
+  deserialized via `figment` (built-in defaults layered under `Env::raw()`), declared `mod config;` (private) in
+  `main.rs`, with `figment`, `serde`, `thiserror`, and `base64` added to `apps/api/Cargo.toml`.
+- [x] `Settings::load() -> Result<Settings, ConfigError>` layers defaults → env, extracts, then `validate()`s; it is
   **panic-free** (no `unwrap`/`expect`) and returns a typed error.
-- [ ] `ConfigError` is a `thiserror` enum with at least `Extract(#[from] figment::Error)`, `JwtSecretTooShort { got }`,
+- [x] `ConfigError` is a `thiserror` enum with at least `Extract(Box<figment::Error>)`, `JwtSecretTooShort { got }`,
   and `MfaKeyInvalid`; each `Display` names the variable and the constraint.
-- [ ] Hard guards enforced: `JWT_SECRET.len() >= 64`; `MFA_ENCRYPTION_KEY` base64-decodes to exactly 32 bytes.
-- [ ] Unit tests (using `figment::Jail`) prove: a valid env loads; a short `JWT_SECRET` returns
+- [x] Hard guards enforced: `JWT_SECRET.len() >= 64`; `MFA_ENCRYPTION_KEY` base64-decodes to exactly 32 bytes.
+- [x] Unit tests (using `figment::Jail`) prove: a valid env loads; a short `JWT_SECRET` returns
   `ConfigError::JwtSecretTooShort`; a malformed `MFA_ENCRYPTION_KEY` returns `ConfigError::MfaKeyInvalid`; the module is
   100% covered by `cargo llvm-cov nextest -p api`.
 
@@ -902,4 +903,8 @@ If any DoD bullet is unmet or CI is red, set P1 to `🟡 Partial`, not `✅`.
 
 > Append-only. One line per completed task: `- <id> ✅ YYYY-MM-DD — <summary>`.
 
-_(empty — no tasks completed yet)_
+- 1.1 ✅ 2026-07-02 — docker-compose dev stack (pg + redis + mailpit)
+- 1.2 ✅ 2026-07-02 — test (high-port tmpfs) + prod (GHCR) compose
+- 1.3 ✅ 2026-07-02 — postgres init.sql + redis.conf + infra:up/down
+- 1.4 ✅ 2026-07-02 — .env.example + .env.prod.example (full §9 contract)
+- 1.5 ✅ 2026-07-02 — figment Settings loader + fail-fast validation

@@ -1,0 +1,105 @@
+name: rust-auth-example-prod
+
+# Production-topology compose file for local smoke testing.
+# Images are published to GHCR by .github/workflows/release.yml on every v* tag.
+#
+# Usage:
+#   cp .env.prod.example .env.prod
+#   # fill in real secrets in .env.prod
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
+#
+# No Mailpit in this file — production uses EMAIL_PROVIDER=resend.
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?must be set}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?must be set}
+      POSTGRES_DB: ${POSTGRES_DB:-example_app_prod}
+    volumes:
+      - pg-prod-data:/var/lib/postgresql
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB:-example_app_prod}
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - prod
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # Persist sessions to disk; requirepass enforces auth on the prod network.
+    command:
+      - redis-server
+      - '--appendonly'
+      - 'yes'
+      - '--requirepass'
+      - '${REDIS_PASSWORD:?must be set}'
+      - '--maxmemory'
+      - 512mb
+      - '--maxmemory-policy'
+      - volatile-lru
+    volumes:
+      - redis-prod-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', '-a', '${REDIS_PASSWORD:?must be set}', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - prod
+
+  api:
+    image: ghcr.io/bymaxone/rust-auth-example-api:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?must be set}
+      REDIS_URL: ${REDIS_URL:-redis://:${REDIS_PASSWORD:?must be set}@redis:6379}
+      JWT_SECRET: ${JWT_SECRET:?must be set}
+      MFA_ENCRYPTION_KEY: ${MFA_ENCRYPTION_KEY:?must be set}
+      API_PORT: ${API_PORT:-4000}
+      WEB_ORIGIN: ${WEB_ORIGIN:?must be set}
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-resend}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      SMTP_FROM: ${SMTP_FROM:?must be set}
+      OAUTH_GOOGLE_CLIENT_ID: ${OAUTH_GOOGLE_CLIENT_ID:-}
+      OAUTH_GOOGLE_CLIENT_SECRET: ${OAUTH_GOOGLE_CLIENT_SECRET:-}
+      OAUTH_GOOGLE_CALLBACK_URL: ${OAUTH_GOOGLE_CALLBACK_URL:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # No healthcheck yet: the image is distroless (no shell/wget) and the /health
+    # route is wired in a later phase. A native check is added alongside that route.
+    networks:
+      - prod
+
+  web:
+    image: ghcr.io/bymaxone/rust-auth-example-web:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:${WEB_PORT:-3000}:3000'
+    environment:
+      INTERNAL_API_URL: ${INTERNAL_API_URL:-http://api:4000}
+      AUTH_JWT_SECRET_FOR_PROXY: ${AUTH_JWT_SECRET_FOR_PROXY:?must be set}
+    depends_on:
+      api:
+        # service_started (not service_healthy) until the api exposes a health
+        # endpoint and ships a check-capable base image.
+        condition: service_started
+    networks:
+      - prod
+
+networks:
+  prod:
+    driver: bridge
+
+volumes:
+  pg-prod-data:
+  redis-prod-data:
