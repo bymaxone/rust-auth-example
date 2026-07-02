@@ -1,6 +1,6 @@
 # Phase 4 — Schema & Repositories
 
-> **Status**: 🔄 In Progress · **Progress**: 0 / 6 tasks · **Last updated**: 2026-07-02
+> **Status**: 🔄 In Progress · **Progress**: 1 / 6 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P4
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -84,7 +84,7 @@ routes, no email or audit (all P5), and no business logic inside the repositorie
 
 | ID | Task | Status | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- | --- |
-| 4.1 | Schema migrations (`0001_init.sql`) | 📋 ToDo | P0 | M | — |
+| 4.1 | Schema migrations (`0001_init.sql`) | ✅ Done | P0 | M | — |
 | 4.2 | sqlx offline cache + prepare workflow | 📋 ToDo | P0 | S | 4.1 |
 | 4.3 | `SqlxUserRepository` (11 methods) | 📋 ToDo | P0 | L | 4.1, 4.2 |
 | 4.4 | `SqlxPlatformUserRepository` (6 methods) | 📋 ToDo | P0 | M | 4.1, 4.2 |
@@ -97,7 +97,7 @@ routes, no email or audit (all P5), and no business logic inside the repositorie
 
 ### Task 4.1 — Schema migrations (`0001_init.sql`)
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: —
@@ -110,16 +110,16 @@ with the `users`/`platform_users` columns backing `AuthUser`/`AuthPlatformUser` 
 
 #### Acceptance criteria
 
-- [ ] `apps/api/migrations/0001_init.sql` exists and `sqlx migrate run` applies it cleanly against the dev stack.
-- [ ] `users` has every `AuthUser` column with matching nullability: `password_hash` nullable, `mfa_secret` nullable,
+- [x] `apps/api/migrations/0001_init.sql` exists and `sqlx migrate run` applies it cleanly against the dev stack.
+- [x] `users` has every `AuthUser` column with matching nullability: `password_hash` nullable, `mfa_secret` nullable,
       `mfa_recovery_codes TEXT[]` nullable, `oauth_provider`/`oauth_provider_id` nullable, `last_login_at` nullable,
       `email_verified`/`mfa_enabled` `BOOLEAN NOT NULL`, `created_at TIMESTAMPTZ NOT NULL`.
-- [ ] `platform_users` mirrors `AuthPlatformUser`: `password_hash TEXT NOT NULL`, **no** `tenant_id`/`email_verified`,
+- [x] `platform_users` mirrors `AuthPlatformUser`: `password_hash TEXT NOT NULL`, **no** `tenant_id`/`email_verified`,
       adds `platform_id` (nullable) and `updated_at TIMESTAMPTZ NOT NULL`.
-- [ ] A unique index on `users (tenant_id, email)` backs `find_by_email` and raises `23505` on a duplicate; a
+- [x] A unique index on `users (tenant_id, email)` backs `find_by_email` and raises `23505` on a duplicate; a
       (partial) unique index on `users (tenant_id, oauth_provider, oauth_provider_id)` backs `find_by_oauth_id`.
-- [ ] `audit_log` has a keyset index on `(created_at DESC, id DESC)`; `invitations` and `tenants` exist.
-- [ ] No `.gitkeep` / empty-directory placeholders are created.
+- [x] `audit_log` has a keyset index on `(created_at DESC, id DESC)`; `invitations` and `tenants` exist.
+- [x] No `.gitkeep` / empty-directory placeholders are created.
 
 #### Files to create / modify
 
@@ -1026,4 +1026,4 @@ When Task 4.6 is ✅ (the LAST task), close the phase:
 
 > Append-only. One line per completed task: `- <id> ✅ YYYY-MM-DD — <summary>`.
 
-_(empty — no tasks completed yet)_
+- 4.1 ✅ 2026-07-02 — Initial migration `0001_init.sql` creates tenants, users, platform_users, invitations, audit_log backing AuthUser/AuthPlatformUser field-for-field, with the tenant-email + partial OAuth unique indexes and the keyset audit index.
