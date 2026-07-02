@@ -18,8 +18,18 @@ bymax-auth-redis  = { path = "../../../rust-auth/crates/bymax-auth-redis",  vers
 bymax-auth-types  = { path = "../../../rust-auth/crates/bymax-auth-types",  version = "0.0.0" }
 # The repository traits (`UserRepository`, `PlatformUserRepository`) are `#[async_trait]`.
 async-trait = "0.1"
+# Compile-time HTML templating for the transactional emails; `.html` files auto-escape.
+askama = "0.13"
 axum = "0.8"
 base64 = "0.22"
+# The SMTP `EmailProvider` transport. Plaintext to Mailpit locally — no TLS backend is
+# selected, keeping the banned `openssl`/`ring` crates off the graph.
+lettre = { version = "0.11", default-features = false, features = [
+    "builder",
+    "smtp-transport",
+    "tokio1",
+    "pool",
+] }
 figment = { version = "0.10", features = ["env"] }
 # Wraps the HS256 signing secret / MFA key as a redacting, zeroizing `SecretString`,
 # matching the library's `JwtConfig::secret` / `MfaConfig::encryption_key` types.

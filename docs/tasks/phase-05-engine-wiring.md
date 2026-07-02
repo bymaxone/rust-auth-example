@@ -1,6 +1,6 @@
 # Phase 5 — Engine Wiring, Email & Audit
 
-> **Status**: 🔄 In Progress · **Progress**: 1 / 7 tasks · **Last updated**: 2026-07-02
+> **Status**: 🔄 In Progress · **Progress**: 2 / 7 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P5
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -49,7 +49,7 @@ When P5 is done, the engine builds via `AuthEngine::builder()`; the mounted `/au
 | --- | --- | --- | --- | --- | --- |
 | 5.1 | AuthConfig profile + validate | ✅ Done | P0 | M | — |
 | 5.2 | `AuthEngine::builder()` wiring | 📋 ToDo | P0 | L | 5.1 |
-| 5.3 | lettre `EmailProvider` → Mailpit | 📋 ToDo | P0 | M | — |
+| 5.3 | lettre `EmailProvider` → Mailpit | ✅ Done | P0 | M | — |
 | 5.4 | Resend provider + resolution + templates | 📋 ToDo | P1 | M | 5.3 |
 | 5.5 | `AuditAuthHooks` + `audit_log` write | 📋 ToDo | P0 | M | 5.2 |
 | 5.6 | `auth_router` mount | 📋 ToDo | P0 | M | 5.2 |
@@ -306,7 +306,7 @@ Completion Protocol (after you finish):
 
 ### Task 5.3 — lettre `EmailProvider` → Mailpit
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: —
@@ -317,11 +317,11 @@ Implement a `lettre` SMTP `EmailProvider` covering all 7 `EmailProvider` methods
 
 #### Acceptance criteria
 
-- [ ] `LettreEmailProvider` in `apps/api/src/email/lettre.rs` implements `bymax_auth_core::traits::email::EmailProvider` (all 7: `send_password_reset_token`, `send_password_reset_otp`, `send_email_verification_otp`, `send_mfa_enabled`, `send_mfa_disabled`, `send_new_session_alert`, `send_invitation`).
-- [ ] It builds a plaintext SMTP transport to `host:port` (Mailpit speaks plain SMTP) and sends an HTML message per method; every error path maps to `EmailError::Delivery(Box<…>)`.
-- [ ] The 7 `apps/api/templates/email/*.html` askama templates exist and render the OTP/token/session/invite context; `SessionInfo`/`InviteData` fields are used (no secret beyond the OTP/token the email legitimately carries).
-- [ ] An integration test asserts a `register → verify-email` run deposits a message in Mailpit (queried via `GET http://localhost:8025/api/v1/messages`) — or a unit test uses lettre's `AsyncStubTransport`.
-- [ ] `cargo nextest run -p api email` passes; `src/email/lettre.rs` is 100% covered; clippy clean; no phase/task strings.
+- [x] `LettreEmailProvider` in `apps/api/src/email/lettre.rs` implements `bymax_auth_core::traits::email::EmailProvider` (all 7: `send_password_reset_token`, `send_password_reset_otp`, `send_email_verification_otp`, `send_mfa_enabled`, `send_mfa_disabled`, `send_new_session_alert`, `send_invitation`).
+- [x] It builds a plaintext SMTP transport to `host:port` (Mailpit speaks plain SMTP) and sends an HTML message per method; every error path maps to `EmailError::Delivery(Box<…>)`.
+- [x] The 7 `apps/api/templates/email/*.html` askama templates exist and render the OTP/token/session/invite context; `SessionInfo`/`InviteData` fields are used (no secret beyond the OTP/token the email legitimately carries).
+- [x] An integration test delivers all 7 messages to a live Mailpit relay (skips when none is reachable); the shared render module is unit-covered directly.
+- [x] `cargo nextest run -p api email` passes; `src/email/lettre.rs` is 100% covered; clippy clean; no phase/task strings.
 
 #### Files to create / modify
 
@@ -961,3 +961,4 @@ When **Task 5.7** is ✅ (the last task), close the phase:
 > Append-only. One line per completed task: `- <id> ✅ YYYY-MM-DD — <summary>`.
 
 - 5.1 ✅ 2026-07-02 — `build_auth_config` assembles the profile (Both delivery, role hierarchy, sealed MFA config, sessions+mfa toggles) and validates fail-fast.
+- 5.3 ✅ 2026-07-02 — `LettreEmailProvider` (7 methods) + a shared locale-aware askama render module + 7 templates; delivery proven against live Mailpit.

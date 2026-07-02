@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+  <body style="font-family: system-ui, sans-serif; color: #111;">
+    <h1>{{ heading }}</h1>
+    <p>{{ intro }}</p>
+    <ul>
+      <li>{{ inviter_label }}: {{ inviter_name }}</li>
+      <li>{{ tenant_label }}: {{ tenant_name }}</li>
+      <li>{{ token_label }}: <span style="font-family: ui-monospace, monospace;">{{ invite_token }}</span></li>
+      <li>{{ expiry_label }}: {{ expires_at }}</li>
+    </ul>
+    <hr />
+    <p style="color: #888; font-size: 12px;">{{ footer }}</p>
+  </body>
+</html>
