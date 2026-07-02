@@ -175,7 +175,7 @@ mod tests {
     fn unique_marker() -> String {
         static SEQ: AtomicU64 = AtomicU64::new(0);
         let seq = SEQ.fetch_add(1, Ordering::Relaxed);
-        format!("audit-test-{seq}")
+        format!("audit-test-{}-{seq}", std::process::id())
     }
 
     fn ctx(marker: &str) -> HookContext {

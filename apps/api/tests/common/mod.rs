@@ -170,12 +170,14 @@ pub async fn spawn() -> Option<TestApp> {
         .await
         .expect("the test stack Postgres must be reachable");
 
-    // A process-wide counter guarantees collision-free tenant/email markers within a
-    // test run without relying on wall-clock time (which can repeat under fast clocks).
+    // Markers must be unique across nextest test PROCESSES (each starts a fresh
+    // static), so combine the process id with a per-process atomic counter — no
+    // wall-clock, no cross-process collision in the shared test database.
     static SEQ: AtomicU64 = AtomicU64::new(0);
     let seq = SEQ.fetch_add(1, Ordering::Relaxed);
-    let tenant_id = format!("tenant-{seq}");
-    let email = format!("user-{seq}@example.test");
+    let pid = std::process::id();
+    let tenant_id = format!("tenant-{pid}-{seq}");
+    let email = format!("user-{pid}-{seq}@example.test");
 
     // The user FK requires the tenant to exist; provision an isolated one for this run.
     sqlx::query("INSERT INTO tenants (id, name) VALUES ($1, $1) ON CONFLICT DO NOTHING")
