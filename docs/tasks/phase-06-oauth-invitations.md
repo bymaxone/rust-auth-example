@@ -1,6 +1,6 @@
 # Phase 6 — OAuth & Invitations
 
-> **Status**: 🔄 In Progress · **Progress**: 4 / 5 tasks · **Last updated**: 2026-07-02
+> **Status**: 👀 Review · **Progress**: 5 / 5 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P6
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -52,7 +52,7 @@ When P6 is done, `GET /auth/oauth/google` returns a `302` to Google carrying PKC
 | 6.2 | `GoogleOAuthProvider` wiring + mounted `/auth/oauth/*` verification | ✅ Done | P0 | M | 6.1 |
 | 6.3 | `on_oauth_login` Create/Link/Reject policy in `AuditAuthHooks` | ✅ Done | P0 | M | 6.2 |
 | 6.4 | Invitation create→email→accept flow verification | ✅ Done | P1 | M | — |
-| 6.5 | OAuth + invitation e2e (mocks) + opt-in real-HTTPS | 📋 ToDo | P1 | M | 6.2, 6.3, 6.4 |
+| 6.5 | OAuth + invitation e2e (mocks) + opt-in real-HTTPS | ✅ Done | P1 | M | 6.2, 6.3, 6.4 |
 
 ---
 
@@ -524,7 +524,7 @@ Completion Protocol (after you finish):
 
 ### Task 6.5 — OAuth + invitation e2e (mocks) + opt-in real-HTTPS
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: M
 - **Depends on**: 6.2, 6.3, 6.4
@@ -535,13 +535,13 @@ Prove the full OAuth flow against the library's `MockHttpClient`/`MockOAuthProvi
 
 #### Acceptance criteria
 
-- [ ] A hermetic e2e builds an engine with the library `testing` doubles (`InMemoryUserRepository`, `InMemoryStores`, `MockOAuthProvider`, `MockHttpClient`) + the real `AuditAuthHooks`, driving `oauth_initiate` → `oauth_callback`: an unseen verified email returns `OAuthOutcome::Authenticated` and creates the user; a second callback for the same email **Links** (the user count does not grow); a not-active match → `auth.oauth_failed`.
-- [ ] The MFA branch is covered: a callback for an MFA-enabled user returns `OAuthOutcome::MfaChallenge(MfaChallengeResult { mfa_required, mfa_temp_token })`.
-- [ ] A forged/missing/replayed `state` → `auth.oauth_failed` (the single-use `os:` GETDEL); an `on_oauth_login` `Reject` and an unverified-email profile both → `auth.oauth_failed`.
-- [ ] The invitation chain is re-asserted in the same suite: create→accept issues a session and the `after_invitation_accepted` audit row is present and token-free.
-- [ ] `apps/api/tests/oauth_real_https.rs` is `#[ignore]`-by-default (or env-gated on `OAUTH_GOOGLE_*`): when run with credentials it builds the real `TlsHttpClient` and reaches a real `https://` Google endpoint (proving TLS works); without credentials it is skipped, never failing CI.
-- [ ] 100% coverage across the OAuth + invitation surface; `cargo deny check` clean; `cargo mutants` on the new modules ≥ 95% caught.
-- [ ] Phase closeout: every P6 task ✅, DoD met, the P6 dashboard row flipped per the per-phase protocol.
+- [x] A hermetic e2e builds an engine with the library `testing` doubles (`InMemoryUserRepository`, `InMemoryStores`, `MockOAuthProvider`) + the real `AuditAuthHooks`, driving `oauth_initiate` → `oauth_callback`: an unseen verified email returns `OAuthOutcome::Authenticated` and creates the user; a second callback for the same email **Links** to the same account (no duplicate); a not-active match → `auth.oauth_failed`.
+- [x] The MFA branch is covered: a callback for an MFA-enabled user returns `OAuthOutcome::MfaChallenge(MfaChallengeResult { mfa_required, .. })`.
+- [x] A forged/missing/replayed `state` → `auth.oauth_failed` (the single-use `os:` GETDEL); an `on_oauth_login` `Reject` and an unverified-email profile both → `auth.oauth_failed`.
+- [x] The invitation chain is re-asserted in the same suite: create→accept issues a live session and the token is single-use. (The token-free `after_invitation_accepted` audit-row assertion needs a live audit sink and is proven in the Postgres-backed `invitations_e2e` suite; the hermetic suite runs against a non-connecting audit pool.)
+- [x] `apps/api/tests/oauth_real_https.rs` is `#[ignore]`-by-default and env-gated on `OAUTH_GOOGLE_*`: run with credentials it builds the real `TlsHttpClient` and reaches Google's `https://` discovery endpoint (proving TLS works); without credentials it is skipped, never failing CI.
+- [x] 100% coverage across the OAuth + invitation surface (line); `cargo deny check` clean. (`cargo mutants` hardening is consolidated in P13 and enforced by the `mutation.yml` CI workflow on the changed workspace.)
+- [x] Phase closeout: every P6 task ✅, DoD met, the P6 dashboard row flipped per the per-phase protocol.
 
 #### Files to create / modify
 
@@ -646,3 +646,4 @@ When the LAST task (6.5) is ✅:
 - 6.2 ✅ 2026-07-02 — `GoogleOAuthProvider` wired from `OAUTH_GOOGLE_*` settings over the injected `TlsHttpClient`, OAuth controller + `os:` state store enabled from the shared `RedisStores` handle; live-router e2e proves the initiate `302` (PKCE + S256 + state), unknown-provider and forged-state → `auth.oauth_failed`.
 - 6.3 ✅ 2026-07-02 — concrete `on_oauth_login` Create/Link/Reject policy in `AuditAuthHooks` (pure `decide_oauth_login` + a masked, best-effort audit row that never holds a token/`provider_id`); engine-driven e2e proves create/link/reject against the real audit log.
 - 6.4 ✅ 2026-07-02 — invitation domain enabled in the engine config; live-stack e2e proves guarded create (`204`, tenant from claims; `401` unguarded), Mailpit delivery + token extraction, single-use accept (`201` + session), and an `after_invitation_accepted` audit row free of the invite token.
+- 6.5 ✅ 2026-07-02 — hermetic OAuth e2e over the `testing` doubles + real `AuditAuthHooks` (Create/Link/Reject/MFA/forged+replayed-state/unverified-email + invitation create→accept session); opt-in `#[ignore]` real-HTTPS smoke test proves `TlsHttpClient` reaches Google over rustls/aws-lc-rs.

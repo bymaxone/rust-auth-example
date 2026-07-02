@@ -23,7 +23,9 @@ use secrecy::SecretString;
 
 use bymax_auth_core::AuthEngine;
 use bymax_auth_core::config::Environment;
+use bymax_auth_core::testing::{InMemoryStores, InMemoryUserRepository, MockOAuthProvider};
 use bymax_auth_core::traits::email::{EmailError, EmailProvider, InviteData, SessionInfo};
+use bymax_auth_core::traits::oauth::OAuthProvider;
 use bymax_auth_redis::RedisStores;
 use sqlx::PgPool;
 
@@ -413,4 +415,61 @@ pub async fn oauth_policy_stack() -> Option<OAuthPolicyStack> {
         pool,
         tenant_id,
     })
+}
+
+/// A hermetic engine assembled from the library `testing` doubles plus the example's real
+/// `AuditAuthHooks`, so the OAuth flow runs with no Redis, Postgres, or HTTP.
+pub struct TestingEngine {
+    /// The wired engine (OAuth on, in-memory stores + state store, mock provider).
+    pub engine: AuthEngine,
+    /// The in-memory user repository, for seeding and inspecting accounts.
+    pub users: Arc<InMemoryUserRepository>,
+    /// The in-memory store backend, for seeding a known invitation directly.
+    pub stores: Arc<InMemoryStores>,
+}
+
+/// Build a hermetic [`TestingEngine`] registered with the canned [`MockOAuthProvider`]
+/// (profile `mock@example.com` / `mock-123`).
+pub fn testing_engine() -> TestingEngine {
+    testing_engine_with(Arc::new(MockOAuthProvider::new("google")))
+}
+
+/// Build a hermetic [`TestingEngine`] over a caller-supplied OAuth `provider` (registered
+/// as `google`), so a test can inject a provider that returns, e.g., an unverified email.
+///
+/// The audit pool is a non-connecting lazy handle: the real `AuditAuthHooks` still runs,
+/// but its best-effort recording no-ops, so the decision path is exercised without a DB.
+pub fn testing_engine_with(provider: Arc<dyn OAuthProvider>) -> TestingEngine {
+    let settings = test_settings(
+        "postgres://127.0.0.1:1/unreachable".to_owned(),
+        "redis://127.0.0.1:6379".to_owned(),
+    );
+    let mut config =
+        build_auth_config(&settings, Environment::Test).expect("the base configuration validates");
+    // Enable the OAuth controller; the mock provider + in-memory state store back it.
+    config.controllers.oauth = true;
+
+    let users = Arc::new(InMemoryUserRepository::new());
+    let stores = Arc::new(InMemoryStores::new());
+    let dead_pool = sqlx::postgres::PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(200))
+        .connect_lazy("postgres://127.0.0.1:1/unreachable")
+        .expect("a well-formed url yields a lazy pool");
+
+    let engine = AuthEngine::builder()
+        .config(config)
+        .environment(Environment::Test)
+        .user_repository(users.clone())
+        .redis_stores(stores.clone())
+        .hooks(Arc::new(AuditAuthHooks::new(dead_pool)))
+        .oauth_provider(provider)
+        .oauth_state_store(stores.clone())
+        .build()
+        .expect("the testing engine builds");
+
+    TestingEngine {
+        engine,
+        users,
+        stores,
+    }
 }
