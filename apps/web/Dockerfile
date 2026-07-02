@@ -29,8 +29,9 @@ ENV NEXT_PUBLIC_OAUTH_GOOGLE_ENABLED=$NEXT_PUBLIC_OAUTH_GOOGLE_ENABLED
 ENV NEXT_TELEMETRY_DISABLED=1
 
 COPY . .
-# Server-only secrets are provided inline so they never persist as an image
-# layer; real values are injected exclusively at container run time.
+# These are throwaway build-time placeholders only. Real secrets are NEVER passed
+# as build args or inline RUN env — those can leak via image history and
+# build-cache metadata; real values are injected exclusively at container run time.
 RUN INTERNAL_API_URL=http://build-placeholder:4000 \
     AUTH_JWT_SECRET_FOR_PROXY=00000000000000000000000000000000 \
     pnpm --filter web run build
