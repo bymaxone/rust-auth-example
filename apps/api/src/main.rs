@@ -46,7 +46,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 /// that never resolves, so the process still shuts down cleanly on Ctrl-C alone.
 async fn shutdown_signal() {
     let ctrl_c = async {
-        let _ = signal::ctrl_c().await;
+        match signal::ctrl_c().await {
+            Ok(()) => {}
+            Err(_) => std::future::pending::<()>().await,
+        }
     };
 
     #[cfg(unix)]
