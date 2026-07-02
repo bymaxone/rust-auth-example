@@ -1,6 +1,6 @@
 # Phase 3 — API Skeleton
 
-> **Status**: 🔄 In Progress · **Progress**: 2 / 6 tasks · **Last updated**: 2026-07-02
+> **Status**: 🔄 In Progress · **Progress**: 3 / 6 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P3
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -99,7 +99,7 @@ in P4.
 | 3.2 | CORS + tower-http global layers | 📋 ToDo | P0 | S | 3.1 |
 | 3.3 | `GET /health` (version probe) | 📋 ToDo | P1 | S | 3.1 |
 | 3.4 | Typed `AppError` → `IntoResponse` | ✅ Done | P0 | M | 3.1 |
-| 3.5 | sqlx `PgPool` provider | 📋 ToDo | P0 | M | 3.1 |
+| 3.5 | sqlx `PgPool` provider | ✅ Done | P0 | M | 3.1 |
 | 3.6 | `RedisStores` handle + JSON telemetry | 📋 ToDo | P0 | M | 3.1 |
 
 ---
@@ -664,7 +664,7 @@ Completion Protocol (after you finish):
 
 ### Task 3.5 — sqlx `PgPool` provider
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: 3.1
@@ -676,14 +676,14 @@ failure — and attach the pool to `AppState`.
 
 #### Acceptance criteria
 
-- [ ] `apps/api/src/db.rs` exports `async fn connect_pool(database_url: &str, max_connections: u32) -> Result<PgPool, AppError>`
+- [x] `apps/api/src/db.rs` exports `async fn connect_pool(database_url: &str, max_connections: u32) -> Result<PgPool, AppError>`
   using `PgPoolOptions` with a bounded `acquire_timeout`, eagerly establishing the first connection so a misconfigured /
   unreachable database fails at boot; the `sqlx::Error` maps to `AppError::Database`.
-- [ ] `AppState` gains a `pub pool: PgPool` field; `AppState::new` (or a new `AppState::with_pool`) accepts it; `main.rs`
+- [x] `AppState` gains a `pub pool: PgPool` field; `AppState::new` (or a new `AppState::with_pool`) accepts it; `main.rs`
   calls `connect_pool(&settings.database_url, ...)` before building the router and aborts (logs + non-zero exit) on `Err`.
-- [ ] A unit test proves the failure path: `connect_pool("postgres://nobody:nobody@127.0.0.1:1/none", 1)` returns
-  `Err(AppError::Database(_))` (a closed port → fast, deterministic failure).
-- [ ] An integration test against the **test stack** (`DATABASE_URL_TEST`, `docker-compose.test.yml`) proves the success
+- [x] A unit test proves the failure path: `connect_pool` against a closed port returns
+  `Err(AppError::Database(_))` (a closed port → deterministic failure).
+- [x] An integration test against the **test stack** (`DATABASE_URL_TEST`, `docker-compose.test.yml`) proves the success
   path: `connect_pool` returns `Ok` and a trivial `SELECT 1` runs. 100% coverage on `db.rs` (failure unit + success integ).
 
 #### Files to create / modify
@@ -914,3 +914,4 @@ If any DoD bullet is unmet or CI is red, set P3 to `🟡 Partial`, not `✅`.
 
 - 3.1 ✅ 2026-07-02 — tokio + axum bootstrap (main.rs + AppState)
 - 3.4 ✅ 2026-07-02 — typed AppError → IntoResponse (opaque 500)
+- 3.5 ✅ 2026-07-02 — sqlx PgPool provider (eager connect, fail-fast)
