@@ -103,6 +103,10 @@ mod tests {
             mfa_encryption_key: "ZGV2X29ubHlfbG9jYWxfMzJfYnl0ZV9rZXlfMDAwMDA=".to_string(),
             web_origin: web_origin.to_string(),
             email_provider: EmailProviderKind::Mailpit,
+            smtp_host: "localhost".to_string(),
+            smtp_port: 1025,
+            smtp_from: "no-reply@auth.local".to_string(),
+            resend_api_key: None,
         }
     }
 

@@ -68,6 +68,16 @@ pub struct Settings {
     pub web_origin: String,
     /// Outbound email transport (`EMAIL_PROVIDER`, default `mailpit`).
     pub email_provider: EmailProviderKind,
+    /// SMTP relay host for the lettre provider (`SMTP_HOST`, default `localhost`).
+    pub smtp_host: String,
+    /// SMTP relay port (`SMTP_PORT`, default `1025`, the Mailpit listener).
+    pub smtp_port: u16,
+    /// `From` mailbox for outbound mail (`SMTP_FROM`, default `no-reply@auth.local`).
+    pub smtp_from: String,
+    /// Resend API key (`RESEND_API_KEY`); when present, selects the Resend transport.
+    ///
+    /// A secret: redacted in the [`Debug`] output so it never reaches a log line.
+    pub resend_api_key: Option<String>,
 }
 
 /// Redacts secrets so the struct can be safely printed in logs.
@@ -92,6 +102,14 @@ impl fmt::Debug for Settings {
             .field("mfa_encryption_key", &"[REDACTED]")
             .field("web_origin", &self.web_origin)
             .field("email_provider", &self.email_provider)
+            .field("smtp_host", &self.smtp_host)
+            .field("smtp_port", &self.smtp_port)
+            .field("smtp_from", &self.smtp_from)
+            // Reveal only presence, never the key material.
+            .field(
+                "resend_api_key",
+                &self.resend_api_key.as_ref().map(|_| "[REDACTED]"),
+            )
             .finish()
     }
 }
@@ -104,6 +122,9 @@ struct Defaults {
     redis_namespace: String,
     web_origin: String,
     email_provider: EmailProviderKind,
+    smtp_host: String,
+    smtp_port: u16,
+    smtp_from: String,
 }
 
 impl Default for Defaults {
@@ -114,6 +135,9 @@ impl Default for Defaults {
             redis_namespace: "rust_auth_example".to_string(),
             web_origin: "http://localhost:3000".to_string(),
             email_provider: EmailProviderKind::Mailpit,
+            smtp_host: "localhost".to_string(),
+            smtp_port: 1025,
+            smtp_from: "no-reply@auth.local".to_string(),
         }
     }
 }
@@ -260,6 +284,27 @@ mod tests {
             jail.set_env("EMAIL_PROVIDER", "resend");
             let settings = Settings::load().expect("resend provider must load");
             assert_eq!(settings.email_provider, EmailProviderKind::Resend);
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn smtp_defaults_apply_and_the_resend_key_is_redacted() {
+        figment::Jail::expect_with(|jail| {
+            seed(jail);
+            jail.set_env("RESEND_API_KEY", "re_test_secret_value");
+            let settings = Settings::load().expect("valid env with a resend key must load");
+            assert_eq!(settings.smtp_host, "localhost");
+            assert_eq!(settings.smtp_port, 1025);
+            assert_eq!(settings.smtp_from, "no-reply@auth.local");
+            assert_eq!(
+                settings.resend_api_key.as_deref(),
+                Some("re_test_secret_value")
+            );
+            // The key value is present but never rendered in the debug output.
+            let debug = format!("{settings:?}");
+            assert!(debug.contains("[REDACTED]"));
+            assert!(!debug.contains("re_test_secret_value"));
             Ok(())
         });
     }

@@ -28,13 +28,25 @@ lettre = { version = "0.11", default-features = false, features = [
     "builder",
     "smtp-transport",
     "tokio1",
-    "pool",
 ] }
 figment = { version = "0.10", features = ["env"] }
+# The Resend HTTPS transport. `default-features = false` + the `-no-provider` rustls
+# feature keep the banned `ring` crate off the graph; the rustls `aws-lc-rs` provider
+# already resolved by the sqlx TLS stack supplies the process-default crypto backend.
+reqwest = { version = "0.12", default-features = false, features = [
+    "json",
+    "rustls-tls-webpki-roots-no-provider",
+] }
+# Installs the `aws-lc-rs` rustls crypto provider as the process default so the
+# `-no-provider` reqwest TLS backend has a ring-free provider to build its config from.
+# The same rustls version is already resolved by the sqlx TLS stack.
+rustls = { version = "0.23", default-features = false, features = ["aws_lc_rs"] }
 # Wraps the HS256 signing secret / MFA key as a redacting, zeroizing `SecretString`,
 # matching the library's `JwtConfig::secret` / `MfaConfig::encryption_key` types.
 secrecy = "0.10"
 serde = { version = "1", features = ["derive"] }
+# Builds the Resend request body and serializes the audit read-API responses.
+serde_json = "1"
 # `tls-rustls-aws-lc-rs` keeps the rustls backend free of `ring`, which deny.toml
 # bans. `macros` enables the compile-checked `query!`/`query_as!` the repositories
 # use; `time` maps `TIMESTAMPTZ` onto `time::OffsetDateTime` to match the domain
@@ -52,7 +64,6 @@ tracing-subscriber = { version = "0.3", features = ["json", "env-filter"] }
 [dev-dependencies]
 figment = { version = "0.10", features = ["env", "test"] }
 http-body-util = "0.1"
-serde_json = "1"
 tower = { version = "0.5", default-features = false, features = ["util"] }
 
 [features]

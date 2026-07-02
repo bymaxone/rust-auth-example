@@ -1,6 +1,6 @@
 # Phase 5 — Engine Wiring, Email & Audit
 
-> **Status**: 🔄 In Progress · **Progress**: 2 / 7 tasks · **Last updated**: 2026-07-02
+> **Status**: 🔄 In Progress · **Progress**: 3 / 7 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P5
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -50,7 +50,7 @@ When P5 is done, the engine builds via `AuthEngine::builder()`; the mounted `/au
 | 5.1 | AuthConfig profile + validate | ✅ Done | P0 | M | — |
 | 5.2 | `AuthEngine::builder()` wiring | 📋 ToDo | P0 | L | 5.1 |
 | 5.3 | lettre `EmailProvider` → Mailpit | ✅ Done | P0 | M | — |
-| 5.4 | Resend provider + resolution + templates | 📋 ToDo | P1 | M | 5.3 |
+| 5.4 | Resend provider + resolution + templates | ✅ Done | P1 | M | 5.3 |
 | 5.5 | `AuditAuthHooks` + `audit_log` write | 📋 ToDo | P0 | M | 5.2 |
 | 5.6 | `auth_router` mount | 📋 ToDo | P0 | M | 5.2 |
 | 5.7 | audit read-API + diagnostics | 📋 ToDo | P1 | M | 5.5, 5.6 |
@@ -435,7 +435,7 @@ Completion Protocol (after you finish):
 
 ### Task 5.4 — Resend provider + resolution + templates
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: M
 - **Depends on**: 5.3
@@ -446,11 +446,11 @@ Add a `reqwest`-based Resend `EmailProvider` (opt-in via `RESEND_API_KEY`), the 
 
 #### Acceptance criteria
 
-- [ ] `ResendEmailProvider` in `apps/api/src/email/resend.rs` implements all 7 `EmailProvider` methods by POSTing to `https://api.resend.com/emails` with `Authorization: Bearer <key>`, rendering via the shared `email::templates` module.
-- [ ] `resolve_email_provider(settings) -> Arc<dyn EmailProvider>` returns `ResendEmailProvider` when `settings.resend_api_key` is `Some`, otherwise `LettreEmailProvider`.
-- [ ] The 7 `templates/email/*.html` are finalized (branding + BCP-47 `locale` handling); both providers render identical HTML (DRY — one shared render module).
-- [ ] A Resend unit test mocks the HTTP endpoint (e.g. `wiremock`) and asserts the request reaches `/emails` with bearer auth; a resolution test asserts the selector picks each provider correctly.
-- [ ] `cargo nextest run -p api email` passes; `src/email/resend.rs` + `src/email/mod.rs` 100% covered; clippy clean.
+- [x] `ResendEmailProvider` in `apps/api/src/email/resend.rs` implements all 7 `EmailProvider` methods by POSTing to `https://api.resend.com/emails` with `Authorization: Bearer <key>`, rendering via the shared `email::templates` module.
+- [x] `resolve_email_provider(settings) -> Result<Arc<dyn EmailProvider>, EmailError>` returns `ResendEmailProvider` when `settings.resend_api_key` is `Some`, otherwise `LettreEmailProvider`.
+- [x] The 7 `templates/email/*.html` are finalized (BCP-47 `locale` handling with an `es` copy set); both providers render identical HTML (DRY — one shared render module).
+- [x] A Resend unit test mocks the HTTP endpoint (a local axum server) and asserts the request reaches `/emails` with bearer auth; a resolution test asserts the selector picks each provider correctly.
+- [x] `cargo nextest run -p api email` passes; `src/email/resend.rs` + `src/email/mod.rs` 100% covered; clippy clean.
 
 #### Files to create / modify
 
@@ -962,3 +962,4 @@ When **Task 5.7** is ✅ (the last task), close the phase:
 
 - 5.1 ✅ 2026-07-02 — `build_auth_config` assembles the profile (Both delivery, role hierarchy, sealed MFA config, sessions+mfa toggles) and validates fail-fast.
 - 5.3 ✅ 2026-07-02 — `LettreEmailProvider` (7 methods) + a shared locale-aware askama render module + 7 templates; delivery proven against live Mailpit.
+- 5.4 ✅ 2026-07-02 — `ResendEmailProvider` (bearer HTTPS, ring-free rustls/aws-lc-rs) + `resolve_email_provider`/`resolve_kind`; Settings gains SMTP + redacted Resend key.

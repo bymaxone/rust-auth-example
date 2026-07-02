@@ -118,6 +118,10 @@ mod tests {
             mfa_encryption_key: TEST_MFA_KEY.to_owned(),
             web_origin: "http://localhost:3000".to_owned(),
             email_provider: EmailProviderKind::Mailpit,
+            smtp_host: "localhost".to_owned(),
+            smtp_port: 1025,
+            smtp_from: "no-reply@auth.local".to_owned(),
+            resend_api_key: None,
         }
     }
 
