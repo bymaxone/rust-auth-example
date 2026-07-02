@@ -8,6 +8,7 @@ use async_trait::async_trait;
 
 use bymax_auth_core::traits::email::{EmailError, EmailProvider, InviteData, SessionInfo};
 use secrecy::{ExposeSecret as _, SecretString};
+use std::time::Duration;
 
 use crate::email::templates;
 
@@ -50,7 +51,11 @@ impl ResendEmailProvider {
     fn with_endpoint(api_key: SecretString, from: String, endpoint: String) -> Self {
         install_default_crypto_provider();
         Self {
-            http: reqwest::Client::new(),
+            http: reqwest::Client::builder()
+                .connect_timeout(Duration::from_secs(5))
+                .timeout(Duration::from_secs(10))
+                .build()
+                .unwrap_or_else(|_| reqwest::Client::new()),
             api_key,
             from,
             endpoint,

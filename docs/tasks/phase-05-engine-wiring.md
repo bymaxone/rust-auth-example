@@ -186,9 +186,9 @@ Assemble the production-shaped `AuthEngine` via `AuthEngine::builder()` — conf
 
 #### Acceptance criteria
 
-- [x] `build_engine(settings, pool, environment) -> Result<AuthEngine, EngineError>` exists in `apps/api/src/engine/mod.rs`.
-- [x] It calls `build_auth_config` (5.1), constructs `Arc::new(RedisStores::connect(&settings.redis_url, settings.redis_namespace.clone())?)`, and chains `.config().environment().user_repository().redis_stores().email_provider().hooks().build()` (the `platform_user_repository` seam is deferred until `platform.enabled` flips true in P7).
-- [x] A typed `EngineError` (`thiserror`) wraps `ConfigError`, `RedisStoreError`, and `EmailError`.
+- [x] `build_engine(settings, pool, stores, environment) -> Result<AuthEngine, EngineError>` exists in `apps/api/src/engine/mod.rs`.
+- [x] It calls `build_auth_config` (5.1), receives the shared `Arc<RedisStores>` from the caller (connected once in `main.rs`), and chains `.config().environment().user_repository().redis_stores().email_provider().hooks().build()` (the `platform_user_repository` seam is deferred until `platform.enabled` flips true in P7).
+- [x] A typed `EngineError` (`thiserror`) wraps `ConfigError` and `EmailError` (the `RedisStores` connection is established in `main.rs`).
 - [x] `AppState` holds an `Arc<AuthEngine>` reachable by the example's own routes; `main.rs` builds the engine at startup and aborts with the precise `EngineError` message on failure.
 - [x] `cargo nextest run -p api engine` passes (a smoke test builds the engine from a lazy `PgPool` + dev `Settings`, no live backends needed); `cargo +1.90 check` builds; coverage 100%; clippy clean.
 
