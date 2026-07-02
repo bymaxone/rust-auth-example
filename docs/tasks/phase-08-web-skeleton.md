@@ -5,13 +5,12 @@
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
 
-> **Known limitation (build integration).** `pnpm -C apps/web build` currently stops at Next.js's page-data
-> collection: the `@bymax-one/rust-auth/nextjs` barrel imports its `wasm-pack --target bundler` WASM eagerly, which
-> Next 16.2.10 cannot execute in the build sandbox under any runtime/bundler; and Next 16.2.10 ships **no** package
-> `exports` field, so the library's bare `next/server` import is not Node-ESM resolvable when externalized via
-> `serverExternalPackages`. Type-check, lint, format, and the 100%-covered unit suite are green, and CI stays green (it
-> has no web-build job). A lazy-WASM import (or a handlers-only subpath) in the library resolves it — tracked as a
-> library/build-integration follow-up, not an `apps/web` code defect.
+> **Build integration (resolved).** An earlier build-integration issue — the `@bymax-one/rust-auth/nextjs` barrel
+> eagerly initialised its edge WASM, and the library's bare `next/server` import was not Node-ESM resolvable when
+> externalized via `serverExternalPackages` — was fixed in the library (the edge WASM now loads lazily via a memoized
+> dynamic `import()`, and `next/server.js` is imported fully-specified). The app now **bundles** the package instead of
+> externalizing it, so `pnpm -C apps/web build` succeeds; a dedicated `build-web` CI job runs the production build to
+> guard against regressions. Type-check, lint, format, and the 100%-covered unit suite are green.
 
 ---
 
@@ -120,8 +119,8 @@ and copy the shared design system byte-for-byte from the sibling so the console 
   file:../../../rust-auth/packages/rust-auth`, plus `nuqs`, `sonner`, `lucide-react`, `@tanstack/react-query`, `geist`,
   `tailwindcss ^4`, and the test stack (`vitest`, `@vitejs/plugin-react`, `jsdom`, `@testing-library/react`,
   `playwright`, `@stryker-mutator/*`).
-- [x] `apps/web/next.config.mjs` sets `serverExternalPackages: ['@bymax-one/rust-auth']` and
-  `outputFileTracingRoot: path.join(import.meta.dirname, '../..')`.
+- [x] `apps/web/next.config.mjs` **bundles** `@bymax-one/rust-auth` (no `serverExternalPackages`, since the library
+  loads its edge WASM lazily) and sets `outputFileTracingRoot: path.join(import.meta.dirname, '../..')`.
 - [x] `app/globals.css`, `tailwind.config.ts`, `postcss.config.mjs`, `components.json`, and `components/ui/*` are
   **byte-identical** to the sibling source (the `#ff6224` primary, glass `0.06`, Geist + GeistMono, forced dark are
   preserved); `diff` against the sibling produces no output.
@@ -472,7 +471,7 @@ backend round-trip.
 
 #### Acceptance criteria
 
-- [x] `apps/web/middleware.ts` imports `'server-only'` + `createAuthProxy` / `verifyJwtToken` from
+- [x] `apps/web/proxy.ts` imports `'server-only'` + `createAuthProxy` / `verifyJwtToken` from
   `@bymax-one/rust-auth/nextjs` and `AUTH_ACCESS_COOKIE_NAME` from `/shared`; its `config.matcher` covers
   `/dashboard/:path*`, `/platform/:path*`, and `/api/auth/:path*`.
 - [x] A request to a protected path with **no** (or an invalid) access cookie redirects (`307`) to `/auth/login` for
@@ -482,7 +481,7 @@ backend round-trip.
   cookies and grants/redirects); the proxy is constructed with `{ loginPath: '/auth/login', accessTokenSecret:
   AUTH_JWT_SECRET_FOR_PROXY, routePrefix: 'auth' }`.
 - [x] The edge verifier uses `AUTH_JWT_SECRET_FOR_PROXY`; the JWT secret is never logged; 100% coverage on the
-  middleware's decision branches (no cookie / invalid / valid / platform-vs-dashboard target).
+  proxy/edge-gate decision branches (no cookie / invalid / valid / platform-vs-dashboard target).
 
 #### Files to create / modify
 
