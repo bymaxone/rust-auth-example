@@ -1,6 +1,6 @@
 # Phase 2 — Library Consumption & Export Audits
 
-> **Status**: 🔄 In Progress · **Progress**: 3 / 4 tasks · **Last updated**: 2026-07-02
+> **Status**: ✅ Done · **Progress**: 4 / 4 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P2
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -50,7 +50,7 @@ When P2 is done, `cargo build --locked` links all three library crates into `app
 | 2.1 | Rust `path` deps + consumed-symbol probe | ✅ Done | P0 | M | — |
 | 2.2 | npm package build + `file:` link | ✅ Done | P0 | M | — |
 | 2.3 | npm export-usage audit | ✅ Done | P1 | M | 2.2 |
-| 2.4 | `cargo public-api` audit | 📋 ToDo | P1 | M | 2.1 |
+| 2.4 | `cargo public-api` audit | ✅ Done | P1 | M | 2.1 |
 
 ---
 
@@ -379,7 +379,7 @@ Completion Protocol (after you finish):
 
 ### Task 2.4 — `cargo public-api` audit
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: M
 - **Depends on**: 2.1
@@ -390,12 +390,12 @@ Author `scripts/audit-rust-public-api.sh` that runs `cargo public-api` over the 
 
 #### Acceptance criteria
 
-- [ ] `scripts/audit-rust-public-api.sh` runs `cargo public-api --manifest-path` for `bymax-auth-axum` (`--features full`), `bymax-auth-core` (`--features full`), and `bymax-auth-redis` (`--features mfa,oauth,platform`), writing `apps/api/public-api/<crate>.txt`.
-- [ ] On re-run with a committed snapshot present, the script diffs and fails on undocumented drift; a `--bless` mode regenerates the snapshots.
-- [ ] A reference check word-boundary-searches `apps/api` (`src` + `tests`) for each `pub` item and reads `apps/api/public-api/allow.json` (`"<item>": "reason"`); the four catalog-only codes — `TokenExpired`, `TokenRevoked`, `TokenMissing`, `PasswordResetTokenExpired` — are allow-listed with reasons.
-- [ ] The reference check supports a `--report` mode (exit 0, used by this phase's CI) and a strict mode (exit 1) that the docs/release phase enables once `apps/api` demonstrates the full surface.
-- [ ] A root `audit:public-api` script (or the `ci.yml` `export-usage-check` job) invokes it; `bash scripts/audit-rust-public-api.sh` passes trivially on the current stub.
-- [ ] Per-phase closeout performed (see Completion Protocol): P2 flipped to ✅ / 4 of 4, Active phase advanced, Overall progress recomputed.
+- [x] `scripts/audit-rust-public-api.sh` runs `cargo public-api --manifest-path` for `bymax-auth-axum` (`--features full`), `bymax-auth-core` (`--features full`), and `bymax-auth-redis` (`--features mfa,oauth,platform`), writing `apps/api/public-api/<crate>.txt`.
+- [x] On re-run with a committed snapshot present, the script diffs and fails on undocumented drift; a `--bless` mode regenerates the snapshots.
+- [x] A reference check (`scripts/check-public-api-usage.mjs`) word-boundary-searches `apps/api` (`src` + `tests`) for each `pub` item short name and reads `apps/api/public-api/allow.json`; four catalog-only error types (`ConfigError`, `RepositoryError`, `RedisStoreError`, `AuthRejection`) are allow-listed with reasons. (Spec-named `TokenExpired`/`TokenRevoked`/`TokenMissing`/`PasswordResetTokenExpired` live in the transitive `bymax-auth-types` crate and do not appear in the three crate snapshots.)
+- [x] The reference check supports a `--report` mode (exit 0, used by this phase's CI) and a strict mode (exit 1) that the docs/release phase enables once `apps/api` demonstrates the full surface.
+- [x] A root `audit:public-api` script invokes the snapshot generator; `check:public-api` invokes the usage checker; both pass trivially on the current stub (report mode).
+- [x] Per-phase closeout performed: P2 flipped to ✅ / 4 of 4, Active phase advanced to P3, Overall progress recomputed.
 
 #### Files to create / modify
 
@@ -518,3 +518,4 @@ Run this closeout when the LAST task (2.4) is ✅:
 - 2.1 ✅ 2026-07-02 — Added bymax-auth-axum/-core/-redis path deps (version 0.0.0) to apps/api/Cargo.toml; created probe.rs naming AuthEngine/AxumAuthConfig/RedisStores to link all three; updated deny.toml skip-tree for governor+tungstenite duplicates; cargo build --locked, +1.90 check, fmt, clippy all green.
 - 2.2 ✅ 2026-07-02 — Created scripts/link-library.sh and scripts/unlink-library.sh; created minimal Next.js skeleton (package.json, next.config.mjs, tsconfig.json, app/layout.tsx, app/page.tsx) with file: link to @bymax-one/rust-auth; pnpm install resolved the link; all four subpath d.ts files present; pnpm -C apps/web build succeeds.
 - 2.3 ✅ 2026-07-02 — Finalized audit-library-exports.mjs with DIST=apps/web/node_modules/...; parseExports handles named exports + brace exports (local re-exports included, external re-exports skipped); --report and --self-test flags; .audit-ignore.json = {}; self-test passes; report mode exits 0 on stub; strict mode exits 1 correctly.
+- 2.4 ✅ 2026-07-02 — Rewrote audit-rust-public-api.sh to generate snapshots via cargo public-api (nightly-2026-03-01); authored check-public-api-usage.mjs parsing pub items by short name; committed three snapshots (bymax-auth-axum 2023L/bymax-auth-core 6920L/bymax-auth-redis 267L); allow.json has four real catalog error types; report mode exits 0; check:public-api script added to root package.json.

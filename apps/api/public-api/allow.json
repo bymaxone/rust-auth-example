@@ -1,0 +1,6 @@
+{
+  "ConfigError": "Exported for caller pattern-matching on setup errors; not needed in the minimal binary.",
+  "RepositoryError": "Exported for store implementors; not needed in the minimal binary.",
+  "RedisStoreError": "Exported for Redis store error handling; not needed in the minimal binary.",
+  "AuthRejection": "Exported for custom rejection handlers; not needed in the minimal binary."
+}
