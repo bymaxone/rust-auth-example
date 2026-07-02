@@ -12,6 +12,7 @@
 //!
 //! When `DATABASE_URL_TEST` is unset the test skips (passes) so a database-free CI
 //! run still succeeds.
+#![forbid(unsafe_code)]
 #![allow(
     // Integration tests panic to signal failure, so the workspace-level
     // `unwrap_used`/`expect_used` denials are relaxed for this file.
