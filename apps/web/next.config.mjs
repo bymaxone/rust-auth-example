@@ -21,4 +21,39 @@ import path from 'node:path';
 /** @type {import('next').NextConfig} */
 export default {
   outputFileTracingRoot: path.join(import.meta.dirname, '../..'),
+
+  async headers() {
+    return [
+      {
+        /* Apply security headers to every route. */
+        source: '/(.*)',
+        headers: [
+          /* Prevent the auth pages from being embedded in frames (clickjacking). */
+          { key: 'X-Frame-Options', value: 'DENY' },
+          /* Block MIME-type sniffing attacks on served assets. */
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          /* Ensure only the origin (no full URL) is sent as Referer, limiting
+             invitation-token and email-address leakage to third-party sub-resources. */
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          /* Enforce HTTPS for the lifetime of the session. */
+          { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains' },
+          /* CSP: restrict origins; adjust connect-src when the BFF URL is known. */
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self'",
+              /* Tailwind's generated styles require unsafe-inline in dev;
+                 a nonce-based policy can replace this in production builds. */
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data:",
+              "font-src 'self'",
+              "connect-src 'self'",
+              "frame-ancestors 'none'",
+            ].join('; '),
+          },
+        ],
+      },
+    ];
+  },
 };
