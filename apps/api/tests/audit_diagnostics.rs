@@ -37,6 +37,9 @@ async fn audit_keyset_pagination_walks_newest_first() {
     let Some(app) = common::spawn().await else {
         return;
     };
+    // The audit read-API is admin-gated; mint an admin token under an isolated tenant so its
+    // own login audit row does not pollute this tenant's count.
+    let admin = common::dashboard_admin_token_isolated(&app).await;
     for i in 0..5 {
         insert_row(&app, &format!("evt-{i}")).await;
     }
@@ -45,6 +48,7 @@ async fn audit_keyset_pagination_walks_newest_first() {
     let page1: Value = app
         .client
         .get(format!("{}/audit/logs", app.base_url))
+        .bearer_auth(&admin)
         .query(&[("tenantId", app.tenant_id.as_str()), ("limit", "2")])
         .send()
         .await
@@ -60,6 +64,7 @@ async fn audit_keyset_pagination_walks_newest_first() {
     let page2: Value = app
         .client
         .get(format!("{}/audit/logs", app.base_url))
+        .bearer_auth(&admin)
         .query(&[
             ("tenantId", app.tenant_id.as_str()),
             ("limit", "2"),
@@ -79,6 +84,7 @@ async fn audit_keyset_pagination_walks_newest_first() {
     let full: Value = app
         .client
         .get(format!("{}/audit/logs", app.base_url))
+        .bearer_auth(&admin)
         .query(&[("tenantId", app.tenant_id.as_str())])
         .send()
         .await
@@ -99,10 +105,12 @@ async fn audit_stream_resumes_from_last_event_id() {
     // A marker row; a reconnect just below its id must redeliver exactly it.
     let marker_event = format!("sse-marker-{}", app.tenant_id);
     let marker_id = insert_row(&app, &marker_event).await;
+    let admin = common::dashboard_admin_token_isolated(&app).await;
 
     let mut resp = app
         .client
         .get(format!("{}/audit/stream", app.base_url))
+        .bearer_auth(&admin)
         .header("Last-Event-ID", (marker_id - 1).to_string())
         .send()
         .await
@@ -166,7 +174,7 @@ async fn diagnostics_hash_strength_flags_stale_hashes() {
 }
 
 #[tokio::test]
-async fn diagnostics_force_lockout_locks_the_identifier() {
+async fn diagnostics_force_lockout_reports_a_countdown_and_reset_clears_it() {
     let Some(app) = common::spawn().await else {
         return;
     };
@@ -183,6 +191,79 @@ async fn diagnostics_force_lockout_locks_the_identifier() {
         .unwrap();
     assert_eq!(result["locked"], true);
     assert!(result["attempts"].as_i64().unwrap() >= 1);
+    // A locked identifier reports a positive remaining-lockout countdown.
+    assert!(
+        result["remainingLockoutSecs"].as_u64().unwrap() > 0,
+        "a locked identifier reports a countdown"
+    );
+
+    // Reset clears the lock: a fresh force-lockout run starts from zero prior failures.
+    let reset: Value = app
+        .client
+        .post(format!("{}/diagnostics/reset-lockout", app.base_url))
+        .json(&json!({ "identifier": identifier }))
+        .send()
+        .await
+        .unwrap()
+        .json()
+        .await
+        .unwrap();
+    assert_eq!(reset["locked"], false, "reset clears the lockout");
+}
+
+#[tokio::test]
+async fn diagnostics_hook_log_exposes_only_masked_fields() {
+    let Some(app) = common::spawn().await else {
+        return;
+    };
+    // Drive a registration so the hook log has fresh rows, and capture the emailed OTP the
+    // masked view must never carry.
+    let email = &app.email;
+    let tenant = &app.tenant_id;
+    app.client
+        .post(format!("{}/auth/register", app.base_url))
+        .json(&json!({ "email": email, "password": "Sup3rSecret!pw", "name": "Hook User", "tenantId": tenant }))
+        .send()
+        .await
+        .unwrap();
+    let otp = app
+        .verification_otps
+        .lock()
+        .unwrap()
+        .get(email)
+        .cloned()
+        .expect("the verification OTP was captured");
+
+    // The only fields a hook row may expose — a projection over safe columns, never a
+    // token, code, or secret.
+    const ALLOWED_FIELDS: [&str; 6] = ["id", "event", "actorEmail", "tenantId", "ip", "createdAt"];
+
+    let rows: Value = app
+        .client
+        .get(format!("{}/diagnostics/hooks", app.base_url))
+        .send()
+        .await
+        .unwrap()
+        .json()
+        .await
+        .unwrap();
+    let array = rows.as_array().expect("an array of rows");
+    assert!(!array.is_empty(), "the hook log returns recent rows");
+    for row in array {
+        let object = row.as_object().expect("each row is an object");
+        assert!(object.contains_key("event"), "each row carries an event");
+        for key in object.keys() {
+            assert!(
+                ALLOWED_FIELDS.contains(&key.as_str()),
+                "the hook view must expose only masked fields, found `{key}`"
+            );
+        }
+    }
+    // The emailed OTP never appears in the masked view (the never-log-secrets invariant).
+    assert!(
+        !rows.to_string().contains(&otp),
+        "the hook log must never contain the emailed OTP"
+    );
 }
 
 #[tokio::test]

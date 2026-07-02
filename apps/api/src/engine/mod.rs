@@ -21,6 +21,7 @@ use crate::email::resolve_email_provider;
 use crate::engine::config::build_auth_config;
 use crate::hooks::AuditAuthHooks;
 use crate::oauth::TlsHttpClientError;
+use crate::repository::platform_user::SqlxPlatformUserRepository;
 use crate::repository::user::SqlxUserRepository;
 
 /// Failure assembling the engine from settings.
@@ -62,6 +63,9 @@ pub fn build_engine(
         .config(config)
         .environment(environment)
         .user_repository(Arc::new(SqlxUserRepository::new(pool.clone())))
+        // The tenant-less platform-admin domain is enabled in the config profile, so the
+        // builder structurally requires its repository seam. The same pool backs it.
+        .platform_user_repository(Arc::new(SqlxPlatformUserRepository::new(pool.clone())))
         .redis_stores(Arc::clone(&stores))
         .email_provider(resolve_email_provider(settings)?)
         .hooks(Arc::new(AuditAuthHooks::new(pool)));

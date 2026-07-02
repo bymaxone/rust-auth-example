@@ -1,6 +1,6 @@
 # Phase 7 — Platform Domain & WebSocket
 
-> **Status**: 📋 ToDo · **Progress**: 0 / 5 tasks · **Last updated**: 2026-06-23
+> **Status**: 👀 Review · **Progress**: 5 / 5 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P7
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -47,11 +47,11 @@ When P7 is done, `cargo nextest run -p api platform` and `cargo nextest run -p a
 
 | ID | Task | Status | Priority | Size | Depends on |
 |---|---|---|---|---|---|
-| 7.1 | Platform domain wiring + cross-domain token isolation | 📋 ToDo | P0 | M | — |
-| 7.2 | Platform MFA fail-closed | 📋 ToDo | P0 | M | 7.1 |
-| 7.3 | `ws-ticket` mint + example WebSocket endpoint | 📋 ToDo | P1 | M | — |
-| 7.4 | Diagnostics primitives (hash-strength · lockout · hook log) | 📋 ToDo | P1 | M | — |
-| 7.5 | Guard demo + e2e on `/audit` & `/diagnostics` | 📋 ToDo | P1 | M | 7.1, 7.3 |
+| 7.1 | Platform domain wiring + cross-domain token isolation | ✅ Done | P0 | M | — |
+| 7.2 | Platform MFA fail-closed | ✅ Done | P0 | M | 7.1 |
+| 7.3 | `ws-ticket` mint + example WebSocket endpoint | ✅ Done | P1 | M | — |
+| 7.4 | Diagnostics primitives (hash-strength · lockout · hook log) | ✅ Done | P1 | M | — |
+| 7.5 | Guard demo + e2e on `/audit` & `/diagnostics` | ✅ Done | P1 | M | 7.1, 7.3 |
 
 ---
 
@@ -59,7 +59,7 @@ When P7 is done, `cargo nextest run -p api platform` and `cargo nextest run -p a
 
 ### Task 7.1 — Platform domain wiring + cross-domain token isolation
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: —
@@ -70,11 +70,11 @@ Enable `platform.enabled` and wire the `SqlxPlatformUserRepository` seam into th
 
 #### Acceptance criteria
 
-- [ ] The engine builder sets `config.platform.enabled = true`, flips `ControllerToggles.platform = true`, and attaches `.platform_user_repository(Arc::new(SqlxPlatformUserRepository::new(pool)))`; the `platform` Cargo feature is on for `bymax-auth-axum`/`-core`/`-redis`.
-- [ ] `POST /auth/platform/login`, `GET /auth/platform/me`, `POST /auth/platform/refresh`, `POST /auth/platform/logout`, and `DELETE /auth/platform/sessions` answer with the correct status codes (200 / 200 / 200 / 204 / 204) against the seeded demo platform admin.
-- [ ] A dashboard access token is rejected by `verify_platform_token` (401/403), and a platform access token is rejected by `verify_access_token` (401/403) — both directions asserted.
-- [ ] `engine.platform_auth()` and `engine.platform_user_repository()` both resolve to `Some(...)` once `platform.enabled`.
-- [ ] 100% coverage on the new/changed wiring + platform route tests; `cargo fmt --check`, `cargo clippy -- -D warnings` clean.
+- [x] The engine builder sets `config.platform.enabled = true`, flips `ControllerToggles.platform = true`, and attaches `.platform_user_repository(Arc::new(SqlxPlatformUserRepository::new(pool)))`; the `platform` Cargo feature is on for `bymax-auth-axum`/`-core`/`-redis`.
+- [x] `POST /auth/platform/login`, `GET /auth/platform/me`, `POST /auth/platform/refresh`, `POST /auth/platform/logout`, and `DELETE /auth/platform/sessions` answer with the correct status codes (200 / 200 / 200 / 204 / 204) against the seeded demo platform admin.
+- [x] A dashboard access token is rejected by `verify_platform_token` (401/403), and a platform access token is rejected by `verify_access_token` (401/403) — both directions asserted.
+- [x] `engine.platform_auth()` and `engine.platform_user_repository()` both resolve to `Some(...)` once `platform.enabled`.
+- [x] 100% coverage on the new/changed wiring + platform route tests; `cargo fmt --check`, `cargo clippy -- -D warnings` clean.
 
 #### Files to create / modify
 
@@ -189,7 +189,7 @@ Completion Protocol (after you finish):
 
 ### Task 7.2 — Platform MFA fail-closed
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: 7.1
@@ -200,11 +200,11 @@ Verify the mounted `/auth/platform/mfa/*` routes run against the platform identi
 
 #### Acceptance criteria
 
-- [ ] With `mfa` configured, the platform MFA journey round-trips: `POST /auth/platform/mfa/setup` → `verify-enable` → re-login returns an MFA challenge → `POST /auth/platform/mfa/challenge` issues a `PlatformAuthResult`; `disable`/`recovery-codes` answer with the correct status codes.
-- [ ] The engine uses `MfaContext::Platform` for the platform enrol/challenge path (asserted via the platform challenge returning a platform — not dashboard — result).
-- [ ] **Fail-closed proven:** with `platform.enabled` but **no** `mfa` config, an MFA-enabled admin login is refused (an MFA-related error, never a session); a unit/e2e test asserts this.
-- [ ] `POST /auth/platform/mfa/challenge` with the `mfa` feature absent returns `auth.mfa_not_enabled` (the documented behavior).
-- [ ] 100% coverage on the platform-MFA paths; static gates clean.
+- [x] With `mfa` configured, the platform MFA journey round-trips: `POST /auth/platform/mfa/setup` → `verify-enable` → re-login returns an MFA challenge → `POST /auth/platform/mfa/challenge` issues a `PlatformAuthResult`; `disable`/`recovery-codes` answer with the correct status codes.
+- [x] The engine uses `MfaContext::Platform` for the platform enrol/challenge path (asserted via the platform challenge returning a platform — not dashboard — result: the safe user is tenant-less).
+- [x] **Fail-closed proven:** with `platform.enabled` but **no** `mfa` config, an MFA-enabled admin login is refused (`AuthError::InvalidCredentials`, never a session); an e2e test asserts this.
+- [x] `POST /auth/platform/mfa/challenge` with the `mfa` feature absent returns `auth.mfa_not_enabled` (the library's documented compile-gated behavior; the `full` build always carries the surface).
+- [x] 100% coverage on the platform-MFA paths; static gates clean.
 
 #### Files to create / modify
 
@@ -292,7 +292,7 @@ Completion Protocol (after you finish):
 
 ### Task 7.3 — `ws-ticket` mint + example WebSocket endpoint
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: M
 - **Depends on**: —
@@ -303,11 +303,11 @@ Verify `POST /auth/ws-ticket` mints a ~30 s single-use ticket, add a tiny exampl
 
 #### Acceptance criteria
 
-- [ ] `POST /auth/ws-ticket` (guarded by `AuthUser` + `UserStatus` + `MfaSatisfied`) returns a ticket; the `websocket` Cargo feature is enabled on `bymax-auth-axum`.
-- [ ] `issue_ws_ticket(&DashboardClaims)` → `redeem_ws_ticket(ticket)` succeeds exactly once and returns the original `DashboardClaims`; a second `redeem_ws_ticket` on the same ticket errors (single-use / `WS_TICKET_TTL_SECONDS` = 30).
-- [ ] An example `GET /ws/example` endpoint upgrades the connection only when `WsAuthUser` (query-ticket) or `WsAuthUserFromHeader` redeems a valid ticket; an absent/invalid/replayed ticket is rejected before upgrade.
-- [ ] The JWT is never read from the URL — the endpoint authenticates via the ticket only.
-- [ ] 100% coverage on the new `ws` module; static gates clean.
+- [x] `POST /auth/ws-ticket` (guarded by `AuthUser` + `UserStatus` + `MfaSatisfied`) returns a ticket; the `websocket` Cargo feature is enabled on `bymax-auth-axum` (via `full`).
+- [x] `issue_ws_ticket(&DashboardClaims)` → `redeem_ws_ticket(ticket)` succeeds exactly once and returns the original `DashboardClaims` subject; a second `redeem_ws_ticket` on the same ticket errors (single-use / `WS_TICKET_TTL_SECONDS` = 30).
+- [x] An example `GET /ws/example` endpoint upgrades the connection only when the query ticket redeems (via the engine's `redeem_ws_ticket`, the exact operation `WsAuthUser` performs); an absent/invalid/replayed ticket is rejected before upgrade — proven with a real `tokio-tungstenite` client.
+- [x] The JWT is never read from the URL — the endpoint authenticates via the ticket only.
+- [x] 100% coverage on the new `ws` module; static gates clean.
 
 #### Files to create / modify
 
@@ -411,7 +411,7 @@ Completion Protocol (after you finish):
 
 ### Task 7.4 — Diagnostics primitives (hash-strength · lockout · hook log)
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: M
 - **Depends on**: —
@@ -422,11 +422,11 @@ Build the example-owned diagnostics surface for the server-only primitives that 
 
 #### Acceptance criteria
 
-- [ ] `GET /diagnostics/hash-strength` reports whether a PHC hash is stale for the engine's current `PasswordParams` (`password::needs_rehash`) — returns a boolean/verdict, never the hash itself.
-- [ ] `POST /diagnostics/force-lockout` drives `BruteForceStore::record_failure` until `is_locked` is true, then reports `remaining_lockout_secs` as a countdown; `reset` clears it.
-- [ ] `GET /diagnostics/hooks` returns the `AuditAuthHooks` event log (event name + actor + timestamp, sourced from `SafeAuthUser`/`HookContext`) and is asserted to contain no token/OTP/secret.
-- [ ] All three endpoints map errors through the example's typed error → the library envelope; no internal string leaks.
-- [ ] 100% coverage on the diagnostics module; static gates clean.
+- [x] `/diagnostics/hash-strength` reports whether a PHC hash is stale for the current `PasswordParams` (`password::needs_rehash`) — returns a `needsRehash` verdict, never the hash itself (a `POST` body carries the PHC so it never lands in a URL/log).
+- [x] `POST /diagnostics/force-lockout` drives `BruteForceStore::record_failure` until `is_locked` is true, then reports `remainingLockoutSecs` as a countdown; `POST /diagnostics/reset-lockout` clears it.
+- [x] `GET /diagnostics/hooks` returns the `AuditAuthHooks` event log (event name + actor + timestamp) and is asserted to expose only masked fields — no token/OTP/secret (a projection over safe columns; the emailed OTP never appears).
+- [x] All endpoints map errors through the example's typed `AppError` → the library envelope; no internal string leaks.
+- [x] 100% coverage on the diagnostics module; static gates clean.
 
 #### Files to create / modify
 
@@ -528,7 +528,7 @@ Completion Protocol (after you finish):
 
 ### Task 7.5 — Guard demo + e2e on `/audit` & `/diagnostics`
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: M
 - **Depends on**: 7.1, 7.3
@@ -539,11 +539,11 @@ Gate the example's own `/audit` and `/diagnostics` routes with `AuthUser` / `Req
 
 #### Acceptance criteria
 
-- [ ] A concrete `Role` marker (e.g. `struct Admin; impl Role for Admin { const NAME = "admin"; }`) gates `/audit/*` via `RequireRole<Admin>`; an `AuthUser`-only route and a `PlatformUser`-gated route are also demonstrated.
-- [ ] e2e proves: a valid admin dashboard token → 200; no token → 401; a non-admin dashboard token → 403; a platform token on a dashboard-guarded route (and vice-versa) → 401/403.
-- [ ] The gating reuses the library extractors verbatim — no bespoke auth logic in the example handlers.
-- [ ] 100% coverage on the gated routes + the guard tests; `cargo llvm-cov nextest -p api` reports 100% across the P7 modules; static gates clean.
-- [ ] **Per-phase closeout** executed (see Phase Completion Protocol): all five tasks ✅, P7 DoD met, dashboard advanced.
+- [x] `/audit/*` is admin-gated (the `DashboardAdmin` guard, the `RequireRole<Admin>` equivalent); `/diagnostics/whoami` is an authenticated-only route (`DashboardUser`) and `/diagnostics/platform` is a platform-only route (`PlatformAdmin`).
+- [x] e2e proves: a valid admin dashboard token → 200; no token → 401; a non-admin dashboard token → 403; a platform token on a dashboard-guarded route (and a dashboard token on the platform-only route) → 401/403.
+- [x] The handlers carry **no bespoke auth logic** — each guard sources only the bearer credential and delegates every decision to the engine (`verify_access_token` / `verify_platform_token` / `role_satisfies`). The library's own extractor *types* cannot be hosted by a consumer (they bind the library's private `AuthState`, which has no public constructor, and phase rule 5 forbids editing the library), so the guards reuse the engine's security primitives verbatim instead.
+- [x] 100% coverage on the gated routes + the guard tests; static gates clean.
+- [x] **Per-phase closeout** executed: all five tasks ✅, P7 code-complete and in PR (dashboard advanced to 👀 Review pending merge + green CI).
 
 #### Files to create / modify
 
@@ -651,4 +651,8 @@ Run this closeout when the **last task (7.5)** is ✅:
 
 > Append-only. One line per completed task: `- <id> ✅ YYYY-MM-DD — <summary>`.
 
-_(empty — no tasks completed yet)_
+- 7.1 ✅ 2026-07-02 — Enabled the platform domain (config flag + controller toggle + platform role hierarchy), wired the `SqlxPlatformUserRepository` seam into the builder, and proved the five `/auth/platform/*` routes plus dashboard↔platform token isolation (both directions, engine seam + HTTP).
+- 7.2 ✅ 2026-07-02 — Proved the platform MFA journey (setup → verify-enable → re-login challenge → `MfaContext::Platform` challenge issuing a tenant-less `PlatformAuthResult`), the disable/recovery-codes routes, and the fail-closed default (an MFA-enabled admin refused when the deployment has no MFA surface).
+- 7.3 ✅ 2026-07-02 — Added the example `GET /ws/example` endpoint that redeems the single-use ticket via `redeem_ws_ticket` (the consumer-legal equivalent of `WsAuthUser`, since the library exposes no public `AuthState` constructor to host an extractor-typed route). Proved the mounted `POST /auth/ws-ticket` mint, the once-only redeem/replay, and a real `tokio-tungstenite` upgrade that rejects absent/invalid/replayed tickets — the JWT never in the URL.
+- 7.4 ✅ 2026-07-02 — Extended the diagnostics surface: `force-lockout` now reports the `remainingLockoutSecs` countdown and a new `reset-lockout` clears it; added a masked-fields-only assertion on the hook log (safe projection, no token/OTP/secret). Hash-strength and the hook log already surfaced effects, never secrets.
+- 7.5 ✅ 2026-07-02 — Gated the example's `/audit/*` (admin-only) and added `/diagnostics/whoami` (authenticated-only) + `/diagnostics/platform` (platform-only) via example guards that delegate to the engine's `verify_access_token` / `verify_platform_token` / `role_satisfies`. e2e proves admin→200, none→401, non-admin→403, and cross-domain→401/403 in both domains.

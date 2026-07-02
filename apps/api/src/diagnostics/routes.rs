@@ -56,12 +56,15 @@ pub struct ForceLockoutResponse {
     pub locked: bool,
     /// The failure count recorded on the final attempt.
     pub attempts: i64,
+    /// Seconds remaining on the lockout — the countdown a login form would surface. Zero
+    /// when the identifier is not locked.
+    pub remaining_lockout_secs: u64,
 }
 
 /// `POST /diagnostics/force-lockout` — records failures until the identifier locks.
 ///
 /// Drives the engine's `BruteForceStore` with the configured max-attempts and
-/// window, then reports the lockout state.
+/// window, then reports the lockout state and the `remaining_lockout_secs` countdown.
 ///
 /// # Errors
 ///
@@ -85,7 +88,66 @@ pub async fn force_lockout(
         }
     }
     let locked = store.is_locked(&request.identifier, max_attempts).await?;
-    Ok(Json(ForceLockoutResponse { locked, attempts }))
+    let remaining_lockout_secs = store.remaining_lockout_secs(&request.identifier).await?;
+    Ok(Json(ForceLockoutResponse {
+        locked,
+        attempts,
+        remaining_lockout_secs,
+    }))
+}
+
+/// The state after clearing a lockout.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ResetLockoutResponse {
+    /// Whether the identifier is locked after the reset (always `false`).
+    pub locked: bool,
+}
+
+/// `POST /diagnostics/reset-lockout` — clears the failure counter for an identifier, so the
+/// lockout countdown returns to zero (the operator-unlock path).
+///
+/// # Errors
+///
+/// Returns [`AppError`] when the store cannot be reached.
+pub async fn reset_lockout(
+    State(state): State<AppState>,
+    Json(request): Json<ForceLockoutRequest>,
+) -> Result<Json<ResetLockoutResponse>, AppError> {
+    let store = state.engine.brute_force_store();
+    store.reset(&request.identifier).await?;
+    Ok(Json(ResetLockoutResponse { locked: false }))
+}
+
+/// The authenticated subject a guard resolved — the safe identity fields only, never a
+/// token or secret.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WhoAmI {
+    /// The subject id from the verified claims.
+    pub sub: String,
+    /// The role carried by the verified claims.
+    pub role: String,
+}
+
+/// `GET /diagnostics/whoami` — an authenticated-only route (the `AuthUser` guard demo).
+/// Returns the caller's subject and role from the verified dashboard token; an
+/// unauthenticated request is rejected with `401` before this handler runs.
+pub async fn whoami(user: crate::guards::DashboardUser) -> Json<WhoAmI> {
+    Json(WhoAmI {
+        sub: user.0.sub,
+        role: user.0.role,
+    })
+}
+
+/// `GET /diagnostics/platform` — a platform-only route (the `PlatformUser` guard demo).
+/// Visible solely to a valid platform admin; a dashboard token (or none) is rejected with
+/// `401`/`403`, proving the two token families never cross over.
+pub async fn platform_whoami(admin: crate::guards::PlatformAdmin) -> Json<WhoAmI> {
+    Json(WhoAmI {
+        sub: admin.0.sub,
+        role: admin.0.role,
+    })
 }
 
 /// `GET /diagnostics/hooks` — the most recent hook-event audit rows (a compact view).

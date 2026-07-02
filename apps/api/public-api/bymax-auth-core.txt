@@ -1357,129 +1357,82 @@ impl<'de> serde_core::de::Deserialize<'de> for bymax_auth_core::traits::store::S
 impl<'de> serde_core::de::Deserialize<'de> for bymax_auth_core::traits::store::StoredInvitation
 impl<'de> serde_core::de::Deserialize<'de> for bymax_auth_core::traits::store::WsTicketSnapshot
 impl<'de> serde_core::de::Deserialize<'de> for bymax_auth_core::traits::store::WsTicketSnapshot
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::AuthEngineBuilder where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::AuthEngineBuilder where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::ConfigError where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::GoogleOAuthProvider where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::GoogleOAuthProvider where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::RepositoryError where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::ReqwestHttpClient where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::ReqwestHttpClient where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::config::Argon2Params where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::config::AuthConfig where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::config::AuthConfig where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::config::BruteForceConfig where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::config::ControllerToggles where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::config::CookieConfig where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::config::EmailVerificationConfig where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::config::Environment where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::config::Environment where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::config::EvictionStrategy where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::config::GoogleOAuthConfig where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::config::InvitationConfig where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::config::JwtAlgorithm where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::config::JwtConfig where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::config::MfaConfig where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::config::OAuthConfig where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::config::PasswordAlgorithm where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::config::PasswordConfig where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::config::PasswordResetConfig where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::config::PlatformConfig where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::config::ResetMethod where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::config::ResolvedConfig where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::config::RolesConfig where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::config::SameSite where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::config::ScryptParams where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::config::SessionConfig where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::config::TokenDelivery where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::config::resolvers::RequestParts where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::config::resolvers::RequestParts where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::config::resolvers::TenantResolveError where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::config::resolvers::TenantResolveError where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::context::RequestContext where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::engine::AuthEngine where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::engine::AuthEngine where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::services::auth::AcceptInvitationInput where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::services::auth::ForgotPasswordInput where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::services::auth::LoginInput where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::services::auth::RegisterInput where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::services::auth::ResendResetOtpInput where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::services::auth::ResetPasswordInput where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::services::auth::VerifyResetOtpInput where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::services::brute_force::BruteForceService where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::services::mfa::LoginResultMfa where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::services::mfa::LoginResultMfa where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::services::mfa::MfaService where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::services::mfa::MfaService where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::services::mfa::MfaSetupResult where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::services::mfa::MfaSetupResult where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::services::oauth::OAuthOutcome where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::services::oauth::OAuthOutcome where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::services::otp::OtpService where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::services::password::PasswordService where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::services::password::VerifyOutcome where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::services::platform::PlatformAuthService where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::services::platform::PlatformAuthService where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::services::session::SessionInfo where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::services::session::SessionService where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::services::token_manager::MfaTempVerified where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::services::token_manager::TokenManagerService where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::email::EmailError where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::email::EmailError where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::email::InviteData where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::email::InviteData where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::email::NoOpEmailProvider where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::email::NoOpEmailProvider where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::email::SessionInfo where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::email::SessionInfo where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::hooks::BeforeRegisterResult where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::hooks::BeforeRegisterResult where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::hooks::HookContext where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::hooks::HookContext where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::hooks::HookError where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::hooks::HookError where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::hooks::NoOpAuthHooks where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::hooks::NoOpAuthHooks where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::hooks::OAuthLoginResult where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::hooks::OAuthLoginResult where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::hooks::RegisterAttempt where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::hooks::RegisterAttempt where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::hooks::RegisterOverrides where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::hooks::RegisterOverrides where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::http::HttpError where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::http::HttpError where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::http::HttpMethod where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::http::HttpMethod where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::http::HttpRequest where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::http::HttpRequest where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::http::HttpResponse where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::http::HttpResponse where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::oauth::OAuthProfile where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::oauth::OAuthProfile where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::oauth::OAuthProviderError where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::oauth::OAuthProviderError where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::oauth::OAuthProviders where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::oauth::OAuthProviders where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::oauth::OAuthTokens where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::oauth::OAuthTokens where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::store::OtpPurpose where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::store::OtpPurpose where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::store::ResetContext where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::store::ResetContext where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::store::RotateOutcome where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::store::RotateOutcome where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::store::SessionDetail where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::store::SessionDetail where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::store::SessionKind where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::store::SessionKind where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::store::SessionRecord where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::store::SessionRecord where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::store::SessionRotation where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::store::SessionRotation where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::store::StoredInvitation where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::store::StoredInvitation where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::store::WsTicketSnapshot where B: http_body::Body
-impl<A, B, T> hyper_util::server::conn::auto::HttpServerConnExec<A, B> for bymax_auth_core::traits::store::WsTicketSnapshot where B: http_body::Body
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_core::config::Argon2Params where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_core::config::BruteForceConfig where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_core::config::ControllerToggles where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_core::config::EmailVerificationConfig where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_core::config::Environment where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_core::config::Environment where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_core::config::EvictionStrategy where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_core::config::InvitationConfig where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_core::config::JwtAlgorithm where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_core::config::PasswordAlgorithm where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_core::config::PasswordConfig where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_core::config::PasswordResetConfig where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_core::config::PlatformConfig where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_core::config::ResetMethod where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_core::config::SameSite where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_core::config::ScryptParams where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_core::config::TokenDelivery where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_core::services::password::VerifyOutcome where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_core::services::session::SessionInfo where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_core::services::token_manager::MfaTempVerified where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_core::traits::http::HttpMethod where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_core::traits::http::HttpMethod where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_core::traits::store::OtpPurpose where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_core::traits::store::OtpPurpose where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_core::traits::store::ResetContext where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_core::traits::store::ResetContext where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_core::traits::store::RotateOutcome where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_core::traits::store::RotateOutcome where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_core::traits::store::SessionDetail where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_core::traits::store::SessionDetail where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_core::traits::store::SessionKind where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_core::traits::store::SessionKind where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_core::traits::store::SessionRecord where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_core::traits::store::SessionRecord where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_core::traits::store::StoredInvitation where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_core::traits::store::StoredInvitation where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_core::traits::store::WsTicketSnapshot where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> equivalent::Equivalent<K> for bymax_auth_core::traits::store::WsTicketSnapshot where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_core::config::Argon2Params where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_core::config::BruteForceConfig where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_core::config::ControllerToggles where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_core::config::EmailVerificationConfig where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_core::config::Environment where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_core::config::Environment where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_core::config::EvictionStrategy where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_core::config::InvitationConfig where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_core::config::JwtAlgorithm where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_core::config::PasswordAlgorithm where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_core::config::PasswordConfig where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_core::config::PasswordResetConfig where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_core::config::PlatformConfig where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_core::config::ResetMethod where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_core::config::SameSite where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_core::config::ScryptParams where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_core::config::TokenDelivery where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_core::services::password::VerifyOutcome where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_core::services::session::SessionInfo where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_core::services::token_manager::MfaTempVerified where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_core::traits::http::HttpMethod where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_core::traits::http::HttpMethod where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_core::traits::store::OtpPurpose where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_core::traits::store::OtpPurpose where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_core::traits::store::ResetContext where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_core::traits::store::ResetContext where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_core::traits::store::RotateOutcome where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_core::traits::store::RotateOutcome where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_core::traits::store::SessionDetail where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_core::traits::store::SessionDetail where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_core::traits::store::SessionKind where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_core::traits::store::SessionKind where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_core::traits::store::SessionRecord where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_core::traits::store::SessionRecord where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_core::traits::store::StoredInvitation where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_core::traits::store::StoredInvitation where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_core::traits::store::WsTicketSnapshot where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
+impl<Q, K> hashbrown::Equivalent<K> for bymax_auth_core::traits::store::WsTicketSnapshot where Q: core::cmp::Eq + ?core::marker::Sized, K: core::borrow::Borrow<Q> + ?core::marker::Sized
 impl<ST, DT> zerocopy::pointer::invariant::CastableFrom<ST, zerocopy::pointer::invariant::Initialized, zerocopy::pointer::invariant::Initialized> for bymax_auth_core::AuthEngineBuilder where ST: ?core::marker::Sized, DT: ?core::marker::Sized
 impl<ST, DT> zerocopy::pointer::invariant::CastableFrom<ST, zerocopy::pointer::invariant::Initialized, zerocopy::pointer::invariant::Initialized> for bymax_auth_core::AuthEngineBuilder where ST: ?core::marker::Sized, DT: ?core::marker::Sized
 impl<ST, DT> zerocopy::pointer::invariant::CastableFrom<ST, zerocopy::pointer::invariant::Initialized, zerocopy::pointer::invariant::Initialized> for bymax_auth_core::ConfigError where ST: ?core::marker::Sized, DT: ?core::marker::Sized
@@ -4259,6 +4212,8 @@ pub fn bymax_auth_core::config::Argon2Params::clone(&self) -> bymax_auth_core::c
 pub fn bymax_auth_core::config::Argon2Params::clone_into(&self, &mut T)
 pub fn bymax_auth_core::config::Argon2Params::default() -> Self
 pub fn bymax_auth_core::config::Argon2Params::eq(&self, &bymax_auth_core::config::Argon2Params) -> bool
+pub fn bymax_auth_core::config::Argon2Params::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::config::Argon2Params::equivalent(&self, &K) -> bool
 pub fn bymax_auth_core::config::Argon2Params::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_core::config::Argon2Params::from(T) -> T
 pub fn bymax_auth_core::config::Argon2Params::into(self) -> U
@@ -4307,6 +4262,8 @@ pub fn bymax_auth_core::config::BruteForceConfig::clone(&self) -> bymax_auth_cor
 pub fn bymax_auth_core::config::BruteForceConfig::clone_into(&self, &mut T)
 pub fn bymax_auth_core::config::BruteForceConfig::default() -> Self
 pub fn bymax_auth_core::config::BruteForceConfig::eq(&self, &bymax_auth_core::config::BruteForceConfig) -> bool
+pub fn bymax_auth_core::config::BruteForceConfig::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::config::BruteForceConfig::equivalent(&self, &K) -> bool
 pub fn bymax_auth_core::config::BruteForceConfig::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_core::config::BruteForceConfig::from(T) -> T
 pub fn bymax_auth_core::config::BruteForceConfig::into(self) -> U
@@ -4323,6 +4280,8 @@ pub fn bymax_auth_core::config::ControllerToggles::clone(&self) -> bymax_auth_co
 pub fn bymax_auth_core::config::ControllerToggles::clone_into(&self, &mut T)
 pub fn bymax_auth_core::config::ControllerToggles::default() -> Self
 pub fn bymax_auth_core::config::ControllerToggles::eq(&self, &bymax_auth_core::config::ControllerToggles) -> bool
+pub fn bymax_auth_core::config::ControllerToggles::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::config::ControllerToggles::equivalent(&self, &K) -> bool
 pub fn bymax_auth_core::config::ControllerToggles::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_core::config::ControllerToggles::from(T) -> T
 pub fn bymax_auth_core::config::ControllerToggles::into(self) -> U
@@ -4354,6 +4313,8 @@ pub fn bymax_auth_core::config::EmailVerificationConfig::clone(&self) -> bymax_a
 pub fn bymax_auth_core::config::EmailVerificationConfig::clone_into(&self, &mut T)
 pub fn bymax_auth_core::config::EmailVerificationConfig::default() -> Self
 pub fn bymax_auth_core::config::EmailVerificationConfig::eq(&self, &bymax_auth_core::config::EmailVerificationConfig) -> bool
+pub fn bymax_auth_core::config::EmailVerificationConfig::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::config::EmailVerificationConfig::equivalent(&self, &K) -> bool
 pub fn bymax_auth_core::config::EmailVerificationConfig::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_core::config::EmailVerificationConfig::from(T) -> T
 pub fn bymax_auth_core::config::EmailVerificationConfig::into(self) -> U
@@ -4377,6 +4338,10 @@ pub fn bymax_auth_core::config::Environment::default() -> bymax_auth_core::confi
 pub fn bymax_auth_core::config::Environment::default() -> bymax_auth_core::config::Environment
 pub fn bymax_auth_core::config::Environment::eq(&self, &bymax_auth_core::config::Environment) -> bool
 pub fn bymax_auth_core::config::Environment::eq(&self, &bymax_auth_core::config::Environment) -> bool
+pub fn bymax_auth_core::config::Environment::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::config::Environment::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::config::Environment::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::config::Environment::equivalent(&self, &K) -> bool
 pub fn bymax_auth_core::config::Environment::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_core::config::Environment::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_core::config::Environment::from(T) -> T
@@ -4402,6 +4367,8 @@ pub fn bymax_auth_core::config::EvictionStrategy::clone(&self) -> bymax_auth_cor
 pub fn bymax_auth_core::config::EvictionStrategy::clone_into(&self, &mut T)
 pub fn bymax_auth_core::config::EvictionStrategy::default() -> bymax_auth_core::config::EvictionStrategy
 pub fn bymax_auth_core::config::EvictionStrategy::eq(&self, &bymax_auth_core::config::EvictionStrategy) -> bool
+pub fn bymax_auth_core::config::EvictionStrategy::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::config::EvictionStrategy::equivalent(&self, &K) -> bool
 pub fn bymax_auth_core::config::EvictionStrategy::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_core::config::EvictionStrategy::from(T) -> T
 pub fn bymax_auth_core::config::EvictionStrategy::into(self) -> U
@@ -4433,6 +4400,8 @@ pub fn bymax_auth_core::config::InvitationConfig::clone(&self) -> bymax_auth_cor
 pub fn bymax_auth_core::config::InvitationConfig::clone_into(&self, &mut T)
 pub fn bymax_auth_core::config::InvitationConfig::default() -> Self
 pub fn bymax_auth_core::config::InvitationConfig::eq(&self, &bymax_auth_core::config::InvitationConfig) -> bool
+pub fn bymax_auth_core::config::InvitationConfig::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::config::InvitationConfig::equivalent(&self, &K) -> bool
 pub fn bymax_auth_core::config::InvitationConfig::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_core::config::InvitationConfig::from(T) -> T
 pub fn bymax_auth_core::config::InvitationConfig::into(self) -> U
@@ -4449,6 +4418,8 @@ pub fn bymax_auth_core::config::JwtAlgorithm::clone(&self) -> bymax_auth_core::c
 pub fn bymax_auth_core::config::JwtAlgorithm::clone_into(&self, &mut T)
 pub fn bymax_auth_core::config::JwtAlgorithm::default() -> bymax_auth_core::config::JwtAlgorithm
 pub fn bymax_auth_core::config::JwtAlgorithm::eq(&self, &bymax_auth_core::config::JwtAlgorithm) -> bool
+pub fn bymax_auth_core::config::JwtAlgorithm::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::config::JwtAlgorithm::equivalent(&self, &K) -> bool
 pub fn bymax_auth_core::config::JwtAlgorithm::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_core::config::JwtAlgorithm::from(T) -> T
 pub fn bymax_auth_core::config::JwtAlgorithm::into(self) -> U
@@ -4511,6 +4482,8 @@ pub fn bymax_auth_core::config::PasswordAlgorithm::clone(&self) -> bymax_auth_co
 pub fn bymax_auth_core::config::PasswordAlgorithm::clone_into(&self, &mut T)
 pub fn bymax_auth_core::config::PasswordAlgorithm::default() -> bymax_auth_core::config::PasswordAlgorithm
 pub fn bymax_auth_core::config::PasswordAlgorithm::eq(&self, &bymax_auth_core::config::PasswordAlgorithm) -> bool
+pub fn bymax_auth_core::config::PasswordAlgorithm::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::config::PasswordAlgorithm::equivalent(&self, &K) -> bool
 pub fn bymax_auth_core::config::PasswordAlgorithm::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_core::config::PasswordAlgorithm::from(T) -> T
 pub fn bymax_auth_core::config::PasswordAlgorithm::into(self) -> U
@@ -4527,6 +4500,8 @@ pub fn bymax_auth_core::config::PasswordConfig::clone(&self) -> bymax_auth_core:
 pub fn bymax_auth_core::config::PasswordConfig::clone_into(&self, &mut T)
 pub fn bymax_auth_core::config::PasswordConfig::default() -> Self
 pub fn bymax_auth_core::config::PasswordConfig::eq(&self, &bymax_auth_core::config::PasswordConfig) -> bool
+pub fn bymax_auth_core::config::PasswordConfig::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::config::PasswordConfig::equivalent(&self, &K) -> bool
 pub fn bymax_auth_core::config::PasswordConfig::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_core::config::PasswordConfig::from(T) -> T
 pub fn bymax_auth_core::config::PasswordConfig::into(self) -> U
@@ -4543,6 +4518,8 @@ pub fn bymax_auth_core::config::PasswordResetConfig::clone(&self) -> bymax_auth_
 pub fn bymax_auth_core::config::PasswordResetConfig::clone_into(&self, &mut T)
 pub fn bymax_auth_core::config::PasswordResetConfig::default() -> Self
 pub fn bymax_auth_core::config::PasswordResetConfig::eq(&self, &bymax_auth_core::config::PasswordResetConfig) -> bool
+pub fn bymax_auth_core::config::PasswordResetConfig::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::config::PasswordResetConfig::equivalent(&self, &K) -> bool
 pub fn bymax_auth_core::config::PasswordResetConfig::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_core::config::PasswordResetConfig::from(T) -> T
 pub fn bymax_auth_core::config::PasswordResetConfig::into(self) -> U
@@ -4559,6 +4536,8 @@ pub fn bymax_auth_core::config::PlatformConfig::clone(&self) -> bymax_auth_core:
 pub fn bymax_auth_core::config::PlatformConfig::clone_into(&self, &mut T)
 pub fn bymax_auth_core::config::PlatformConfig::default() -> bymax_auth_core::config::PlatformConfig
 pub fn bymax_auth_core::config::PlatformConfig::eq(&self, &bymax_auth_core::config::PlatformConfig) -> bool
+pub fn bymax_auth_core::config::PlatformConfig::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::config::PlatformConfig::equivalent(&self, &K) -> bool
 pub fn bymax_auth_core::config::PlatformConfig::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_core::config::PlatformConfig::from(T) -> T
 pub fn bymax_auth_core::config::PlatformConfig::into(self) -> U
@@ -4575,6 +4554,8 @@ pub fn bymax_auth_core::config::ResetMethod::clone(&self) -> bymax_auth_core::co
 pub fn bymax_auth_core::config::ResetMethod::clone_into(&self, &mut T)
 pub fn bymax_auth_core::config::ResetMethod::default() -> bymax_auth_core::config::ResetMethod
 pub fn bymax_auth_core::config::ResetMethod::eq(&self, &bymax_auth_core::config::ResetMethod) -> bool
+pub fn bymax_auth_core::config::ResetMethod::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::config::ResetMethod::equivalent(&self, &K) -> bool
 pub fn bymax_auth_core::config::ResetMethod::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_core::config::ResetMethod::from(T) -> T
 pub fn bymax_auth_core::config::ResetMethod::into(self) -> U
@@ -4622,6 +4603,8 @@ pub fn bymax_auth_core::config::SameSite::clone(&self) -> bymax_auth_core::confi
 pub fn bymax_auth_core::config::SameSite::clone_into(&self, &mut T)
 pub fn bymax_auth_core::config::SameSite::default() -> bymax_auth_core::config::SameSite
 pub fn bymax_auth_core::config::SameSite::eq(&self, &bymax_auth_core::config::SameSite) -> bool
+pub fn bymax_auth_core::config::SameSite::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::config::SameSite::equivalent(&self, &K) -> bool
 pub fn bymax_auth_core::config::SameSite::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_core::config::SameSite::from(T) -> T
 pub fn bymax_auth_core::config::SameSite::into(self) -> U
@@ -4638,6 +4621,8 @@ pub fn bymax_auth_core::config::ScryptParams::clone(&self) -> bymax_auth_core::c
 pub fn bymax_auth_core::config::ScryptParams::clone_into(&self, &mut T)
 pub fn bymax_auth_core::config::ScryptParams::default() -> Self
 pub fn bymax_auth_core::config::ScryptParams::eq(&self, &bymax_auth_core::config::ScryptParams) -> bool
+pub fn bymax_auth_core::config::ScryptParams::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::config::ScryptParams::equivalent(&self, &K) -> bool
 pub fn bymax_auth_core::config::ScryptParams::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_core::config::ScryptParams::from(T) -> T
 pub fn bymax_auth_core::config::ScryptParams::into(self) -> U
@@ -4669,6 +4654,8 @@ pub fn bymax_auth_core::config::TokenDelivery::clone(&self) -> bymax_auth_core::
 pub fn bymax_auth_core::config::TokenDelivery::clone_into(&self, &mut T)
 pub fn bymax_auth_core::config::TokenDelivery::default() -> bymax_auth_core::config::TokenDelivery
 pub fn bymax_auth_core::config::TokenDelivery::eq(&self, &bymax_auth_core::config::TokenDelivery) -> bool
+pub fn bymax_auth_core::config::TokenDelivery::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::config::TokenDelivery::equivalent(&self, &K) -> bool
 pub fn bymax_auth_core::config::TokenDelivery::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_core::config::TokenDelivery::from(T) -> T
 pub fn bymax_auth_core::config::TokenDelivery::into(self) -> U
@@ -5059,6 +5046,8 @@ pub fn bymax_auth_core::services::password::VerifyOutcome::borrow_mut(&mut self)
 pub fn bymax_auth_core::services::password::VerifyOutcome::clone(&self) -> bymax_auth_core::services::password::VerifyOutcome
 pub fn bymax_auth_core::services::password::VerifyOutcome::clone_into(&self, &mut T)
 pub fn bymax_auth_core::services::password::VerifyOutcome::eq(&self, &bymax_auth_core::services::password::VerifyOutcome) -> bool
+pub fn bymax_auth_core::services::password::VerifyOutcome::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::services::password::VerifyOutcome::equivalent(&self, &K) -> bool
 pub fn bymax_auth_core::services::password::VerifyOutcome::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_core::services::password::VerifyOutcome::from(T) -> T
 pub fn bymax_auth_core::services::password::VerifyOutcome::into(self) -> U
@@ -5094,6 +5083,8 @@ pub fn bymax_auth_core::services::session::SessionInfo::borrow_mut(&mut self) ->
 pub fn bymax_auth_core::services::session::SessionInfo::clone(&self) -> bymax_auth_core::services::session::SessionInfo
 pub fn bymax_auth_core::services::session::SessionInfo::clone_into(&self, &mut T)
 pub fn bymax_auth_core::services::session::SessionInfo::eq(&self, &bymax_auth_core::services::session::SessionInfo) -> bool
+pub fn bymax_auth_core::services::session::SessionInfo::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::services::session::SessionInfo::equivalent(&self, &K) -> bool
 pub fn bymax_auth_core::services::session::SessionInfo::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_core::services::session::SessionInfo::from(T) -> T
 pub fn bymax_auth_core::services::session::SessionInfo::into(self) -> U
@@ -5120,6 +5111,8 @@ pub fn bymax_auth_core::services::token_manager::MfaTempVerified::borrow_mut(&mu
 pub fn bymax_auth_core::services::token_manager::MfaTempVerified::clone(&self) -> bymax_auth_core::services::token_manager::MfaTempVerified
 pub fn bymax_auth_core::services::token_manager::MfaTempVerified::clone_into(&self, &mut T)
 pub fn bymax_auth_core::services::token_manager::MfaTempVerified::eq(&self, &bymax_auth_core::services::token_manager::MfaTempVerified) -> bool
+pub fn bymax_auth_core::services::token_manager::MfaTempVerified::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::services::token_manager::MfaTempVerified::equivalent(&self, &K) -> bool
 pub fn bymax_auth_core::services::token_manager::MfaTempVerified::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_core::services::token_manager::MfaTempVerified::from(T) -> T
 pub fn bymax_auth_core::services::token_manager::MfaTempVerified::into(self) -> U
@@ -5679,6 +5672,10 @@ pub fn bymax_auth_core::traits::http::HttpMethod::clone_into(&self, &mut T)
 pub fn bymax_auth_core::traits::http::HttpMethod::clone_into(&self, &mut T)
 pub fn bymax_auth_core::traits::http::HttpMethod::eq(&self, &bymax_auth_core::traits::http::HttpMethod) -> bool
 pub fn bymax_auth_core::traits::http::HttpMethod::eq(&self, &bymax_auth_core::traits::http::HttpMethod) -> bool
+pub fn bymax_auth_core::traits::http::HttpMethod::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::traits::http::HttpMethod::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::traits::http::HttpMethod::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::traits::http::HttpMethod::equivalent(&self, &K) -> bool
 pub fn bymax_auth_core::traits::http::HttpMethod::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_core::traits::http::HttpMethod::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_core::traits::http::HttpMethod::from(T) -> T
@@ -5920,6 +5917,10 @@ pub fn bymax_auth_core::traits::store::OtpPurpose::clone_into(&self, &mut T)
 pub fn bymax_auth_core::traits::store::OtpPurpose::clone_into(&self, &mut T)
 pub fn bymax_auth_core::traits::store::OtpPurpose::eq(&self, &bymax_auth_core::traits::store::OtpPurpose) -> bool
 pub fn bymax_auth_core::traits::store::OtpPurpose::eq(&self, &bymax_auth_core::traits::store::OtpPurpose) -> bool
+pub fn bymax_auth_core::traits::store::OtpPurpose::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::traits::store::OtpPurpose::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::traits::store::OtpPurpose::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::traits::store::OtpPurpose::equivalent(&self, &K) -> bool
 pub fn bymax_auth_core::traits::store::OtpPurpose::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_core::traits::store::OtpPurpose::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_core::traits::store::OtpPurpose::from(T) -> T
@@ -5962,6 +5963,10 @@ pub fn bymax_auth_core::traits::store::ResetContext::deserialize<__D>(__D) -> co
 pub fn bymax_auth_core::traits::store::ResetContext::deserialize<__D>(__D) -> core::result::Result<Self, <__D as serde_core::de::Deserializer>::Error> where __D: serde_core::de::Deserializer<'de>
 pub fn bymax_auth_core::traits::store::ResetContext::eq(&self, &bymax_auth_core::traits::store::ResetContext) -> bool
 pub fn bymax_auth_core::traits::store::ResetContext::eq(&self, &bymax_auth_core::traits::store::ResetContext) -> bool
+pub fn bymax_auth_core::traits::store::ResetContext::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::traits::store::ResetContext::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::traits::store::ResetContext::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::traits::store::ResetContext::equivalent(&self, &K) -> bool
 pub fn bymax_auth_core::traits::store::ResetContext::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_core::traits::store::ResetContext::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_core::traits::store::ResetContext::from(T) -> T
@@ -5994,6 +5999,10 @@ pub fn bymax_auth_core::traits::store::RotateOutcome::clone_into(&self, &mut T)
 pub fn bymax_auth_core::traits::store::RotateOutcome::clone_into(&self, &mut T)
 pub fn bymax_auth_core::traits::store::RotateOutcome::eq(&self, &bymax_auth_core::traits::store::RotateOutcome) -> bool
 pub fn bymax_auth_core::traits::store::RotateOutcome::eq(&self, &bymax_auth_core::traits::store::RotateOutcome) -> bool
+pub fn bymax_auth_core::traits::store::RotateOutcome::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::traits::store::RotateOutcome::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::traits::store::RotateOutcome::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::traits::store::RotateOutcome::equivalent(&self, &K) -> bool
 pub fn bymax_auth_core::traits::store::RotateOutcome::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_core::traits::store::RotateOutcome::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_core::traits::store::RotateOutcome::from(T) -> T
@@ -6026,6 +6035,10 @@ pub fn bymax_auth_core::traits::store::SessionDetail::deserialize<__D>(__D) -> c
 pub fn bymax_auth_core::traits::store::SessionDetail::deserialize<__D>(__D) -> core::result::Result<Self, <__D as serde_core::de::Deserializer>::Error> where __D: serde_core::de::Deserializer<'de>
 pub fn bymax_auth_core::traits::store::SessionDetail::eq(&self, &bymax_auth_core::traits::store::SessionDetail) -> bool
 pub fn bymax_auth_core::traits::store::SessionDetail::eq(&self, &bymax_auth_core::traits::store::SessionDetail) -> bool
+pub fn bymax_auth_core::traits::store::SessionDetail::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::traits::store::SessionDetail::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::traits::store::SessionDetail::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::traits::store::SessionDetail::equivalent(&self, &K) -> bool
 pub fn bymax_auth_core::traits::store::SessionDetail::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_core::traits::store::SessionDetail::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_core::traits::store::SessionDetail::from(T) -> T
@@ -6058,6 +6071,10 @@ pub fn bymax_auth_core::traits::store::SessionKind::clone_into(&self, &mut T)
 pub fn bymax_auth_core::traits::store::SessionKind::clone_into(&self, &mut T)
 pub fn bymax_auth_core::traits::store::SessionKind::eq(&self, &bymax_auth_core::traits::store::SessionKind) -> bool
 pub fn bymax_auth_core::traits::store::SessionKind::eq(&self, &bymax_auth_core::traits::store::SessionKind) -> bool
+pub fn bymax_auth_core::traits::store::SessionKind::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::traits::store::SessionKind::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::traits::store::SessionKind::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::traits::store::SessionKind::equivalent(&self, &K) -> bool
 pub fn bymax_auth_core::traits::store::SessionKind::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_core::traits::store::SessionKind::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_core::traits::store::SessionKind::from(T) -> T
@@ -6092,6 +6109,10 @@ pub fn bymax_auth_core::traits::store::SessionRecord::deserialize<__D>(__D) -> c
 pub fn bymax_auth_core::traits::store::SessionRecord::deserialize<__D>(__D) -> core::result::Result<Self, <__D as serde_core::de::Deserializer>::Error> where __D: serde_core::de::Deserializer<'de>
 pub fn bymax_auth_core::traits::store::SessionRecord::eq(&self, &bymax_auth_core::traits::store::SessionRecord) -> bool
 pub fn bymax_auth_core::traits::store::SessionRecord::eq(&self, &bymax_auth_core::traits::store::SessionRecord) -> bool
+pub fn bymax_auth_core::traits::store::SessionRecord::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::traits::store::SessionRecord::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::traits::store::SessionRecord::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::traits::store::SessionRecord::equivalent(&self, &K) -> bool
 pub fn bymax_auth_core::traits::store::SessionRecord::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_core::traits::store::SessionRecord::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_core::traits::store::SessionRecord::from(T) -> T
@@ -6163,6 +6184,10 @@ pub fn bymax_auth_core::traits::store::StoredInvitation::deserialize<__D>(__D) -
 pub fn bymax_auth_core::traits::store::StoredInvitation::deserialize<__D>(__D) -> core::result::Result<Self, <__D as serde_core::de::Deserializer>::Error> where __D: serde_core::de::Deserializer<'de>
 pub fn bymax_auth_core::traits::store::StoredInvitation::eq(&self, &bymax_auth_core::traits::store::StoredInvitation) -> bool
 pub fn bymax_auth_core::traits::store::StoredInvitation::eq(&self, &bymax_auth_core::traits::store::StoredInvitation) -> bool
+pub fn bymax_auth_core::traits::store::StoredInvitation::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::traits::store::StoredInvitation::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::traits::store::StoredInvitation::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::traits::store::StoredInvitation::equivalent(&self, &K) -> bool
 pub fn bymax_auth_core::traits::store::StoredInvitation::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_core::traits::store::StoredInvitation::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_core::traits::store::StoredInvitation::from(T) -> T
@@ -6197,6 +6222,10 @@ pub fn bymax_auth_core::traits::store::WsTicketSnapshot::deserialize<__D>(__D) -
 pub fn bymax_auth_core::traits::store::WsTicketSnapshot::deserialize<__D>(__D) -> core::result::Result<Self, <__D as serde_core::de::Deserializer>::Error> where __D: serde_core::de::Deserializer<'de>
 pub fn bymax_auth_core::traits::store::WsTicketSnapshot::eq(&self, &bymax_auth_core::traits::store::WsTicketSnapshot) -> bool
 pub fn bymax_auth_core::traits::store::WsTicketSnapshot::eq(&self, &bymax_auth_core::traits::store::WsTicketSnapshot) -> bool
+pub fn bymax_auth_core::traits::store::WsTicketSnapshot::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::traits::store::WsTicketSnapshot::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::traits::store::WsTicketSnapshot::equivalent(&self, &K) -> bool
+pub fn bymax_auth_core::traits::store::WsTicketSnapshot::equivalent(&self, &K) -> bool
 pub fn bymax_auth_core::traits::store::WsTicketSnapshot::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_core::traits::store::WsTicketSnapshot::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn bymax_auth_core::traits::store::WsTicketSnapshot::from(T) -> T
