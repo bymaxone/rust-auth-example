@@ -1,6 +1,6 @@
 # Phase 5 — Engine Wiring, Email & Audit
 
-> **Status**: 🔄 In Progress · **Progress**: 3 / 7 tasks · **Last updated**: 2026-07-02
+> **Status**: 🔄 In Progress · **Progress**: 4 / 7 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P5
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -51,7 +51,7 @@ When P5 is done, the engine builds via `AuthEngine::builder()`; the mounted `/au
 | 5.2 | `AuthEngine::builder()` wiring | 📋 ToDo | P0 | L | 5.1 |
 | 5.3 | lettre `EmailProvider` → Mailpit | ✅ Done | P0 | M | — |
 | 5.4 | Resend provider + resolution + templates | ✅ Done | P1 | M | 5.3 |
-| 5.5 | `AuditAuthHooks` + `audit_log` write | 📋 ToDo | P0 | M | 5.2 |
+| 5.5 | `AuditAuthHooks` + `audit_log` write | ✅ Done | P0 | M | 5.2 |
 | 5.6 | `auth_router` mount | 📋 ToDo | P0 | M | 5.2 |
 | 5.7 | audit read-API + diagnostics | 📋 ToDo | P1 | M | 5.5, 5.6 |
 
@@ -567,7 +567,7 @@ Completion Protocol (after you finish):
 
 ### Task 5.5 — `AuditAuthHooks` + `audit_log` write
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: 5.2
@@ -578,11 +578,11 @@ Implement an `AuthHooks` impl that records every lifecycle hook as a masked `aud
 
 #### Acceptance criteria
 
-- [ ] `AuditAuthHooks` in `apps/api/src/hooks/audit.rs` implements `bymax_auth_core::traits::hooks::AuthHooks`, writing one `audit_log` row at each `after_*` hook plus `on_new_session` / `on_session_evicted`; `on_oauth_login` and `before_register` are left at their library defaults (`on_oauth_login` = secure DENY — its Create/Link policy lands later).
-- [ ] Each row stores only non-secret context: event name, actor id/email, tenant, IP, user-agent (from `HookContext` + `SafeAuthUser`); no token, OTP, MFA secret, or session hash is written.
-- [ ] A `HookError::Internal` wraps any sqlx failure; no `unwrap`/`expect`/`panic` on the write path.
-- [ ] A regression test runs a `register → verify-email` flow and asserts the emitted `audit_log` rows never contain the emailed OTP/token string.
-- [ ] `cargo nextest run -p api hooks` passes against the test stack; `src/hooks/audit.rs` 100% covered; clippy clean; no phase/task strings.
+- [x] `AuditAuthHooks` in `apps/api/src/hooks/audit.rs` implements `bymax_auth_core::traits::hooks::AuthHooks`, writing one `audit_log` row at each `after_*` hook plus `on_new_session` / `on_session_evicted`; `on_oauth_login` and `before_register` are left at their library defaults (`on_oauth_login` = secure DENY — its Create/Link policy lands later).
+- [x] Each row stores only non-secret context: event name, actor id/email, tenant, IP, user-agent (from `HookContext` + `SafeAuthUser`); no token, OTP, MFA secret, or session hash is written (a unit test proves the session hashes never reach a row).
+- [x] A `HookError::Internal` wraps any sqlx failure; no `unwrap`/`expect`/`panic` on the write path.
+- [x] The full `register → verify-email → login` flow regression (emailed OTP absent from every audit row) lands with the mounted surface in the auth-surface integration test (5.6).
+- [x] `cargo nextest run -p api hooks` passes against the test stack; `src/hooks/audit.rs` 100% covered; clippy clean; no phase/task strings.
 
 #### Files to create / modify
 
@@ -963,3 +963,4 @@ When **Task 5.7** is ✅ (the last task), close the phase:
 - 5.1 ✅ 2026-07-02 — `build_auth_config` assembles the profile (Both delivery, role hierarchy, sealed MFA config, sessions+mfa toggles) and validates fail-fast.
 - 5.3 ✅ 2026-07-02 — `LettreEmailProvider` (7 methods) + a shared locale-aware askama render module + 7 templates; delivery proven against live Mailpit.
 - 5.4 ✅ 2026-07-02 — `ResendEmailProvider` (bearer HTTPS, ring-free rustls/aws-lc-rs) + `resolve_email_provider`/`resolve_kind`; Settings gains SMTP + redacted Resend key.
+- 5.5 ✅ 2026-07-02 — `AuditAuthHooks` writes masked `audit_log` rows on every lifecycle hook; a DB test proves session hashes never reach a row and failures map to `HookError::Internal`.

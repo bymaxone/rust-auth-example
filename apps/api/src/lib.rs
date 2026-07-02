@@ -14,6 +14,7 @@ pub mod db;
 pub mod email;
 pub mod engine;
 pub mod error;
+pub mod hooks;
 pub mod layers;
 pub mod repository;
 pub mod routes;
