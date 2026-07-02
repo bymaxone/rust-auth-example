@@ -1,6 +1,6 @@
 # Phase 4 — Schema & Repositories
 
-> **Status**: 🔄 In Progress · **Progress**: 2 / 6 tasks · **Last updated**: 2026-07-02
+> **Status**: 🔄 In Progress · **Progress**: 3 / 6 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P4
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -86,7 +86,7 @@ routes, no email or audit (all P5), and no business logic inside the repositorie
 | --- | --- | --- | --- | --- | --- |
 | 4.1 | Schema migrations (`0001_init.sql`) | ✅ Done | P0 | M | — |
 | 4.2 | sqlx offline cache + prepare workflow | ✅ Done | P0 | S | 4.1 |
-| 4.3 | `SqlxUserRepository` (11 methods) | 📋 ToDo | P0 | L | 4.1, 4.2 |
+| 4.3 | `SqlxUserRepository` (11 methods) | ✅ Done | P0 | L | 4.1, 4.2 |
 | 4.4 | `SqlxPlatformUserRepository` (6 methods) | 📋 ToDo | P0 | M | 4.1, 4.2 |
 | 4.5 | `RepositoryError` mapping (Conflict / `Ok(None)`) | 📋 ToDo | P1 | S | 4.3, 4.4 |
 | 4.6 | Seed data (acme/globex + demo admin) | 📋 ToDo | P1 | S | 4.1 |
@@ -372,7 +372,7 @@ Completion Protocol (after you finish):
 
 ### Task 4.3 — `SqlxUserRepository` (11 methods)
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: L
 - **Depends on**: 4.1, 4.2
@@ -385,16 +385,16 @@ as an `Arc<dyn UserRepository>` ready for the Phase 5 engine builder.
 
 #### Acceptance criteria
 
-- [ ] `SqlxUserRepository::new(pool: PgPool)` exists; the type implements `UserRepository` via `#[async_trait]`.
-- [ ] All 11 methods are implemented: `find_by_id`, `find_by_email`, `create`, `update_password`, `update_mfa`,
+- [x] `SqlxUserRepository::new(pool: PgPool)` exists; the type implements `UserRepository` via `#[async_trait]`.
+- [x] All 11 methods are implemented: `find_by_id`, `find_by_email`, `create`, `update_password`, `update_mfa`,
       `update_last_login`, `update_status`, `update_email_verified`, `find_by_oauth_id`, `link_oauth`,
       `create_with_oauth` — each using `query_as!`/`query!` (no runtime query strings).
-- [ ] `find_by_id`/`find_by_email`/`find_by_oauth_id` return `Ok(None)` for a missing or cross-tenant row (proven by a
+- [x] `find_by_id`/`find_by_email`/`find_by_oauth_id` return `Ok(None)` for a missing or cross-tenant row (proven by a
       test); `create`/`create_with_oauth` round-trip and return the full `AuthUser`.
-- [ ] Every `AuthUser` field round-trips, including `mfa_recovery_codes: Option<Vec<String>>` and the OAuth columns.
-- [ ] `cargo nextest run -p api repository::user` passes against the test stack; `cargo llvm-cov nextest -p api` shows
-      `repository/user.rs` at 100%.
-- [ ] After adding the macros, `cargo sqlx prepare --check --workspace` passes (cache regenerated + committed).
+- [x] Every `AuthUser` field round-trips, including `mfa_recovery_codes: Option<Vec<String>>` and the OAuth columns.
+- [x] `cargo nextest run -p api repository::user` passes against the test stack; `cargo llvm-cov nextest -p api` shows
+      `repository/user.rs` at 100% lines (merging a DB-present run with the DB-absent skip-guard run).
+- [x] After adding the macros, `cargo sqlx prepare --check --workspace` passes (cache regenerated + committed).
 
 #### Files to create / modify
 
@@ -1029,3 +1029,4 @@ When Task 4.6 is ✅ (the LAST task), close the phase:
 
 - 4.1 ✅ 2026-07-02 — Initial migration `0001_init.sql` creates tenants, users, platform_users, invitations, audit_log backing AuthUser/AuthPlatformUser field-for-field, with the tenant-email + partial OAuth unique indexes and the keyset audit index.
 - 4.2 ✅ 2026-07-02 — Wired sqlx (`macros`/`migrate`/`time`, ring-free rustls) + `async-trait`/`time` deps, a `.cargo/config.toml` placeholder `DATABASE_URL`, `SQLX_OFFLINE=true` in CI, and `db:migrate`/`db:prepare` scripts; the `.sqlx/` cache lands with the first query macros.
+- 4.3 ✅ 2026-07-02 — `SqlxUserRepository` implements all 11 `UserRepository` methods over compile-checked `query!`/`query_as!`, mapping rows to `AuthUser` with `Ok(None)` for missing/cross-tenant reads and `Conflict`/`Backend` error mapping; held in `AppState` as `Arc<dyn UserRepository>`; committed `.sqlx/` cache; 100% line coverage against the test stack.

@@ -1,0 +1,104 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO users\n                   (email, name, role, status, tenant_id, email_verified,\n                    oauth_provider, oauth_provider_id)\n               VALUES ($1, $2, COALESCE($3, 'user'), COALESCE($4, 'active'), $5,\n                       COALESCE($6, false), $7, $8)\n               RETURNING id, email, name, password_hash, role, status, tenant_id,\n                         email_verified, mfa_enabled, mfa_secret,\n                         mfa_recovery_codes AS \"mfa_recovery_codes: Vec<String>\",\n                         oauth_provider, oauth_provider_id, last_login_at, created_at",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "email",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "password_hash",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "role",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "status",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "tenant_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "email_verified",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 8,
+        "name": "mfa_enabled",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 9,
+        "name": "mfa_secret",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 10,
+        "name": "mfa_recovery_codes: Vec<String>",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 11,
+        "name": "oauth_provider",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 12,
+        "name": "oauth_provider_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 13,
+        "name": "last_login_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 14,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": ["Text", "Text", "Text", "Text", "Text", "Bool", "Text", "Text"]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "7d444dd9c33fb3529828b8075a06baca831344ec836916c6f3cfece577dba9e7"
+}
