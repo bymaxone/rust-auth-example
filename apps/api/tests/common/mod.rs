@@ -29,10 +29,13 @@ use sqlx::PgPool;
 
 use api::app::{self, AppState};
 use api::config::{EmailProviderKind, RuntimeEnvironment, Settings};
+use api::engine::build_engine;
 use api::engine::config::build_auth_config;
 use api::hooks::AuditAuthHooks;
 use api::layers::apply_global_layers;
 use api::repository::user::SqlxUserRepository;
+
+pub mod mailpit;
 
 /// A high-entropy JWT fixture that clears the length + entropy guards (dev-only).
 const TEST_JWT: &str = "iN7wQ2eR9tY4uI1oP6aS3dF8gH5jK0lZ2xC7vB4nM9qW1eR6tY3uI8oP5aS0dF7gH";
@@ -150,6 +153,9 @@ fn test_settings(database_url: String, redis_url: String) -> Settings {
         smtp_port: 1025,
         smtp_from: "no-reply@auth.local".to_owned(),
         resend_api_key: None,
+        oauth_google_client_id: None,
+        oauth_google_client_secret: None,
+        oauth_google_callback_url: None,
     }
 }
 
@@ -243,4 +249,99 @@ pub async fn spawn() -> Option<TestApp> {
         tenant_id,
         email,
     })
+}
+
+/// Spawn the example app through the real [`build_engine`] composition root, so the
+/// mounted OAuth and invitation surfaces come up exactly as production wires them (real
+/// lettre → Mailpit email included). `customize` mutates the base test settings (e.g. to
+/// configure Google OAuth). Returns `None` (a skip) when the test-stack env is unset.
+///
+/// The returned client does not follow redirects, so an OAuth `302` can be inspected; its
+/// `verification_otps` map stays empty (this path emails through Mailpit, not a capture).
+pub async fn spawn_engine(customize: impl FnOnce(&mut Settings)) -> Option<TestApp> {
+    let Ok(database_url) = std::env::var("DATABASE_URL_TEST") else {
+        eprintln!("skipping integration test: DATABASE_URL_TEST is not set");
+        return None;
+    };
+    let Ok(redis_url) = std::env::var("REDIS_URL") else {
+        eprintln!("skipping integration test: REDIS_URL is not set");
+        return None;
+    };
+    install_crypto();
+
+    let pool = PgPool::connect(&database_url)
+        .await
+        .expect("the test stack Postgres must be reachable");
+
+    static SEQ: AtomicU64 = AtomicU64::new(0);
+    let seq = SEQ.fetch_add(1, Ordering::Relaxed);
+    let pid = std::process::id();
+    let tenant_id = format!("tenant-eng-{pid}-{seq}");
+    let email = format!("user-eng-{pid}-{seq}@example.test");
+
+    sqlx::query("INSERT INTO tenants (id, name) VALUES ($1, $1) ON CONFLICT DO NOTHING")
+        .bind(&tenant_id)
+        .execute(&pool)
+        .await
+        .expect("seed the test tenant");
+
+    let mut settings = test_settings(database_url, redis_url);
+    customize(&mut settings);
+    let stores = Arc::new(
+        RedisStores::connect(&settings.redis_url, settings.redis_namespace.clone())
+            .expect("the redis handle builds"),
+    );
+    let engine = Arc::new(
+        build_engine(
+            &settings,
+            pool.clone(),
+            stores.clone(),
+            Environment::Development,
+        )
+        .expect("the engine builds from settings"),
+    );
+    let state = AppState::new(
+        pool.clone(),
+        stores,
+        engine,
+        RuntimeEnvironment::Development,
+    );
+    let router =
+        apply_global_layers(app::build_router(state), &settings).expect("global layers apply");
+
+    let listener = TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind the test app");
+    let addr = listener.local_addr().expect("the app address");
+    tokio::spawn(async move {
+        let _ = axum::serve(
+            listener,
+            router.into_make_service_with_connect_info::<SocketAddr>(),
+        )
+        .await;
+    });
+
+    let client = reqwest::Client::builder()
+        .redirect(reqwest::redirect::Policy::none())
+        .build()
+        .expect("the http client builds");
+
+    Some(TestApp {
+        base_url: format!("http://{addr}"),
+        client,
+        pool,
+        verification_otps: Arc::new(Mutex::new(HashMap::new())),
+        tenant_id,
+        email,
+    })
+}
+
+/// Configure Google OAuth on the test settings, pointing the provider at the local web
+/// origin. The credentials are fixtures — the mounted initiate route mints a real Google
+/// authorize URL from them without contacting Google.
+pub fn with_google_oauth(settings: &mut Settings) {
+    settings.oauth_google_client_id = Some("test-client-id.apps.googleusercontent.com".to_owned());
+    settings.oauth_google_client_secret = Some(SecretString::from("test-client-secret".to_owned()));
+    settings.oauth_google_callback_url =
+        Some("http://localhost:3000/api/auth/oauth/google/callback".to_owned());
 }

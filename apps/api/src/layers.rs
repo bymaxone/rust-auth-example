@@ -116,6 +116,9 @@ mod tests {
             smtp_port: 1025,
             smtp_from: "no-reply@auth.local".to_string(),
             resend_api_key: None,
+            oauth_google_client_id: None,
+            oauth_google_client_secret: None,
+            oauth_google_callback_url: None,
         }
     }
 

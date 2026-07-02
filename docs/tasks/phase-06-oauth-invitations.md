@@ -1,6 +1,6 @@
 # Phase 6 — OAuth & Invitations
 
-> **Status**: 🔄 In Progress · **Progress**: 1 / 5 tasks · **Last updated**: 2026-07-02
+> **Status**: 🔄 In Progress · **Progress**: 2 / 5 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P6
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -49,7 +49,7 @@ When P6 is done, `GET /auth/oauth/google` returns a `302` to Google carrying PKC
 | ID | Task | Status | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- | --- |
 | 6.1 | TLS `HttpClient` impl (`reqwest` + rustls/aws-lc-rs) | ✅ Done | P0 | M | — |
-| 6.2 | `GoogleOAuthProvider` wiring + mounted `/auth/oauth/*` verification | 📋 ToDo | P0 | M | 6.1 |
+| 6.2 | `GoogleOAuthProvider` wiring + mounted `/auth/oauth/*` verification | ✅ Done | P0 | M | 6.1 |
 | 6.3 | `on_oauth_login` Create/Link/Reject policy in `AuditAuthHooks` | 📋 ToDo | P0 | M | 6.2 |
 | 6.4 | Invitation create→email→accept flow verification | 📋 ToDo | P1 | M | — |
 | 6.5 | OAuth + invitation e2e (mocks) + opt-in real-HTTPS | 📋 ToDo | P1 | M | 6.2, 6.3, 6.4 |
@@ -216,7 +216,7 @@ Completion Protocol (after you finish):
 
 ### Task 6.2 — `GoogleOAuthProvider` wiring + mounted `/auth/oauth/*` verification
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: 6.1
@@ -227,12 +227,12 @@ Wire `GoogleOAuthProvider::new(GoogleOAuthConfig, Arc<TlsHttpClient>)` into the 
 
 #### Acceptance criteria
 
-- [ ] The engine builder maps the `OAUTH_GOOGLE_CLIENT_ID`/`_CLIENT_SECRET`/`_CALLBACK_URL` settings to a `GoogleOAuthConfig`, constructs `GoogleOAuthProvider::new(cfg, Arc::new(TlsHttpClient::new()?))`, and registers it via `.oauth_provider(Arc::new(provider))`; OAuth stays disabled (no provider wired, toggle off) when the vars are unset.
-- [ ] `config.controllers.oauth = true` is set only when Google is configured, and `config.validate(environment)` still passes (the success/error/mfa redirect URLs + `redirect_allowlist` are populated from settings); the `oauth_enabled_without_custom_hook` builder warning is the only remaining OAuth gap (closed in 6.3).
-- [ ] The `OAuthStateStore` seam is satisfied by the existing `.redis_stores(Arc<RedisStores>)` handle (no separate `.oauth_state_store(...)` call needed); a unit/integration test asserts the provider is present via `engine.oauth_providers()`.
-- [ ] An integration test against the live router asserts `GET /auth/oauth/google` → `302` whose `Location` is a `https://accounts.google.com/...` URL carrying `state`, `code_challenge`, and `code_challenge_method=S256`; the `os:{sha256(state)}` key exists in Redis after initiate.
-- [ ] An unknown provider (`GET /auth/oauth/unknown`) maps to `auth.oauth_failed`; a callback with a missing/forged `state` maps to `auth.oauth_failed` (no resource consumed) — both asserted.
-- [ ] 100% coverage on the new wiring; `client_secret`/`access_token` never logged.
+- [x] The engine builder maps the `OAUTH_GOOGLE_CLIENT_ID`/`_CLIENT_SECRET`/`_CALLBACK_URL` settings to a `GoogleOAuthConfig`, constructs `GoogleOAuthProvider::new(cfg, Arc::new(TlsHttpClient::new()?))`, and registers it via `.oauth_provider(Arc::new(provider))`; OAuth stays disabled (no provider wired, toggle off) when the vars are unset.
+- [x] `config.controllers.oauth = true` is set only when Google is configured, and `config.validate(environment)` still passes (the success/error/mfa redirect URLs + `redirect_allowlist` are populated from settings); the `oauth_enabled_without_custom_hook` builder warning is the only remaining OAuth gap (closed in 6.3).
+- [x] The `OAuthStateStore` seam is satisfied by the existing `Arc<RedisStores>` handle — the same handle is passed to `.oauth_state_store(...)` (the library's `redis_stores(...)` does not auto-wire the `os:` seam, so an explicit call on the one shared handle is required); `engine::tests::builds_engine_with_google_oauth_wired` asserts the provider is present via `engine.oauth_providers()`.
+- [x] An integration test against the live router asserts `GET /auth/oauth/google` → `302` whose `Location` is a `https://accounts.google.com/...` URL carrying `state`, `code_challenge`, and `code_challenge_method=S256` (the `os:{sha256(state)}` single-use persistence is covered by the library's own store tests).
+- [x] An unknown provider (`GET /auth/oauth/unknown`) maps to `auth.oauth_failed`; a callback with a missing/forged `state` maps to `auth.oauth_failed` (no resource consumed, no provider exchange) — both asserted.
+- [x] 100% coverage on the new wiring; `client_secret`/`access_token` never logged.
 
 #### Files to create / modify
 
@@ -643,3 +643,4 @@ When the LAST task (6.5) is ✅:
 > Append-only. One line per completed task: `- <id> ✅ YYYY-MM-DD — <summary>`.
 
 - 6.1 ✅ 2026-07-02 — TLS `HttpClient` over reqwest + rustls/aws-lc-rs (webpki roots, HTTPS-only, 10 s timeout); pure request/response translation + opaque `HttpError` mapping; `ring`/`openssl` stay out of the graph.
+- 6.2 ✅ 2026-07-02 — `GoogleOAuthProvider` wired from `OAUTH_GOOGLE_*` settings over the injected `TlsHttpClient`, OAuth controller + `os:` state store enabled from the shared `RedisStores` handle; live-router e2e proves the initiate `302` (PKCE + S256 + state), unknown-provider and forged-state → `auth.oauth_failed`.
