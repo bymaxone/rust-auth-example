@@ -1,6 +1,6 @@
 # Phase 3 — API Skeleton
 
-> **Status**: 🔄 In Progress · **Progress**: 1 / 6 tasks · **Last updated**: 2026-07-02
+> **Status**: 🔄 In Progress · **Progress**: 2 / 6 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P3
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -98,7 +98,7 @@ in P4.
 | 3.1 | tokio + axum bootstrap (`main.rs` + `AppState`) | ✅ Done | P0 | M | — |
 | 3.2 | CORS + tower-http global layers | 📋 ToDo | P0 | S | 3.1 |
 | 3.3 | `GET /health` (version probe) | 📋 ToDo | P1 | S | 3.1 |
-| 3.4 | Typed `AppError` → `IntoResponse` | 📋 ToDo | P0 | M | 3.1 |
+| 3.4 | Typed `AppError` → `IntoResponse` | ✅ Done | P0 | M | 3.1 |
 | 3.5 | sqlx `PgPool` provider | 📋 ToDo | P0 | M | 3.1 |
 | 3.6 | `RedisStores` handle + JSON telemetry | 📋 ToDo | P0 | M | 3.1 |
 
@@ -538,7 +538,7 @@ Completion Protocol (after you finish):
 
 ### Task 3.4 — Typed `AppError` → `IntoResponse`
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: 3.1
@@ -551,16 +551,16 @@ the inner string.
 
 #### Acceptance criteria
 
-- [ ] `apps/api/src/error.rs` exports `#[derive(Debug, thiserror::Error)] pub enum AppError` with at least
+- [x] `apps/api/src/error.rs` exports `#[derive(Debug, thiserror::Error)] pub enum AppError` with at least
   `Auth(#[from] AuthError)`, `Database(#[source] sqlx::Error)`, and `Internal(#[source] Box<dyn Error + Send + Sync>)`,
   plus `impl From<sqlx::Error> for AppError`.
-- [ ] `impl IntoResponse for AppError` renders `Auth(err)` via `bymax_auth_axum::error_response(&err)`, and renders both
+- [x] `impl IntoResponse for AppError` renders `Auth(err)` via `bymax_auth_axum::error_response(&err)`, and renders both
   `Database` and `Internal` by wrapping the source in `AuthError::Internal(..)` and delegating to `error_response` — so
   the body uses the generic `auth.internal` client message and the source string is **never** serialized.
-- [ ] A unit test proves: `AppError::from(AuthError::InvalidCredentials).into_response()` ⇒ status `401` and body
+- [x] A unit test proves: `AppError::from(AuthError::InvalidCredentials).into_response()` ⇒ status `401` and body
   `{"error":{"code":"auth.invalid_credentials",...}}`; an `AppError::Internal` carrying a secret marker string ⇒ status
   `500`, body `code == "auth.internal"`, and the body does **not** contain the secret marker.
-- [ ] 100% coverage on `error.rs`.
+- [x] 100% coverage on `error.rs`.
 
 #### Files to create / modify
 
@@ -913,3 +913,4 @@ If any DoD bullet is unmet or CI is red, set P3 to `🟡 Partial`, not `✅`.
 > Append-only. One line per completed task: `- <id> ✅ YYYY-MM-DD — <summary>`.
 
 - 3.1 ✅ 2026-07-02 — tokio + axum bootstrap (main.rs + AppState)
+- 3.4 ✅ 2026-07-02 — typed AppError → IntoResponse (opaque 500)
