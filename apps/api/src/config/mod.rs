@@ -20,6 +20,7 @@ use figment::{
     Figment,
     providers::{Env, Serialized},
 };
+use secrecy::{ExposeSecret as _, SecretString};
 use serde::{Deserialize, Serialize};
 
 /// The transport selected for outbound transactional email.
@@ -32,12 +33,41 @@ pub enum EmailProviderKind {
     Resend,
 }
 
+/// The deployment environment, mapped onto the library's `Environment` at startup.
+///
+/// It drives the library's production-only guards (secure cookies, redirect https
+/// checks). Defaults to `development` for the local-first reference stack; a real
+/// deployment sets `APP_ENV=production`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum RuntimeEnvironment {
+    /// A development deployment (the local default).
+    #[default]
+    Development,
+    /// A production deployment.
+    Production,
+    /// A test deployment.
+    Test,
+}
+
+impl RuntimeEnvironment {
+    /// Map onto the library's [`bymax_auth_core::config::Environment`].
+    #[must_use]
+    pub fn as_core(self) -> bymax_auth_core::config::Environment {
+        use bymax_auth_core::config::Environment;
+        match self {
+            Self::Development => Environment::Development,
+            Self::Production => Environment::Production,
+            Self::Test => Environment::Test,
+        }
+    }
+}
+
 /// The fully validated runtime configuration for `apps/api`.
 ///
-/// Models the configuration variables the current API surface needs. Variables
-/// used by later phases (SMTP host/port, OAuth credentials, `DATABASE_URL_TEST`,
-/// `RESEND_API_KEY`) are absent here by design and will be added when those
-/// phases wire their respective subsystems.
+/// Bundles the server, datastore, JWT/MFA, email-transport, and CORS settings the
+/// service needs at boot. `DATABASE_URL_TEST` is a test-only override read directly by
+/// the integration tests and is deliberately not modelled here.
 ///
 /// Constructed exclusively by [`Settings::load`]; do not build this struct
 /// directly in production code.
@@ -49,10 +79,12 @@ pub enum EmailProviderKind {
 pub struct Settings {
     /// TCP port the axum server binds (`API_PORT`, default `4000`).
     pub api_port: u16,
+    /// Deployment environment (`APP_ENV`, default `development`).
+    pub app_env: RuntimeEnvironment,
     /// Settings-level log filter default (`LOG_LEVEL`, default `info`).
     ///
-    /// `RUST_LOG` is consumed directly by the tracing `EnvFilter` when logging
-    /// is wired in a later phase; it is not a `Settings` field.
+    /// `RUST_LOG` is consumed directly by the tracing `EnvFilter`; it is not a
+    /// `Settings` field.
     pub log_level: String,
     /// sqlx Postgres connection string (`DATABASE_URL`).
     pub database_url: String,
@@ -60,10 +92,10 @@ pub struct Settings {
     pub redis_url: String,
     /// Store key namespace (`REDIS_NAMESPACE`, default `rust_auth_example`).
     pub redis_namespace: String,
-    /// HS256 signing secret (`JWT_SECRET`); validated `>= 64` bytes.
-    pub jwt_secret: String,
-    /// base64-encoded 32-byte AES-256-GCM key (`MFA_ENCRYPTION_KEY`).
-    pub mfa_encryption_key: String,
+    /// HS256 signing secret (`JWT_SECRET`); validated `>= 64` bytes. Zeroized on drop.
+    pub jwt_secret: SecretString,
+    /// base64-encoded 32-byte AES-256-GCM key (`MFA_ENCRYPTION_KEY`). Zeroized on drop.
+    pub mfa_encryption_key: SecretString,
     /// CORS allow-origin (`WEB_ORIGIN`, default `http://localhost:3000`).
     pub web_origin: String,
     /// Outbound email transport (`EMAIL_PROVIDER`, default `mailpit`).
@@ -76,8 +108,8 @@ pub struct Settings {
     pub smtp_from: String,
     /// Resend API key (`RESEND_API_KEY`); when present, selects the Resend transport.
     ///
-    /// A secret: redacted in the [`Debug`] output so it never reaches a log line.
-    pub resend_api_key: Option<String>,
+    /// A secret: redacted in [`Debug`] and zeroized on drop.
+    pub resend_api_key: Option<SecretString>,
 }
 
 /// Redacts secrets so the struct can be safely printed in logs.
@@ -94,6 +126,7 @@ impl fmt::Debug for Settings {
         let redis_hint = format!("[REDACTED {} bytes]", self.redis_url.len());
         f.debug_struct("Settings")
             .field("api_port", &self.api_port)
+            .field("app_env", &self.app_env)
             .field("log_level", &self.log_level)
             .field("database_url", &db_hint)
             .field("redis_url", &redis_hint)
@@ -118,6 +151,7 @@ impl fmt::Debug for Settings {
 #[derive(Serialize)]
 struct Defaults {
     api_port: u16,
+    app_env: RuntimeEnvironment,
     log_level: String,
     redis_namespace: String,
     web_origin: String,
@@ -131,6 +165,7 @@ impl Default for Defaults {
     fn default() -> Self {
         Self {
             api_port: 4000,
+            app_env: RuntimeEnvironment::Development,
             log_level: "info".to_string(),
             redis_namespace: "rust_auth_example".to_string(),
             web_origin: "http://localhost:3000".to_string(),
@@ -216,13 +251,13 @@ impl Settings {
 
     /// Enforce the hard guards on secret fields after a successful extraction.
     fn validate(&self) -> Result<(), ConfigError> {
-        if self.jwt_secret.len() < Self::JWT_SECRET_MIN_LEN {
+        if self.jwt_secret.expose_secret().len() < Self::JWT_SECRET_MIN_LEN {
             return Err(ConfigError::JwtSecretTooShort {
-                got: self.jwt_secret.len(),
+                got: self.jwt_secret.expose_secret().len(),
             });
         }
         let decoded = base64::engine::general_purpose::STANDARD
-            .decode(self.mfa_encryption_key.as_bytes())
+            .decode(self.mfa_encryption_key.expose_secret().as_bytes())
             .map_err(|_| ConfigError::MfaKeyInvalid)?;
         if decoded.len() != Self::MFA_KEY_LEN {
             return Err(ConfigError::MfaKeyInvalid);
@@ -237,12 +272,15 @@ impl Settings {
 pub(crate) fn dev_settings() -> Settings {
     Settings {
         api_port: 4000,
+        app_env: RuntimeEnvironment::Development,
         log_level: "info".to_owned(),
         database_url: "postgres://postgres:postgres@localhost:5432/example_app".to_owned(),
         redis_url: "redis://127.0.0.1:6379".to_owned(),
         redis_namespace: "rust_auth_example".to_owned(),
-        jwt_secret: DEV_FIXTURE_JWT.to_owned(),
-        mfa_encryption_key: "ZGV2X29ubHlfbG9jYWxfMzJfYnl0ZV9rZXlfMDAwMDA=".to_owned(),
+        jwt_secret: SecretString::from(DEV_FIXTURE_JWT.to_owned()),
+        mfa_encryption_key: SecretString::from(
+            "ZGV2X29ubHlfbG9jYWxfMzJfYnl0ZV9rZXlfMDAwMDA=".to_owned(),
+        ),
         web_origin: "http://localhost:3000".to_owned(),
         email_provider: EmailProviderKind::Mailpit,
         smtp_host: "localhost".to_owned(),
@@ -288,6 +326,26 @@ mod tests {
     }
 
     #[test]
+    fn runtime_environment_maps_onto_the_library_environment() {
+        // Every runtime environment maps onto its library counterpart, and the default
+        // is the local-first development environment.
+        use bymax_auth_core::config::Environment;
+        assert_eq!(
+            RuntimeEnvironment::Development.as_core(),
+            Environment::Development
+        );
+        assert_eq!(
+            RuntimeEnvironment::Production.as_core(),
+            Environment::Production
+        );
+        assert_eq!(RuntimeEnvironment::Test.as_core(), Environment::Test);
+        assert_eq!(
+            RuntimeEnvironment::default(),
+            RuntimeEnvironment::Development
+        );
+    }
+
+    #[test]
     fn loads_a_valid_environment() {
         figment::Jail::expect_with(|jail| {
             seed(jail);
@@ -324,7 +382,7 @@ mod tests {
             assert_eq!(settings.smtp_port, 1025);
             assert_eq!(settings.smtp_from, "no-reply@auth.local");
             assert_eq!(
-                settings.resend_api_key.as_deref(),
+                settings.resend_api_key.as_ref().map(|k| k.expose_secret()),
                 Some("re_test_secret_value")
             );
             // The key value is present but never rendered in the debug output.

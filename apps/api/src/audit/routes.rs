@@ -83,6 +83,18 @@ pub struct AuditPage {
     pub has_more: bool,
 }
 
+/// Optional filters for the live audit tail, mirroring the keyset listing.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AuditStreamQuery {
+    /// Restrict the tail to a single actor id or actor email.
+    pub actor: Option<String>,
+    /// Restrict the tail to a single event name.
+    pub event: Option<String>,
+    /// Restrict the tail to a single tenant.
+    pub tenant_id: Option<String>,
+}
+
 /// Render a timestamp as an RFC 3339 string, falling back to an empty string.
 fn format_ts(ts: OffsetDateTime) -> String {
     ts.format(&Rfc3339).unwrap_or_default()
@@ -149,6 +161,7 @@ pub async fn list_logs(
 /// `id` is the row's keyset cursor, so a reconnect continues after the last row.
 pub async fn stream_logs(
     State(state): State<AppState>,
+    Query(filter): Query<AuditStreamQuery>,
     headers: HeaderMap,
 ) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
     let pool = state.pool.clone();
@@ -163,13 +176,26 @@ pub async fn stream_logs(
             tokio::time::sleep(POLL_INTERVAL).await;
             let rows = sqlx::query!(
                 "SELECT id, event, actor_email, tenant_id, ip, created_at FROM audit_log \
-                 WHERE id > $1 ORDER BY id ASC LIMIT $2",
+                 WHERE id > $1 \
+                   AND ($3::text IS NULL OR actor_id = $3 OR actor_email = $3) \
+                   AND ($4::text IS NULL OR event = $4) \
+                   AND ($5::text IS NULL OR tenant_id = $5) \
+                 ORDER BY id ASC LIMIT $2",
                 last,
                 STREAM_BATCH,
+                filter.actor,
+                filter.event,
+                filter.tenant_id,
             )
             .fetch_all(&pool)
             .await;
-            let Ok(rows) = rows else { break };
+            let rows = match rows {
+                Ok(rows) => rows,
+                Err(error) => {
+                    tracing::error!(?error, "audit stream poll failed");
+                    break;
+                }
+            };
             for row in rows {
                 last = row.id;
                 let audit = AuditRow {

@@ -40,9 +40,9 @@ pub fn resolve_kind(settings: &Settings) -> EmailProviderKind {
 /// Returns an [`EmailError`] when the lettre transport cannot be built because the
 /// configured `SMTP_FROM` is not a valid mailbox.
 pub fn resolve_email_provider(settings: &Settings) -> Result<Arc<dyn EmailProvider>, EmailError> {
-    match settings.resend_api_key.as_deref() {
+    match settings.resend_api_key.as_ref() {
         Some(key) => Ok(Arc::new(ResendEmailProvider::new(
-            key.to_owned(),
+            key.clone(),
             settings.smtp_from.clone(),
         ))),
         None => Ok(Arc::new(LettreEmailProvider::new(
@@ -62,18 +62,22 @@ pub fn resolve_email_provider(settings: &Settings) -> Result<Arc<dyn EmailProvid
 )]
 mod tests {
     use super::*;
-    use crate::config::EmailProviderKind;
+    use crate::config::{EmailProviderKind, RuntimeEnvironment};
+    use secrecy::SecretString;
 
     /// A base `Settings` fixture with no Resend key configured.
     fn settings() -> Settings {
         Settings {
             api_port: 4000,
+            app_env: RuntimeEnvironment::Development,
             log_level: "info".to_owned(),
             database_url: "postgres://localhost/example".to_owned(),
             redis_url: "redis://localhost:6379".to_owned(),
             redis_namespace: "rust_auth_example".to_owned(),
-            jwt_secret: "x".repeat(64),
-            mfa_encryption_key: "ZGV2X29ubHlfbG9jYWxfMzJfYnl0ZV9rZXlfMDAwMDA=".to_owned(),
+            jwt_secret: SecretString::from("x".repeat(64)),
+            mfa_encryption_key: SecretString::from(
+                "ZGV2X29ubHlfbG9jYWxfMzJfYnl0ZV9rZXlfMDAwMDA=".to_owned(),
+            ),
             web_origin: "http://localhost:3000".to_owned(),
             email_provider: EmailProviderKind::Mailpit,
             smtp_host: "localhost".to_owned(),
@@ -95,7 +99,7 @@ mod tests {
     fn selects_resend_when_a_key_is_present() {
         // A configured key switches the selector to the Resend HTTPS transport.
         let mut s = settings();
-        s.resend_api_key = Some("re_key".to_owned());
+        s.resend_api_key = Some(SecretString::from("re_key".to_owned()));
         assert_eq!(resolve_kind(&s), EmailProviderKind::Resend);
         assert!(resolve_email_provider(&s).is_ok());
     }

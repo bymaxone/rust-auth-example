@@ -45,9 +45,11 @@ reqwest = { version = "0.12", default-features = false, features = [
 # `-no-provider` reqwest TLS backend has a ring-free provider to build its config from.
 # The same rustls version is already resolved by the sqlx TLS stack.
 rustls = { version = "0.23", default-features = false, features = ["aws_lc_rs"] }
-# Wraps the HS256 signing secret / MFA key as a redacting, zeroizing `SecretString`,
-# matching the library's `JwtConfig::secret` / `MfaConfig::encryption_key` types.
-secrecy = "0.10"
+# Wraps the HS256 signing secret / MFA key / Resend API key as redacting, zeroizing
+# `SecretString`s, matching the library's `JwtConfig::secret`/`MfaConfig::encryption_key`
+# types. The `serde` feature lets figment deserialize the secrets straight into the
+# protected type so plaintext never lives in an unprotected `String`.
+secrecy = { version = "0.10", features = ["serde"] }
 serde = { version = "1", features = ["derive"] }
 # Builds the Resend request body and serializes the audit read-API responses.
 serde_json = "1"

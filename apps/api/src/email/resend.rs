@@ -7,6 +7,7 @@
 use async_trait::async_trait;
 
 use bymax_auth_core::traits::email::{EmailError, EmailProvider, InviteData, SessionInfo};
+use secrecy::{ExposeSecret as _, SecretString};
 
 use crate::email::templates;
 
@@ -31,7 +32,7 @@ fn install_default_crypto_provider() {
 /// HTTPS [`EmailProvider`] backed by the Resend transactional API.
 pub struct ResendEmailProvider {
     http: reqwest::Client,
-    api_key: String,
+    api_key: SecretString,
     from: String,
     endpoint: String,
 }
@@ -39,14 +40,14 @@ pub struct ResendEmailProvider {
 impl ResendEmailProvider {
     /// Creates a provider bound to a Resend API key and a verified `from` address.
     #[must_use]
-    pub fn new(api_key: String, from: String) -> Self {
+    pub fn new(api_key: SecretString, from: String) -> Self {
         Self::with_endpoint(api_key, from, RESEND_ENDPOINT.to_owned())
     }
 
     /// Creates a provider pointed at an explicit `endpoint`, used to target a local
     /// mock in tests.
     #[must_use]
-    fn with_endpoint(api_key: String, from: String, endpoint: String) -> Self {
+    fn with_endpoint(api_key: SecretString, from: String, endpoint: String) -> Self {
         install_default_crypto_provider();
         Self {
             http: reqwest::Client::new(),
@@ -61,7 +62,7 @@ impl ResendEmailProvider {
         let response = self
             .http
             .post(&self.endpoint)
-            .bearer_auth(&self.api_key)
+            .bearer_auth(self.api_key.expose_secret())
             .json(&serde_json::json!({
                 "from": self.from,
                 "to": to,
@@ -248,7 +249,7 @@ mod tests {
         // body, and the mock's 2xx maps to `Ok`.
         let (endpoint, captured) = spawn_mock(StatusCode::OK).await;
         let provider = ResendEmailProvider::with_endpoint(
-            "re_key_123".to_owned(),
+            SecretString::from("re_key_123".to_owned()),
             "no-reply@auth.local".to_owned(),
             endpoint,
         );
@@ -297,7 +298,7 @@ mod tests {
         // A provider 5xx surfaces as the opaque delivery error rather than a silent success.
         let (endpoint, _captured) = spawn_mock(StatusCode::INTERNAL_SERVER_ERROR).await;
         let provider = ResendEmailProvider::with_endpoint(
-            "re_key_123".to_owned(),
+            SecretString::from("re_key_123".to_owned()),
             "no-reply@auth.local".to_owned(),
             endpoint,
         );

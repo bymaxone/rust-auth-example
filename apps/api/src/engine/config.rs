@@ -9,7 +9,6 @@ use std::collections::HashMap;
 
 use bymax_auth_core::config::{ControllerToggles, Environment, MfaConfig, TokenDelivery};
 use bymax_auth_core::{AuthConfig, ConfigError};
-use secrecy::SecretString;
 
 use crate::config::Settings;
 
@@ -44,7 +43,7 @@ pub fn build_auth_config(
     let mut config = AuthConfig::secure_defaults();
 
     // The HS256 signing secret; its length and entropy are enforced by `validate`.
-    config.jwt.secret = SecretString::from(settings.jwt_secret.clone());
+    config.jwt.secret = settings.jwt_secret.clone();
 
     // Deliver tokens as both HttpOnly cookies and the response body, so the reference
     // surface serves cookie-based browser clients and bearer-token API clients alike.
@@ -63,7 +62,7 @@ pub fn build_auth_config(
     // Seal TOTP secrets with the AES-256-GCM key. Enabling the MFA controller group
     // structurally requires this configuration to be present.
     config.mfa = Some(MfaConfig {
-        encryption_key: SecretString::from(settings.mfa_encryption_key.clone()),
+        encryption_key: settings.mfa_encryption_key.clone(),
         issuer: MFA_ISSUER.to_owned(),
         recovery_code_count: MFA_RECOVERY_CODE_COUNT,
         totp_window: MFA_TOTP_WINDOW,
@@ -96,7 +95,7 @@ pub fn build_auth_config(
 mod tests {
     use super::*;
     use crate::config::EmailProviderKind;
-    use secrecy::ExposeSecret as _;
+    use secrecy::{ExposeSecret as _, SecretString};
 
     /// A 72-byte, mixed-alphabet JWT fixture: over the 32-char floor and above the
     /// entropy threshold (dev-only, never a real secret).
@@ -110,12 +109,13 @@ mod tests {
     fn settings_with_secret(jwt_secret: &str) -> Settings {
         Settings {
             api_port: 4000,
+            app_env: crate::config::RuntimeEnvironment::Development,
             log_level: "info".to_owned(),
             database_url: "postgres://postgres:postgres@localhost:5432/example_app".to_owned(),
             redis_url: "redis://localhost:6379".to_owned(),
             redis_namespace: "rust_auth_example".to_owned(),
-            jwt_secret: jwt_secret.to_owned(),
-            mfa_encryption_key: TEST_MFA_KEY.to_owned(),
+            jwt_secret: SecretString::from(jwt_secret.to_owned()),
+            mfa_encryption_key: SecretString::from(TEST_MFA_KEY.to_owned()),
             web_origin: "http://localhost:3000".to_owned(),
             email_provider: EmailProviderKind::Mailpit,
             smtp_host: "localhost".to_owned(),

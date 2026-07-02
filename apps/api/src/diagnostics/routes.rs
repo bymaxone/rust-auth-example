@@ -60,7 +60,7 @@ pub struct ForceLockoutResponse {
 
 /// `POST /diagnostics/force-lockout` — records failures until the identifier locks.
 ///
-/// Drives the engine's [`BruteForceStore`] with the configured max-attempts and
+/// Drives the engine's `BruteForceStore` with the configured max-attempts and
 /// window, then reports the lockout state.
 ///
 /// # Errors

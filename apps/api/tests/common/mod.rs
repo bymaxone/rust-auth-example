@@ -18,6 +18,8 @@ use std::sync::{Arc, Mutex};
 use async_trait::async_trait;
 use tokio::net::TcpListener;
 
+use secrecy::SecretString;
+
 use bymax_auth_core::AuthEngine;
 use bymax_auth_core::config::Environment;
 use bymax_auth_core::traits::email::{EmailError, EmailProvider, InviteData, SessionInfo};
@@ -25,7 +27,7 @@ use bymax_auth_redis::RedisStores;
 use sqlx::PgPool;
 
 use api::app::{self, AppState};
-use api::config::{EmailProviderKind, Settings};
+use api::config::{EmailProviderKind, RuntimeEnvironment, Settings};
 use api::engine::config::build_auth_config;
 use api::hooks::AuditAuthHooks;
 use api::layers::apply_global_layers;
@@ -134,12 +136,13 @@ pub struct TestApp {
 fn test_settings(database_url: String, redis_url: String) -> Settings {
     Settings {
         api_port: 0,
+        app_env: RuntimeEnvironment::Development,
         log_level: "info".to_owned(),
         database_url,
         redis_url,
         redis_namespace: "rust_auth_example_test".to_owned(),
-        jwt_secret: TEST_JWT.to_owned(),
-        mfa_encryption_key: TEST_MFA_KEY.to_owned(),
+        jwt_secret: SecretString::from(TEST_JWT.to_owned()),
+        mfa_encryption_key: SecretString::from(TEST_MFA_KEY.to_owned()),
         web_origin: "http://localhost:3000".to_owned(),
         email_provider: EmailProviderKind::Mailpit,
         smtp_host: "localhost".to_owned(),
@@ -220,7 +223,6 @@ pub async fn spawn() -> Option<TestApp> {
         .await;
     });
 
-    install_crypto();
     let client = reqwest::Client::builder()
         .build()
         .expect("the http client builds");

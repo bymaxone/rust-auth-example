@@ -7,6 +7,8 @@
 //! reset token, or invitation token) — never a persisted secret.
 
 use askama::Template;
+use time::format_description::well_known::Rfc3339;
+
 use bymax_auth_core::traits::email::{InviteData, SessionInfo};
 
 /// The localized, structural copy shared by every template. The dynamic values
@@ -106,6 +108,13 @@ fn copy_for(locale: Option<&str>) -> &'static Copy {
     }
 }
 
+/// Render a template, logging and returning an empty body on the (compile-time
+/// improbable) render failure rather than silently swallowing it.
+fn log_render_error(error: askama::Error) -> String {
+    tracing::error!(?error, "email template render failed");
+    String::new()
+}
+
 /// Email-verification OTP template.
 #[derive(Template)]
 #[template(path = "email/email_verification_otp.html")]
@@ -200,7 +209,7 @@ pub(crate) fn verification_otp(otp: &str, locale: Option<&str>) -> String {
         footer: c.footer,
     }
     .render()
-    .unwrap_or_default()
+    .unwrap_or_else(log_render_error)
 }
 
 /// Render the password-reset OTP body.
@@ -214,7 +223,7 @@ pub(crate) fn password_reset_otp(otp: &str, locale: Option<&str>) -> String {
         footer: c.footer,
     }
     .render()
-    .unwrap_or_default()
+    .unwrap_or_else(log_render_error)
 }
 
 /// Render the password-reset link-token body.
@@ -228,7 +237,7 @@ pub(crate) fn password_reset_token(token: &str, locale: Option<&str>) -> String 
         footer: c.footer,
     }
     .render()
-    .unwrap_or_default()
+    .unwrap_or_else(log_render_error)
 }
 
 /// Render the MFA-enabled alert body.
@@ -240,7 +249,7 @@ pub(crate) fn mfa_enabled(locale: Option<&str>) -> String {
         footer: c.footer,
     }
     .render()
-    .unwrap_or_default()
+    .unwrap_or_else(log_render_error)
 }
 
 /// Render the MFA-disabled alert body.
@@ -252,11 +261,13 @@ pub(crate) fn mfa_disabled(locale: Option<&str>) -> String {
         footer: c.footer,
     }
     .render()
-    .unwrap_or_default()
+    .unwrap_or_else(log_render_error)
 }
 
 /// Render the new-session alert body from the session context.
 pub(crate) fn new_session_alert(session: &SessionInfo, locale: Option<&str>) -> String {
+    // `session.session_hash` is the library's display-only short hash (never the raw
+    // refresh token), so rendering it into the email body carries no credential.
     let c = copy_for(locale);
     NewSessionAlert {
         heading: c.session_heading,
@@ -270,13 +281,15 @@ pub(crate) fn new_session_alert(session: &SessionInfo, locale: Option<&str>) -> 
         footer: c.footer,
     }
     .render()
-    .unwrap_or_default()
+    .unwrap_or_else(log_render_error)
 }
 
 /// Render the tenant-invitation body from the invite context.
 pub(crate) fn invitation(invite: &InviteData, locale: Option<&str>) -> String {
     let c = copy_for(locale);
-    let expires_at = invite.expires_at.to_string();
+    // `expires_at` is rendered as an RFC 3339 UTC string for a stable, locale-
+    // independent format.
+    let expires_at = invite.expires_at.format(&Rfc3339).unwrap_or_default();
     Invitation {
         heading: c.invite_heading,
         intro: c.invite_intro,
@@ -291,7 +304,7 @@ pub(crate) fn invitation(invite: &InviteData, locale: Option<&str>) -> String {
         footer: c.footer,
     }
     .render()
-    .unwrap_or_default()
+    .unwrap_or_else(log_render_error)
 }
 
 #[cfg(test)]

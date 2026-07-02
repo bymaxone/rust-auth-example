@@ -1,10 +1,9 @@
 //! Shared application state and the router composition seam.
 //!
-//! [`AppState`] is the cheaply-cloneable bundle of handles every request needs;
-//! [`build_router`] merges the example's own route groups into a single
-//! [`Router`]. Later layers attach the Redis store handle and the wired
-//! authentication engine to the state as those subsystems are introduced, and
-//! mount their route groups onto the value returned here.
+//! [`AppState`] is the cheaply-cloneable bundle of handles every request needs — the
+//! Postgres pool, the shared Redis store handle, and the fully-wired `AuthEngine`.
+//! [`build_router`] mounts the library auth surface (derived from the engine's
+//! controller toggles) and merges the example's own domain routes onto one [`Router`].
 
 use std::sync::Arc;
 
@@ -104,6 +103,7 @@ impl AppState {
             crate::engine::build_engine(
                 &crate::config::dev_settings(),
                 pool.clone(),
+                Arc::clone(&stores),
                 bymax_auth_core::config::Environment::Development,
             )
             .expect("the dev settings fixture yields a valid engine"),
