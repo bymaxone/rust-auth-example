@@ -1,6 +1,6 @@
 # Phase 4 — Schema & Repositories
 
-> **Status**: 🔄 In Progress · **Progress**: 3 / 6 tasks · **Last updated**: 2026-07-02
+> **Status**: 🔄 In Progress · **Progress**: 4 / 6 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P4
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -87,7 +87,7 @@ routes, no email or audit (all P5), and no business logic inside the repositorie
 | 4.1 | Schema migrations (`0001_init.sql`) | ✅ Done | P0 | M | — |
 | 4.2 | sqlx offline cache + prepare workflow | ✅ Done | P0 | S | 4.1 |
 | 4.3 | `SqlxUserRepository` (11 methods) | ✅ Done | P0 | L | 4.1, 4.2 |
-| 4.4 | `SqlxPlatformUserRepository` (6 methods) | 📋 ToDo | P0 | M | 4.1, 4.2 |
+| 4.4 | `SqlxPlatformUserRepository` (6 methods) | ✅ Done | P0 | M | 4.1, 4.2 |
 | 4.5 | `RepositoryError` mapping (Conflict / `Ok(None)`) | 📋 ToDo | P1 | S | 4.3, 4.4 |
 | 4.6 | Seed data (acme/globex + demo admin) | 📋 ToDo | P1 | S | 4.1 |
 
@@ -596,7 +596,7 @@ Completion Protocol (after you finish):
 
 ### Task 4.4 — `SqlxPlatformUserRepository` (6 methods)
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: 4.1, 4.2
@@ -608,14 +608,14 @@ methods, each `query_as!`/`query!`-typed, mapping rows to `AuthPlatformUser` and
 
 #### Acceptance criteria
 
-- [ ] `SqlxPlatformUserRepository::new(pool: PgPool)` exists and implements `PlatformUserRepository` via `#[async_trait]`.
-- [ ] All 6 methods are implemented: `find_by_id`, `find_by_email`, `update_last_login`, `update_mfa` (takes
+- [x] `SqlxPlatformUserRepository::new(pool: PgPool)` exists and implements `PlatformUserRepository` via `#[async_trait]`.
+- [x] All 6 methods are implemented: `find_by_id`, `find_by_email`, `update_last_login`, `update_mfa` (takes
       `UpdatePlatformMfaData`), `update_password`, `update_status` — each `query_as!`/`query!`-typed.
-- [ ] `find_by_id`/`find_by_email` return `Ok(None)` for a missing row; the full `AuthPlatformUser` round-trips
+- [x] `find_by_id`/`find_by_email` return `Ok(None)` for a missing row; the full `AuthPlatformUser` round-trips
       (including `password_hash` non-`Option`, `platform_id`, `updated_at`, `mfa_recovery_codes`).
-- [ ] `update_*` bumps `updated_at = now()`; `cargo nextest run -p api repository::platform_user` passes against the
+- [x] `update_*` bumps `updated_at = now()`; `cargo nextest run -p api repository::platform_user` passes against the
       test stack; `repository/platform_user.rs` is 100% covered.
-- [ ] `cargo sqlx prepare --check --workspace` passes after the macros are added.
+- [x] `cargo sqlx prepare --check --workspace` passes after the macros are added.
 
 #### Files to create / modify
 
@@ -1030,3 +1030,4 @@ When Task 4.6 is ✅ (the LAST task), close the phase:
 - 4.1 ✅ 2026-07-02 — Initial migration `0001_init.sql` creates tenants, users, platform_users, invitations, audit_log backing AuthUser/AuthPlatformUser field-for-field, with the tenant-email + partial OAuth unique indexes and the keyset audit index.
 - 4.2 ✅ 2026-07-02 — Wired sqlx (`macros`/`migrate`/`time`, ring-free rustls) + `async-trait`/`time` deps, a `.cargo/config.toml` placeholder `DATABASE_URL`, `SQLX_OFFLINE=true` in CI, and `db:migrate`/`db:prepare` scripts; the `.sqlx/` cache lands with the first query macros.
 - 4.3 ✅ 2026-07-02 — `SqlxUserRepository` implements all 11 `UserRepository` methods over compile-checked `query!`/`query_as!`, mapping rows to `AuthUser` with `Ok(None)` for missing/cross-tenant reads and `Conflict`/`Backend` error mapping; held in `AppState` as `Arc<dyn UserRepository>`; committed `.sqlx/` cache; 100% line coverage against the test stack.
+- 4.4 ✅ 2026-07-02 — `SqlxPlatformUserRepository` implements all 6 tenant-less `PlatformUserRepository` methods, mapping rows to `AuthPlatformUser` (non-optional `password_hash`, `platform_id`, `updated_at`); every mutation bumps `updated_at`; held in `AppState`; cache regenerated; `platform_user.rs` at 100% coverage.

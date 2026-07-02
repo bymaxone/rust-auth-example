@@ -6,6 +6,7 @@
 //! [`RepositoryError::Conflict`]; every other datastore failure becomes an opaque
 //! [`RepositoryError::Backend`].
 
+pub mod platform_user;
 pub mod user;
 
 use bymax_auth_core::RepositoryError;

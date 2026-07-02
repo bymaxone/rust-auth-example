@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE platform_users SET last_login_at = now(), updated_at = now() WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": ["Text"]
+    },
+    "nullable": []
+  },
+  "hash": "c8502a8ba5793aa894ba2cc7a21dfce1efb1230dd94b8a32be350aaf190fddbd"
+}

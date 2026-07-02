@@ -9,10 +9,11 @@
 use std::sync::Arc;
 
 use axum::Router;
-use bymax_auth_core::traits::repository::UserRepository;
+use bymax_auth_core::traits::repository::{PlatformUserRepository, UserRepository};
 use bymax_auth_redis::RedisStores;
 use sqlx::PgPool;
 
+use crate::repository::platform_user::SqlxPlatformUserRepository;
 use crate::repository::user::SqlxUserRepository;
 
 /// Shared, cheaply-cloneable handles every request needs.
@@ -32,6 +33,9 @@ pub struct AppState {
     pub stores: Arc<RedisStores>,
     /// The dashboard user persistence seam, ready for the engine builder.
     pub user_repository: Arc<dyn UserRepository>,
+    /// The tenant-less platform-admin persistence seam. Held unconditionally; the
+    /// engine layer wires it only when the platform domain is enabled.
+    pub platform_user_repository: Arc<dyn PlatformUserRepository>,
 }
 
 impl AppState {
@@ -42,11 +46,13 @@ impl AppState {
     #[must_use]
     pub fn new(pool: PgPool, stores: Arc<RedisStores>) -> Self {
         let user_repository = Arc::new(SqlxUserRepository::new(pool.clone()));
+        let platform_user_repository = Arc::new(SqlxPlatformUserRepository::new(pool.clone()));
         Self {
             version: env!("CARGO_PKG_VERSION"),
             pool,
             stores,
             user_repository,
+            platform_user_repository,
         }
     }
 }
