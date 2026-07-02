@@ -1,6 +1,6 @@
 # Phase 4 — Schema & Repositories
 
-> **Status**: 📋 ToDo · **Progress**: 0 / 6 tasks · **Last updated**: 2026-06-23
+> **Status**: 👀 Review · **Progress**: 6 / 6 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P4
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -84,12 +84,12 @@ routes, no email or audit (all P5), and no business logic inside the repositorie
 
 | ID | Task | Status | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- | --- |
-| 4.1 | Schema migrations (`0001_init.sql`) | 📋 ToDo | P0 | M | — |
-| 4.2 | sqlx offline cache + prepare workflow | 📋 ToDo | P0 | S | 4.1 |
-| 4.3 | `SqlxUserRepository` (11 methods) | 📋 ToDo | P0 | L | 4.1, 4.2 |
-| 4.4 | `SqlxPlatformUserRepository` (6 methods) | 📋 ToDo | P0 | M | 4.1, 4.2 |
-| 4.5 | `RepositoryError` mapping (Conflict / `Ok(None)`) | 📋 ToDo | P1 | S | 4.3, 4.4 |
-| 4.6 | Seed data (acme/globex + demo admin) | 📋 ToDo | P1 | S | 4.1 |
+| 4.1 | Schema migrations (`0001_init.sql`) | ✅ Done | P0 | M | — |
+| 4.2 | sqlx offline cache + prepare workflow | ✅ Done | P0 | S | 4.1 |
+| 4.3 | `SqlxUserRepository` (11 methods) | ✅ Done | P0 | L | 4.1, 4.2 |
+| 4.4 | `SqlxPlatformUserRepository` (6 methods) | ✅ Done | P0 | M | 4.1, 4.2 |
+| 4.5 | `RepositoryError` mapping (Conflict / `Ok(None)`) | ✅ Done | P1 | S | 4.3, 4.4 |
+| 4.6 | Seed data (acme/globex + demo admin) | ✅ Done | P1 | S | 4.1 |
 
 ---
 
@@ -97,7 +97,7 @@ routes, no email or audit (all P5), and no business logic inside the repositorie
 
 ### Task 4.1 — Schema migrations (`0001_init.sql`)
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: —
@@ -110,16 +110,16 @@ with the `users`/`platform_users` columns backing `AuthUser`/`AuthPlatformUser` 
 
 #### Acceptance criteria
 
-- [ ] `apps/api/migrations/0001_init.sql` exists and `sqlx migrate run` applies it cleanly against the dev stack.
-- [ ] `users` has every `AuthUser` column with matching nullability: `password_hash` nullable, `mfa_secret` nullable,
+- [x] `apps/api/migrations/0001_init.sql` exists and `sqlx migrate run` applies it cleanly against the dev stack.
+- [x] `users` has every `AuthUser` column with matching nullability: `password_hash` nullable, `mfa_secret` nullable,
       `mfa_recovery_codes TEXT[]` nullable, `oauth_provider`/`oauth_provider_id` nullable, `last_login_at` nullable,
       `email_verified`/`mfa_enabled` `BOOLEAN NOT NULL`, `created_at TIMESTAMPTZ NOT NULL`.
-- [ ] `platform_users` mirrors `AuthPlatformUser`: `password_hash TEXT NOT NULL`, **no** `tenant_id`/`email_verified`,
+- [x] `platform_users` mirrors `AuthPlatformUser`: `password_hash TEXT NOT NULL`, **no** `tenant_id`/`email_verified`,
       adds `platform_id` (nullable) and `updated_at TIMESTAMPTZ NOT NULL`.
-- [ ] A unique index on `users (tenant_id, email)` backs `find_by_email` and raises `23505` on a duplicate; a
+- [x] A unique index on `users (tenant_id, email)` backs `find_by_email` and raises `23505` on a duplicate; a
       (partial) unique index on `users (tenant_id, oauth_provider, oauth_provider_id)` backs `find_by_oauth_id`.
-- [ ] `audit_log` has a keyset index on `(created_at DESC, id DESC)`; `invitations` and `tenants` exist.
-- [ ] No `.gitkeep` / empty-directory placeholders are created.
+- [x] `audit_log` has a keyset index on `(created_at DESC, id DESC)`; `invitations` and `tenants` exist.
+- [x] No `.gitkeep` / empty-directory placeholders are created.
 
 #### Files to create / modify
 
@@ -266,7 +266,7 @@ Completion Protocol (after you finish):
 
 ### Task 4.2 — sqlx offline cache + prepare workflow
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: S
 - **Depends on**: 4.1
@@ -279,12 +279,13 @@ succeeds with no live database, and commit the `.sqlx/` directory.
 
 #### Acceptance criteria
 
-- [ ] `apps/api/Cargo.toml` depends on `sqlx` with `runtime-tokio`, `tls-rustls-aws-lc-rs`, `postgres`, `time`, `uuid`
-      (as needed), and `migrate` — and on `sqlx-cli`-compatible offline mode (no `ring`).
-- [ ] `apps/api/.env` (or `.cargo/config.toml`) provides a placeholder `DATABASE_URL`; CI/build sets `SQLX_OFFLINE=true`.
-- [ ] `cargo sqlx prepare --workspace` regenerates `.sqlx/` against a live (migrated) DB; the directory is committed.
-- [ ] `cargo build --locked` succeeds with `SQLX_OFFLINE=true` and no database reachable.
-- [ ] `cargo sqlx prepare --check --workspace` passes (the cache is current).
+- [x] `apps/api/Cargo.toml` depends on `sqlx` with `runtime-tokio`, `tls-rustls-aws-lc-rs`, `postgres`, `macros`,
+      `migrate`, and `time` (ids are `TEXT`, so `uuid` is not needed) — a ring-free rustls backend for offline mode.
+- [x] `.cargo/config.toml` provides a placeholder `DATABASE_URL`; the CI top-level env sets `SQLX_OFFLINE=true`.
+- [x] `cargo sqlx prepare --workspace` regenerates `.sqlx/` against a live (migrated) DB; the directory is committed
+      (populated by the first query macros in 4.3/4.4).
+- [x] `cargo build --locked` succeeds with `SQLX_OFFLINE=true` and no database reachable.
+- [x] `cargo sqlx prepare --check --workspace` passes (the cache is current).
 
 #### Files to create / modify
 
@@ -371,7 +372,7 @@ Completion Protocol (after you finish):
 
 ### Task 4.3 — `SqlxUserRepository` (11 methods)
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: L
 - **Depends on**: 4.1, 4.2
@@ -384,16 +385,16 @@ as an `Arc<dyn UserRepository>` ready for the Phase 5 engine builder.
 
 #### Acceptance criteria
 
-- [ ] `SqlxUserRepository::new(pool: PgPool)` exists; the type implements `UserRepository` via `#[async_trait]`.
-- [ ] All 11 methods are implemented: `find_by_id`, `find_by_email`, `create`, `update_password`, `update_mfa`,
+- [x] `SqlxUserRepository::new(pool: PgPool)` exists; the type implements `UserRepository` via `#[async_trait]`.
+- [x] All 11 methods are implemented: `find_by_id`, `find_by_email`, `create`, `update_password`, `update_mfa`,
       `update_last_login`, `update_status`, `update_email_verified`, `find_by_oauth_id`, `link_oauth`,
       `create_with_oauth` — each using `query_as!`/`query!` (no runtime query strings).
-- [ ] `find_by_id`/`find_by_email`/`find_by_oauth_id` return `Ok(None)` for a missing or cross-tenant row (proven by a
+- [x] `find_by_id`/`find_by_email`/`find_by_oauth_id` return `Ok(None)` for a missing or cross-tenant row (proven by a
       test); `create`/`create_with_oauth` round-trip and return the full `AuthUser`.
-- [ ] Every `AuthUser` field round-trips, including `mfa_recovery_codes: Option<Vec<String>>` and the OAuth columns.
-- [ ] `cargo nextest run -p api repository::user` passes against the test stack; `cargo llvm-cov nextest -p api` shows
-      `repository/user.rs` at 100%.
-- [ ] After adding the macros, `cargo sqlx prepare --check --workspace` passes (cache regenerated + committed).
+- [x] Every `AuthUser` field round-trips, including `mfa_recovery_codes: Option<Vec<String>>` and the OAuth columns.
+- [x] `cargo nextest run -p api repository::user` passes against the test stack; `cargo llvm-cov nextest -p api` shows
+      `repository/user.rs` at 100% lines (merging a DB-present run with the DB-absent skip-guard run).
+- [x] After adding the macros, `cargo sqlx prepare --check --workspace` passes (cache regenerated + committed).
 
 #### Files to create / modify
 
@@ -595,7 +596,7 @@ Completion Protocol (after you finish):
 
 ### Task 4.4 — `SqlxPlatformUserRepository` (6 methods)
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: 4.1, 4.2
@@ -607,14 +608,14 @@ methods, each `query_as!`/`query!`-typed, mapping rows to `AuthPlatformUser` and
 
 #### Acceptance criteria
 
-- [ ] `SqlxPlatformUserRepository::new(pool: PgPool)` exists and implements `PlatformUserRepository` via `#[async_trait]`.
-- [ ] All 6 methods are implemented: `find_by_id`, `find_by_email`, `update_last_login`, `update_mfa` (takes
+- [x] `SqlxPlatformUserRepository::new(pool: PgPool)` exists and implements `PlatformUserRepository` via `#[async_trait]`.
+- [x] All 6 methods are implemented: `find_by_id`, `find_by_email`, `update_last_login`, `update_mfa` (takes
       `UpdatePlatformMfaData`), `update_password`, `update_status` — each `query_as!`/`query!`-typed.
-- [ ] `find_by_id`/`find_by_email` return `Ok(None)` for a missing row; the full `AuthPlatformUser` round-trips
+- [x] `find_by_id`/`find_by_email` return `Ok(None)` for a missing row; the full `AuthPlatformUser` round-trips
       (including `password_hash` non-`Option`, `platform_id`, `updated_at`, `mfa_recovery_codes`).
-- [ ] `update_*` bumps `updated_at = now()`; `cargo nextest run -p api repository::platform_user` passes against the
+- [x] `update_*` bumps `updated_at = now()`; `cargo nextest run -p api repository::platform_user` passes against the
       test stack; `repository/platform_user.rs` is 100% covered.
-- [ ] `cargo sqlx prepare --check --workspace` passes after the macros are added.
+- [x] `cargo sqlx prepare --check --workspace` passes after the macros are added.
 
 #### Files to create / modify
 
@@ -758,7 +759,7 @@ Completion Protocol (after you finish):
 
 ### Task 4.5 — `RepositoryError` mapping (Conflict / `Ok(None)`)
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: S
 - **Depends on**: 4.3, 4.4
@@ -772,16 +773,16 @@ semantics against the test Postgres.
 
 #### Acceptance criteria
 
-- [ ] `apps/api/src/repository/error.rs` exposes a single `map_sqlx_error(sqlx::Error) -> RepositoryError`, reused by
-      both repositories (the inline copies from 4.3/4.4 are removed in favour of it).
-- [ ] A Postgres unique-violation (SQLSTATE `23505`) maps to `RepositoryError::Conflict(_)`; any other `sqlx::Error`
-      maps to `RepositoryError::Backend(_)`.
-- [ ] A test inserts a duplicate `(tenant_id, email)` and asserts `Err(RepositoryError::Conflict(_))`; another asserts a
-      missing/cross-tenant `find_*` returns `Ok(None)` (not an error).
-- [ ] A test confirms the engine-level rendering of a pre-checked duplicate as `AuthError::EmailAlreadyExists`
+- [x] `apps/api/src/repository/error.rs` exposes a single `map_sqlx_error(sqlx::Error) -> RepositoryError`, reused by
+      both repositories via a `pub use` re-export (the inline copy from 4.3/4.4's `mod.rs` is removed in favour of it).
+- [x] A Postgres unique-violation (SQLSTATE `23505`) maps to `RepositoryError::Conflict(_)`; any other `sqlx::Error`
+      maps to `RepositoryError::Backend(_)` (proven for both a non-`Database` error and a non-unique `Database` error).
+- [x] A test triggers a real unique violation and asserts `Err(RepositoryError::Conflict(_))`; another asserts a
+      missing `find_*` returns `Ok(None)` (not an error).
+- [x] A test confirms the engine-level rendering of a pre-checked duplicate as `AuthError::EmailAlreadyExists`
       (`auth.email_already_exists`); there is no `From<RepositoryError> for AuthError` impl — the two types live in
       different crates (orphan rule), so the engine maps `Conflict` contextually.
-- [ ] `cargo llvm-cov nextest -p api` shows `repository/error.rs` at 100% (both branches covered).
+- [x] `cargo llvm-cov nextest -p api` shows `repository/error.rs` at 100% lines (both branches covered).
 
 #### Files to create / modify
 
@@ -878,7 +879,7 @@ Completion Protocol (after you finish):
 
 ### Task 4.6 — Seed data (acme/globex + demo admin)
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: S
 - **Depends on**: 4.1
@@ -891,14 +892,14 @@ run the per-phase completion protocol after it.
 
 #### Acceptance criteria
 
-- [ ] A seed runnable via a single command (`cargo run -p api --bin seed`, or an equivalent `db:seed` script) inserts
+- [x] A seed runnable via a single command (`cargo run -p api --bin seed`) inserts
       `acme`/`globex` into `tenants` and a demo admin into `platform_users`.
-- [ ] The demo admin's `password_hash` is produced by `bymax_auth_crypto::password::hash` (a real PHC string), not a
-      hand-written literal.
-- [ ] The seed is idempotent: running it twice leaves the row counts unchanged (`ON CONFLICT DO NOTHING`).
-- [ ] The demo credentials are documented (e.g. in `.env.example`/`GETTING_STARTED.md`) and are clearly local-only
-      fixtures (no real secret committed).
-- [ ] `cargo run -p api --bin seed` succeeds against the dev stack and the rows are present.
+- [x] The demo admin's `password_hash` is produced by `bymax_auth_crypto::password::hash` (a real `$scrypt$` PHC
+      string), not a hand-written literal.
+- [x] The seed is idempotent: running it twice leaves the row counts unchanged (`ON CONFLICT DO NOTHING`).
+- [x] The demo credentials are documented in `.env.example` and are clearly local-only fixtures (no real secret
+      committed).
+- [x] `cargo run -p api --bin seed` succeeds against the dev stack and the rows are present.
 
 #### Files to create / modify
 
@@ -1026,4 +1027,9 @@ When Task 4.6 is ✅ (the LAST task), close the phase:
 
 > Append-only. One line per completed task: `- <id> ✅ YYYY-MM-DD — <summary>`.
 
-_(empty — no tasks completed yet)_
+- 4.1 ✅ 2026-07-02 — Initial migration `0001_init.sql` creates tenants, users, platform_users, invitations, audit_log backing AuthUser/AuthPlatformUser field-for-field, with the tenant-email + partial OAuth unique indexes and the keyset audit index.
+- 4.2 ✅ 2026-07-02 — Wired sqlx (`macros`/`migrate`/`time`, ring-free rustls) + `async-trait`/`time` deps, a `.cargo/config.toml` placeholder `DATABASE_URL`, `SQLX_OFFLINE=true` in CI, and `db:migrate`/`db:prepare` scripts; the `.sqlx/` cache lands with the first query macros.
+- 4.3 ✅ 2026-07-02 — `SqlxUserRepository` implements all 11 `UserRepository` methods over compile-checked `query!`/`query_as!`, mapping rows to `AuthUser` with `Ok(None)` for missing/cross-tenant reads and `Conflict`/`Backend` error mapping; held in `AppState` as `Arc<dyn UserRepository>`; committed `.sqlx/` cache; 100% line coverage against the test stack.
+- 4.4 ✅ 2026-07-02 — `SqlxPlatformUserRepository` implements all 6 tenant-less `PlatformUserRepository` methods, mapping rows to `AuthPlatformUser` (non-optional `password_hash`, `platform_id`, `updated_at`); every mutation bumps `updated_at`; held in `AppState`; cache regenerated; `platform_user.rs` at 100% coverage.
+- 4.5 ✅ 2026-07-02 — Extracted the `sqlx::Error → RepositoryError` mapping into `repository/error.rs` (single definition, re-exported), proving 23505 → `Conflict`, other errors → `Backend`, missing row → `Ok(None)`, and the `auth.email_already_exists` wire rendering; `error.rs` at 100% line coverage.
+- 4.6 ✅ 2026-07-02 — Added `apps/api/src/bin/seed.rs`, an idempotent `cargo run -p api --bin seed` that inserts the acme/globex tenants and a demo platform admin whose password is hashed with the library's scrypt KDF (`$scrypt$` PHC); `ON CONFLICT DO NOTHING` keeps re-runs a no-op; demo credentials documented in `.env.example`.

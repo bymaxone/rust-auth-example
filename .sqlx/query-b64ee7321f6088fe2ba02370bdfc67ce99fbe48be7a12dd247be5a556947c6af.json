@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE platform_users\n             SET mfa_enabled = $2, mfa_secret = $3, mfa_recovery_codes = $4, updated_at = now()\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": ["Text", "Bool", "Text", "TextArray"]
+    },
+    "nullable": []
+  },
+  "hash": "b64ee7321f6088fe2ba02370bdfc67ce99fbe48be7a12dd247be5a556947c6af"
+}

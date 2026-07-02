@@ -1,0 +1,104 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, email, name, password_hash, role, status, tenant_id,\n                      email_verified, mfa_enabled, mfa_secret,\n                      mfa_recovery_codes AS \"mfa_recovery_codes: Vec<String>\",\n                      oauth_provider, oauth_provider_id, last_login_at, created_at\n               FROM users\n               WHERE tenant_id = $1 AND email = $2",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "email",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "password_hash",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "role",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "status",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "tenant_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "email_verified",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 8,
+        "name": "mfa_enabled",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 9,
+        "name": "mfa_secret",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 10,
+        "name": "mfa_recovery_codes: Vec<String>",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 11,
+        "name": "oauth_provider",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 12,
+        "name": "oauth_provider_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 13,
+        "name": "last_login_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 14,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": ["Text", "Text"]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "08e5dcc7bb0a21172f90e60fb6fdca0bf9e8baaa2d4a634707e776cbb7ba0ab8"
+}

@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO platform_users (email, name, password_hash, role, status)\n           VALUES ($1, 'Demo Admin', $2, 'admin', 'active')\n           ON CONFLICT (email) DO NOTHING",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": ["Text", "Text"]
+    },
+    "nullable": []
+  },
+  "hash": "8c1999d6d502cc9e8f2812ef5288b01ac9db99e2616cec2e658b8aa55131fddf"
+}

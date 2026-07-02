@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE platform_users SET status = $2, updated_at = now() WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": ["Text", "Text"]
+    },
+    "nullable": []
+  },
+  "hash": "6e1905002521d94db8d0f2cd8e4410c1842ea02243d3c43baac4f9e5f68e6dbd"
+}

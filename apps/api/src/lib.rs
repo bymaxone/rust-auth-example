@@ -13,6 +13,7 @@ pub mod config;
 pub mod db;
 pub mod error;
 pub mod layers;
+pub mod repository;
 pub mod routes;
 pub mod stores;
 pub mod telemetry;
