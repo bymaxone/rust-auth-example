@@ -12,8 +12,11 @@ use async_trait::async_trait;
 use sqlx::PgPool;
 
 use bymax_auth_core::traits::email::SessionInfo;
-use bymax_auth_core::traits::hooks::{AuthHooks, HookContext, HookError};
+use bymax_auth_core::traits::hooks::{AuthHooks, HookContext, HookError, OAuthLoginResult};
+use bymax_auth_core::traits::oauth::OAuthProfile;
 use bymax_auth_types::SafeAuthUser;
+
+use crate::hooks::oauth_policy::decide_oauth_login;
 
 /// Persists auth lifecycle events to the `audit_log` table.
 pub struct AuditAuthHooks {
@@ -51,10 +54,49 @@ impl AuditAuthHooks {
         .map_err(|error| HookError::Internal(Box::new(error)))?;
         Ok(())
     }
+
+    /// Record the OAuth account decision as one masked `audit_log` row — the event name
+    /// encodes the Create/Link/Reject outcome, and the row carries only the masked actor
+    /// context (never the OAuth token, the PKCE `code_verifier`, or the `provider_id`).
+    ///
+    /// Best-effort: an audit-write failure is logged and swallowed so it never blocks the
+    /// sign-in. The decision itself is the security control (deterministic and independent
+    /// of the audit sink), matching the fire-and-forget contract of the other lifecycle
+    /// hooks — a transient audit outage must not deny an otherwise-valid OAuth login.
+    async fn record_oauth_decision(&self, decision: &OAuthLoginResult, ctx: &HookContext) {
+        let event = match decision {
+            OAuthLoginResult::Create => "oauth_login_create",
+            OAuthLoginResult::Link => "oauth_login_link",
+            OAuthLoginResult::Reject { .. } => "oauth_login_reject",
+        };
+        if self
+            .record(event, ctx.user_id.as_deref(), ctx)
+            .await
+            .is_err()
+        {
+            tracing::warn!(
+                event,
+                "failed to record the oauth login decision to the audit log"
+            );
+        }
+    }
 }
 
 #[async_trait]
 impl AuthHooks for AuditAuthHooks {
+    async fn on_oauth_login(
+        &self,
+        profile: &OAuthProfile,
+        existing_user: Option<&SafeAuthUser>,
+        ctx: &HookContext,
+    ) -> Result<OAuthLoginResult, HookError> {
+        // The pure policy decides; the engine already enforced the provider's
+        // verified-email gate before calling this hook.
+        let decision = decide_oauth_login(profile, existing_user);
+        self.record_oauth_decision(&decision, ctx).await;
+        Ok(decision)
+    }
+
     async fn after_register(
         &self,
         user: &SafeAuthUser,

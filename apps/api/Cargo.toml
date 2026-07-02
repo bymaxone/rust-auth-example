@@ -78,6 +78,10 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["json", "env-filter"] }
 
 [dev-dependencies]
+# The library's in-memory doubles (`InMemoryUserRepository`, `InMemoryStores`,
+# `MockOAuthProvider`, `MockHttpClient`) power the hermetic OAuth e2e; the `testing`
+# feature is dev-only, so the doubles never compile into the shipped binary.
+bymax-auth-core = { path = "../../../rust-auth/crates/bymax-auth-core", version = "0.0.0", features = ["full", "testing"] }
 figment = { version = "0.10", features = ["env", "test"] }
 http-body-util = "0.1"
 tower = { version = "0.5", default-features = false, features = ["util"] }

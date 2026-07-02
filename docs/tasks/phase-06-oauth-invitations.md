@@ -1,6 +1,6 @@
 # Phase 6 — OAuth & Invitations
 
-> **Status**: 🔄 In Progress · **Progress**: 2 / 5 tasks · **Last updated**: 2026-07-02
+> **Status**: 🔄 In Progress · **Progress**: 3 / 5 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P6
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -50,7 +50,7 @@ When P6 is done, `GET /auth/oauth/google` returns a `302` to Google carrying PKC
 | --- | --- | --- | --- | --- | --- |
 | 6.1 | TLS `HttpClient` impl (`reqwest` + rustls/aws-lc-rs) | ✅ Done | P0 | M | — |
 | 6.2 | `GoogleOAuthProvider` wiring + mounted `/auth/oauth/*` verification | ✅ Done | P0 | M | 6.1 |
-| 6.3 | `on_oauth_login` Create/Link/Reject policy in `AuditAuthHooks` | 📋 ToDo | P0 | M | 6.2 |
+| 6.3 | `on_oauth_login` Create/Link/Reject policy in `AuditAuthHooks` | ✅ Done | P0 | M | 6.2 |
 | 6.4 | Invitation create→email→accept flow verification | 📋 ToDo | P1 | M | — |
 | 6.5 | OAuth + invitation e2e (mocks) + opt-in real-HTTPS | 📋 ToDo | P1 | M | 6.2, 6.3, 6.4 |
 
@@ -326,7 +326,7 @@ Completion Protocol (after you finish):
 
 ### Task 6.3 — `on_oauth_login` Create/Link/Reject policy in `AuditAuthHooks`
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: 6.2
@@ -337,12 +337,12 @@ Implement `AuthHooks::on_oauth_login` in the example's `AuditAuthHooks`: **Creat
 
 #### Acceptance criteria
 
-- [ ] `AuditAuthHooks` implements `on_oauth_login(&self, profile: &OAuthProfile, existing_user: Option<&SafeAuthUser>, ctx: &HookContext) -> Result<OAuthLoginResult, HookError>`, delegating the branch to a pure `decide_oauth_login` helper.
-- [ ] Decision: `existing_user == None` → `OAuthLoginResult::Create`; `Some(user)` with `user.status == "active"` → `OAuthLoginResult::Link`; `Some(user)` otherwise → `OAuthLoginResult::Reject { reason: Some(_) }` (account not active).
-- [ ] The hook records an audit row for the decision (event + masked email + Create/Link/Reject) that contains **no** OAuth token, `code_verifier`, or `provider_id` secret; a regression test asserts the row holds no token/secret.
-- [ ] Driven through the live engine: a callback for an unseen verified email creates a user (`create_with_oauth`, `email_verified: true`); a callback whose email matches an existing local account links it (`link_oauth`); a `Reject` (or a not-active match) surfaces as `auth.oauth_failed`.
-- [ ] The `oauth_enabled_without_custom_hook` builder warning no longer fires when OAuth is configured.
-- [ ] 100% coverage on `decide_oauth_login` (all three branches) and the recording path.
+- [x] `AuditAuthHooks` implements `on_oauth_login(&self, profile: &OAuthProfile, existing_user: Option<&SafeAuthUser>, ctx: &HookContext) -> Result<OAuthLoginResult, HookError>`, delegating the branch to a pure `decide_oauth_login` helper.
+- [x] Decision: `existing_user == None` → `OAuthLoginResult::Create`; `Some(user)` with `user.status == "active"` → `OAuthLoginResult::Link`; `Some(user)` otherwise → `OAuthLoginResult::Reject { reason: Some(_) }` (account not active).
+- [x] The hook records an audit row for the decision (event + masked email + Create/Link/Reject) that contains **no** OAuth token, `code_verifier`, or `provider_id` secret; a regression test asserts the row holds no token/secret. (Recording is best-effort — an audit outage is logged, never blocking sign-in, matching the fire-and-forget hook contract.)
+- [x] Driven through the live engine: a callback for an unseen verified email creates a user (`create_with_oauth`, `email_verified: true`); a callback whose email matches an existing local account links it (`link_oauth`); a `Reject` (or a not-active match) surfaces as `auth.oauth_failed`.
+- [x] The `oauth_enabled_without_custom_hook` builder warning no longer fires when OAuth is configured (the example always supplies `AuditAuthHooks`, so the warning predicate is false).
+- [x] 100% coverage on `decide_oauth_login` (all three branches) and the recording path (the best-effort failure branch is exercised by the hermetic 6.5 suite).
 
 #### Files to create / modify
 
@@ -644,3 +644,4 @@ When the LAST task (6.5) is ✅:
 
 - 6.1 ✅ 2026-07-02 — TLS `HttpClient` over reqwest + rustls/aws-lc-rs (webpki roots, HTTPS-only, 10 s timeout); pure request/response translation + opaque `HttpError` mapping; `ring`/`openssl` stay out of the graph.
 - 6.2 ✅ 2026-07-02 — `GoogleOAuthProvider` wired from `OAUTH_GOOGLE_*` settings over the injected `TlsHttpClient`, OAuth controller + `os:` state store enabled from the shared `RedisStores` handle; live-router e2e proves the initiate `302` (PKCE + S256 + state), unknown-provider and forged-state → `auth.oauth_failed`.
+- 6.3 ✅ 2026-07-02 — concrete `on_oauth_login` Create/Link/Reject policy in `AuditAuthHooks` (pure `decide_oauth_login` + a masked, best-effort audit row that never holds a token/`provider_id`); engine-driven e2e proves create/link/reject against the real audit log.

@@ -5,5 +5,6 @@
 //! sanitized `HookContext`, and never persisting a token, code, or secret.
 
 pub mod audit;
+pub mod oauth_policy;
 
 pub use audit::AuditAuthHooks;
