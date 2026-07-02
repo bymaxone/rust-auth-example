@@ -1,6 +1,6 @@
 # Phase 5 — Engine Wiring, Email & Audit
 
-> **Status**: 🔄 In Progress · **Progress**: 4 / 7 tasks · **Last updated**: 2026-07-02
+> **Status**: 🔄 In Progress · **Progress**: 5 / 7 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P5
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -48,7 +48,7 @@ When P5 is done, the engine builds via `AuthEngine::builder()`; the mounted `/au
 | ID | Task | Status | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- | --- |
 | 5.1 | AuthConfig profile + validate | ✅ Done | P0 | M | — |
-| 5.2 | `AuthEngine::builder()` wiring | 📋 ToDo | P0 | L | 5.1 |
+| 5.2 | `AuthEngine::builder()` wiring | ✅ Done | P0 | L | 5.1 |
 | 5.3 | lettre `EmailProvider` → Mailpit | ✅ Done | P0 | M | — |
 | 5.4 | Resend provider + resolution + templates | ✅ Done | P1 | M | 5.3 |
 | 5.5 | `AuditAuthHooks` + `audit_log` write | ✅ Done | P0 | M | 5.2 |
@@ -175,7 +175,7 @@ Completion Protocol (after you finish):
 
 ### Task 5.2 — `AuthEngine::builder()` wiring
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: L
 - **Depends on**: 5.1
@@ -186,11 +186,11 @@ Assemble the production-shaped `AuthEngine` via `AuthEngine::builder()` — conf
 
 #### Acceptance criteria
 
-- [ ] `build_engine(settings, pool, environment) -> Result<AuthEngine, EngineError>` exists in `apps/api/src/engine/mod.rs`.
-- [ ] It calls `build_auth_config` (5.1), constructs `Arc::new(RedisStores::connect(&settings.redis_url, settings.redis_namespace.clone())?)`, and chains `.config().environment().user_repository().redis_stores().email_provider().hooks().build()` (the `platform_user_repository` seam is deferred until `platform.enabled` flips true in P7).
-- [ ] A typed `EngineError` (`thiserror`) wraps `ConfigError` and `RedisStoreError`.
-- [ ] `AppState` holds an `Arc<AuthEngine>` reachable by the example's own routes; `main.rs`/`app.rs` build the engine at startup and abort with a precise message on failure.
-- [ ] `cargo nextest run -p api engine` passes (a smoke test builds the engine from a lazy `PgPool` + dev `Settings`, no live backends needed); `cargo +1.90 check` builds; coverage 100%; clippy clean.
+- [x] `build_engine(settings, pool, environment) -> Result<AuthEngine, EngineError>` exists in `apps/api/src/engine/mod.rs`.
+- [x] It calls `build_auth_config` (5.1), constructs `Arc::new(RedisStores::connect(&settings.redis_url, settings.redis_namespace.clone())?)`, and chains `.config().environment().user_repository().redis_stores().email_provider().hooks().build()` (the `platform_user_repository` seam is deferred until `platform.enabled` flips true in P7).
+- [x] A typed `EngineError` (`thiserror`) wraps `ConfigError`, `RedisStoreError`, and `EmailError`.
+- [x] `AppState` holds an `Arc<AuthEngine>` reachable by the example's own routes; `main.rs` builds the engine at startup and aborts with the precise `EngineError` message on failure.
+- [x] `cargo nextest run -p api engine` passes (a smoke test builds the engine from a lazy `PgPool` + dev `Settings`, no live backends needed); `cargo +1.90 check` builds; coverage 100%; clippy clean.
 
 #### Files to create / modify
 
@@ -964,3 +964,4 @@ When **Task 5.7** is ✅ (the last task), close the phase:
 - 5.3 ✅ 2026-07-02 — `LettreEmailProvider` (7 methods) + a shared locale-aware askama render module + 7 templates; delivery proven against live Mailpit.
 - 5.4 ✅ 2026-07-02 — `ResendEmailProvider` (bearer HTTPS, ring-free rustls/aws-lc-rs) + `resolve_email_provider`/`resolve_kind`; Settings gains SMTP + redacted Resend key.
 - 5.5 ✅ 2026-07-02 — `AuditAuthHooks` writes masked `audit_log` rows on every lifecycle hook; a DB test proves session hashes never reach a row and failures map to `HookError::Internal`.
+- 5.2 ✅ 2026-07-02 — `build_engine` assembles the engine from the sqlx repo, one `Arc<RedisStores>`, the resolved provider, and audit hooks; `AppState` carries `Arc<AuthEngine>` and `main` builds it at boot.

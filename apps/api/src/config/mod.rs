@@ -231,6 +231,32 @@ impl Settings {
     }
 }
 
+/// A well-formed development [`Settings`] fixture, shared by the crate's unit tests
+/// that need a validated configuration (the engine builder and the app state).
+#[cfg(test)]
+pub(crate) fn dev_settings() -> Settings {
+    Settings {
+        api_port: 4000,
+        log_level: "info".to_owned(),
+        database_url: "postgres://postgres:postgres@localhost:5432/example_app".to_owned(),
+        redis_url: "redis://127.0.0.1:6379".to_owned(),
+        redis_namespace: "rust_auth_example".to_owned(),
+        jwt_secret: DEV_FIXTURE_JWT.to_owned(),
+        mfa_encryption_key: "ZGV2X29ubHlfbG9jYWxfMzJfYnl0ZV9rZXlfMDAwMDA=".to_owned(),
+        web_origin: "http://localhost:3000".to_owned(),
+        email_provider: EmailProviderKind::Mailpit,
+        smtp_host: "localhost".to_owned(),
+        smtp_port: 1025,
+        smtp_from: "no-reply@auth.local".to_owned(),
+        resend_api_key: None,
+    }
+}
+
+/// A high-entropy, mixed-alphabet JWT fixture that clears the length + entropy guards
+/// (dev-only, never a real secret).
+#[cfg(test)]
+const DEV_FIXTURE_JWT: &str = "aB3xY7zQ9kL2mN5pR8tV1wF4hJ6dS0gC7uE2iO5aZ4bH8nK1qW6";
+
 #[cfg(test)]
 #[allow(
     // .expect() is the idiomatic failure mode in tests — a panic here is a test

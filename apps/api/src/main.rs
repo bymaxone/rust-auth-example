@@ -8,8 +8,10 @@
 #![deny(missing_docs)]
 
 use std::net::SocketAddr;
+use std::sync::Arc;
 
-use api::{app, config, db, layers, stores, telemetry};
+use api::{app, config, db, engine, layers, stores, telemetry};
+use bymax_auth_core::config::Environment;
 use tokio::signal;
 
 /// Maximum size of the shared Postgres connection pool.
@@ -22,7 +24,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let settings = config::Settings::load()?;
     let pool = db::connect_pool(&settings.database_url, MAX_DB_CONNECTIONS).await?;
     let stores = stores::connect_stores(&settings.redis_url, settings.redis_namespace.clone())?;
-    let state = app::AppState::new(pool, stores);
+    // Assemble the engine once at startup; a rejected config or unbuildable seam aborts
+    // boot with the precise `EngineError` message rather than serving a broken surface.
+    let engine = Arc::new(engine::build_engine(
+        &settings,
+        pool.clone(),
+        Environment::Development,
+    )?);
+    let state = app::AppState::new(pool, stores, engine);
     let app = layers::apply_global_layers(app::build_router(state), &settings)?;
 
     let addr = SocketAddr::from(([127, 0, 0, 1], settings.api_port));

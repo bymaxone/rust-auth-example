@@ -9,50 +9,39 @@
 use std::sync::Arc;
 
 use axum::Router;
-use bymax_auth_core::traits::repository::{PlatformUserRepository, UserRepository};
+use bymax_auth_core::AuthEngine;
 use bymax_auth_redis::RedisStores;
 use sqlx::PgPool;
 
-use crate::repository::platform_user::SqlxPlatformUserRepository;
-use crate::repository::user::SqlxUserRepository;
-
 /// Shared, cheaply-cloneable handles every request needs.
 ///
-/// The wired authentication engine is attached to this struct as the engine layer
-/// is introduced; today it carries the running crate version for the health probe,
-/// the shared Postgres pool, and the shared Redis store handle. Cloning is a
-/// pointer-cheap operation (the pool clone and the `Arc` clone are handle copies),
+/// It carries the running crate version for the health probe, the shared Postgres
+/// pool the example's own routes query, the shared Redis store handle, and the
+/// fully-wired [`AuthEngine`] the example's routes reach for server-only primitives.
+/// Cloning is pointer-cheap (the pool clone and the `Arc` clones are handle copies),
 /// so the state is duplicated freely per request.
 #[derive(Clone)]
 pub struct AppState {
     /// The running crate version, surfaced by the health probe.
     pub version: &'static str,
-    /// The shared Postgres connection pool the repositories draw from.
+    /// The shared Postgres connection pool the example's own routes draw from.
     pub pool: PgPool,
     /// The shared Redis store handle backing every store seam of the engine.
     pub stores: Arc<RedisStores>,
-    /// The dashboard user persistence seam, ready for the engine builder.
-    pub user_repository: Arc<dyn UserRepository>,
-    /// The tenant-less platform-admin persistence seam. Held unconditionally; the
-    /// engine layer wires it only when the platform domain is enabled.
-    pub platform_user_repository: Arc<dyn PlatformUserRepository>,
+    /// The fully-wired authentication engine, shared with the mounted auth router.
+    pub engine: Arc<AuthEngine>,
 }
 
 impl AppState {
-    /// Build the state from the connected handles and compile-time metadata.
-    ///
-    /// The dashboard [`UserRepository`] is constructed over a clone of the pool so
-    /// the engine layer can consume it as an `Arc<dyn UserRepository>` seam.
+    /// Build the state from the connected handles, the wired engine, and compile-time
+    /// metadata.
     #[must_use]
-    pub fn new(pool: PgPool, stores: Arc<RedisStores>) -> Self {
-        let user_repository = Arc::new(SqlxUserRepository::new(pool.clone()));
-        let platform_user_repository = Arc::new(SqlxPlatformUserRepository::new(pool.clone()));
+    pub fn new(pool: PgPool, stores: Arc<RedisStores>, engine: Arc<AuthEngine>) -> Self {
         Self {
             version: env!("CARGO_PKG_VERSION"),
             pool,
             stores,
-            user_repository,
-            platform_user_repository,
+            engine,
         }
     }
 }
@@ -69,14 +58,16 @@ pub fn build_router(state: AppState) -> Router {
 
 #[cfg(test)]
 impl AppState {
-    /// Build a state with a lazy, non-connecting pool for unit tests.
+    /// Build a state with lazy, non-connecting handles and a fully-wired engine for
+    /// unit tests.
     ///
-    /// `connect_lazy` constructs the pool without any I/O, so unit tests exercise
-    /// the router and handlers without a live database.
+    /// Every backend handle is lazy (`connect_lazy` / `RedisStores::connect`) and the
+    /// engine builds without I/O, so unit tests exercise the router and handlers
+    /// without any live backend.
     #[allow(
-        // A malformed URL is the only failure mode of `connect_lazy`; the literal
-        // below is well-formed, so the `expect` is unreachable. The workspace-level
-        // `expect_used` denial is relaxed for this test-only constructor.
+        // The literals below are well-formed and every pool/handle is lazy, so the
+        // engine builds infallibly here; the workspace-level `expect_used` denial is
+        // relaxed for this test-only constructor.
         clippy::expect_used
     )]
     pub(crate) fn for_test() -> Self {
@@ -87,7 +78,15 @@ impl AppState {
             "rust_auth_example".to_string(),
         )
         .expect("a well-formed redis url yields an infallible lazy handle");
-        Self::new(pool, stores)
+        let engine = Arc::new(
+            crate::engine::build_engine(
+                &crate::config::dev_settings(),
+                pool.clone(),
+                bymax_auth_core::config::Environment::Development,
+            )
+            .expect("the dev settings fixture yields a valid engine"),
+        );
+        Self::new(pool, stores, engine)
     }
 }
 
