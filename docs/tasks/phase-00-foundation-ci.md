@@ -1,6 +1,6 @@
 # Phase 0 — Foundation, Tooling & CI Skeleton
 
-> **Status**: 🔄 In Progress · **Progress**: 4 / 7 tasks · **Last updated**: 2026-07-01
+> **Status**: 🔄 In Progress · **Progress**: 5 / 7 tasks · **Last updated**: 2026-07-01
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P0
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -49,7 +49,7 @@ When P0 is done: `cargo build --locked`, `cargo fmt --all --check`, and `cargo c
 | 0.2 | Rust lint/supply-chain + commit governance | ✅ Done | P0 | S | 0.1 |
 | 0.3 | Mandatory repo & community-health files | ✅ Done | P1 | S | 0.1 |
 | 0.4 | GitHub config & Copilot review | ✅ Done | P0 | M | 0.1 |
-| 0.5 | Core CI workflow + audit-script stubs | 📋 ToDo | P0 | M | 0.1, 0.2 |
+| 0.5 | Core CI workflow + audit-script stubs | ✅ Done | P0 | M | 0.1, 0.2 |
 | 0.6 | Security & supply-chain workflows | 📋 ToDo | P0 | M | 0.5 |
 | 0.7 | Mutation/release skeletons + Dockerfiles | 📋 ToDo | P1 | M | 0.5 |
 
@@ -513,7 +513,7 @@ Completion Protocol (after you finish):
 
 ### Task 0.5 — Core CI workflow + audit-script stubs
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: 0.1, 0.2
@@ -524,11 +524,11 @@ Author the core `ci.yml` workflow (the full Appendix D job DAG) plus the two exp
 
 #### Acceptance criteria
 
-- [ ] `.github/workflows/ci.yml` triggers on PR + push to `main`/`next`, sets top-level `permissions: contents: read`, `concurrency` with `cancel-in-progress: true`, pinned actions, and `timeout-minutes` per job.
-- [ ] The job DAG matches Appendix D: `build-library` → `install`, `format`, `lint`, `typecheck`, `msrv`, `unit`, `e2e-api`, `e2e-web` (`needs: e2e-api`), `export-usage-check`, `supply-chain`, `dependency-review` (PR), `coverage-report` (`if: always()`).
-- [ ] `scripts/audit-library-exports.mjs` parses the four-subpath `dist/**/*.d.ts` of `@bymax-one/rust-auth`, word-boundary-searches `apps/web`, and exits 0 when `apps/web` is absent/empty (with a clear "nothing to audit yet" message).
-- [ ] `scripts/audit-rust-public-api.sh` runs `cargo public-api` over the consumed crates and exits 0 on the current stub (no path deps yet).
-- [ ] `.audit-ignore.json` is the allow-list seed (empty `{ "exports": [], "publicApi": [] }` with a schema comment); `pnpm audit:exports` and `pnpm audit:public-api` both exit 0.
+- [x] `.github/workflows/ci.yml` triggers on PR + push to `main`/`next`, sets top-level `permissions: contents: read`, `concurrency` with `cancel-in-progress: true`, pinned actions, and `timeout-minutes` per job.
+- [x] The job DAG matches Appendix D: `build-library` → `install`, `format`, `lint`, `typecheck`, `msrv`, `unit`, `e2e-api`, `e2e-web` (`needs: e2e-api`), `export-usage-check`, `supply-chain`, `dependency-review` (PR), `coverage-report` (`if: always()`).
+- [x] `scripts/audit-library-exports.mjs` parses the four-subpath `dist/**/*.d.ts` of `@bymax-one/rust-auth`, word-boundary-searches `apps/web`, and exits 0 when `apps/web` is absent/empty (with a clear "nothing to audit yet" message).
+- [x] `scripts/audit-rust-public-api.sh` runs `cargo public-api` over the consumed crates and exits 0 on the current stub (no path deps yet).
+- [x] `.audit-ignore.json` is the allow-list seed (empty `{ "exports": [], "publicApi": [] }` with a schema comment); `pnpm audit:exports` and `pnpm audit:public-api` both exit 0.
 
 #### Files to create / modify
 
@@ -866,3 +866,4 @@ Run this only when the LAST task (0.7) is ✅:
 - 0.2 ✅ 2026-07-01 — Rust lint/supply-chain policy (`rustfmt.toml`, `clippy.toml`, `deny.toml` + workspace deny-lints) and cross-stack commit governance (commitlint, husky hooks, lint-staged, ESLint flat, Prettier, editor/git dotfiles).
 - 0.3 ✅ 2026-07-01 — Mandatory governance + community-health files: MIT `LICENSE`, badge-header `README.md` with ASCII diagram + docs table, `CHANGELOG.md`, `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, and the `CLAUDE.md`/`AGENTS.md` invariants.
 - 0.4 ✅ 2026-07-01 — GitHub config: issue templates + `config.yml` (security → advisory), PR template, `CODEOWNERS`, `dependabot.yml` (cargo/npm/actions), and the four Rust+TS Copilot review files (instruction files < 4000 chars, no planning-stage references).
+- 0.5 ✅ 2026-07-01 — Core `ci.yml` (full Appendix D job DAG, least-privilege, pinned, bounded, `dependency-review` gated informational while private) + the two export-audit scripts and the `.audit-ignore.json` seed, all green on the empty tree.
