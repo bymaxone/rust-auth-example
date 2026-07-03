@@ -165,8 +165,8 @@ describe('AuditTable', () => {
     expect(screen.queryByText(/No token, code, or secret in this row/i)).not.toBeInTheDocument();
   });
 
-  it('flags a row whose details carry a secret-shaped key', () => {
-    // A leaked secret key must be surfaced, not silently rendered.
+  it('flags and redacts a row whose details carry a secret-shaped key', () => {
+    // A leaked secret must be flagged AND its value redacted, never rendered.
     const rows: AuditLogRow[] = [
       {
         id: 's',
@@ -175,11 +175,15 @@ describe('AuditTable', () => {
         tenantId: null,
         ip: '0',
         createdAt: '2024-01-01T00:00:00.000Z',
-        details: { token: 'oops' },
+        details: { token: 'super-secret', reason: 'audit' },
       },
     ];
     render(<AuditTable rows={rows} following={false} pendingCount={0} onFollowChange={vi.fn()} />);
     fireEvent.click(screen.getByText('leak'));
     expect(screen.getByText(/Secret-shaped key present/i)).toBeInTheDocument();
+    // The secret value is replaced; the non-secret field survives.
+    expect(screen.queryByText(/super-secret/)).not.toBeInTheDocument();
+    expect(screen.getByText(/<redacted>/)).toBeInTheDocument();
+    expect(screen.getByText(/audit/)).toBeInTheDocument();
   });
 });

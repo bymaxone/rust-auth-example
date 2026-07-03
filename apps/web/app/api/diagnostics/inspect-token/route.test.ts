@@ -7,7 +7,7 @@
  * @module app/api/diagnostics/inspect-token/route.test
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 const decodeJwtToken = vi.hoisted(() => vi.fn());
 const verifyJwtToken = vi.hoisted(() => vi.fn());
@@ -26,7 +26,19 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
 describe('POST /api/diagnostics/inspect-token', () => {
+  it('is unavailable (404) in a production build', async () => {
+    // The inspector must not become a verification oracle in production.
+    vi.stubEnv('NODE_ENV', 'production');
+    const res = await POST(post({ token: 'a.b.c' }));
+    expect(res.status).toBe(404);
+    expect(decodeJwtToken).not.toHaveBeenCalled();
+  });
+
   it('decodes and verifies a valid token', async () => {
     // A properly signed token decodes and verifies true.
     decodeJwtToken.mockResolvedValueOnce({ isValid: true, header: { alg: 'HS256' } });

@@ -40,6 +40,19 @@ export function containsSecret(details: Record<string, unknown>): boolean {
   return Object.keys(details).some((key) => SECRET_KEY_RE.test(key));
 }
 
+/**
+ * Defense-in-depth redaction: the backend already masks audit rows, but if a
+ * secret-shaped key ever slips through, its value is replaced before display so
+ * the drawer never renders a real secret.
+ */
+function redactDetails(details: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(details)) {
+    out[key] = SECRET_KEY_RE.test(key) ? '<redacted>' : value;
+  }
+  return out;
+}
+
 /** Props for {@link AuditTable}. */
 export interface AuditTableProps {
   /** All rows to render (page + live tail), in order. */
@@ -83,7 +96,7 @@ function RowDetail({ row }: { readonly row: AuditLogRow }) {
           </Badge>
         )}
         <pre className="bg-(--glass-bg) max-h-64 overflow-auto rounded-md p-3 font-mono text-xs text-foreground">
-          {JSON.stringify(row.details, null, 2)}
+          {JSON.stringify(leaked ? redactDetails(row.details) : row.details, null, 2)}
         </pre>
       </div>
     </>

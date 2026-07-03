@@ -6,7 +6,8 @@
  * `decodeJwtToken` / `verifyJwtToken` from it, decodes the pasted token's
  * header + claims, and reports whether it verifies against the configured secret
  * — demonstrating that a forged `alg:none` token is rejected. The pasted token is
- * never logged.
+ * never logged. This is a development-only diagnostic: in a production build it
+ * responds `404`, so it never becomes a signature-verification oracle.
  *
  * @module app/api/diagnostics/inspect-token/route
  */
@@ -17,9 +18,13 @@ import { decodeJwtToken, verifyJwtToken } from '@bymax-one/rust-auth/nextjs';
  * Decode + verify a pasted JWT.
  *
  * @param request - The POST request carrying `{ token }`.
- * @returns `{ decoded, verified }`, or `400` when no token is supplied.
+ * @returns `{ decoded, verified }`, `400` when no token is supplied, or `404`
+ *   outside development.
  */
 export async function POST(request: Request): Promise<Response> {
+  if (process.env.NODE_ENV === 'production') {
+    return Response.json({ error: 'not available' }, { status: 404 });
+  }
   const body = (await request.json()) as { token?: unknown };
   const token = body.token;
   if (typeof token !== 'string' || token === '') {
