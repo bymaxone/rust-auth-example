@@ -60,6 +60,10 @@ export default function PlatformSessionsPage(): React.ReactElement {
   }, []);
 
   async function handleRevokeAll(): Promise<void> {
+    // In-flight guard: if a revoke is already in progress, ignore the second call.
+    // This prevents a double submit if the confirm button is activated twice before
+    // the disabled state propagates (e.g. via keyboard or accessibility tools).
+    if (revoking) return;
     setRevoking(true);
     setErrorCode(null);
     try {
@@ -159,8 +163,12 @@ export default function PlatformSessionsPage(): React.ReactElement {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => void handleRevokeAll()}>
-                      Revoke all
+                    <AlertDialogAction
+                      onClick={() => void handleRevokeAll()}
+                      disabled={revoking}
+                      aria-disabled={revoking}
+                    >
+                      {revoking ? 'Revoking…' : 'Revoke all'}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>

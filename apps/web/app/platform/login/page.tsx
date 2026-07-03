@@ -28,19 +28,32 @@ import { messageForCode } from '@/lib/error-messages';
 import { platformClient } from '@/lib/platform-client';
 
 /**
- * Render a localized banner for `?reason=wrong-domain` redirects so the admin
- * understands they used a dashboard session to access the platform tree.
+ * Render a localized banner for `?reason=` redirects from the protected layout.
  *
- * @param reason - The `?reason` query param value; only `"wrong-domain"` shows a banner.
+ * - `"wrong-domain"` — a valid token of a different domain was presented; the admin
+ *   must sign in with platform credentials.
+ * - `"session-expired"` — the cookie was absent, invalid, or expired; the admin's
+ *   session simply needs to be refreshed.
+ *
+ * @param reason - The `?reason` query param value.
  * @returns A warning alert or `null`.
  */
 function ReasonBanner({ reason }: { readonly reason: string | null }): React.ReactElement | null {
-  if (reason !== 'wrong-domain') return null;
-  return (
-    <Alert variant="destructive" data-reason={reason}>
-      <AlertTitle>{messageForCode('auth.platform_auth_required')}</AlertTitle>
-    </Alert>
-  );
+  if (reason === 'wrong-domain') {
+    return (
+      <Alert variant="destructive" data-reason={reason}>
+        <AlertTitle>{messageForCode('auth.platform_auth_required')}</AlertTitle>
+      </Alert>
+    );
+  }
+  if (reason === 'session-expired') {
+    return (
+      <Alert variant="default" data-reason={reason}>
+        <AlertTitle>{messageForCode('auth.session_expired')}</AlertTitle>
+      </Alert>
+    );
+  }
+  return null;
 }
 
 /** The inner form — uses `useSearchParams`, so it must sit inside a `<Suspense>`. */

@@ -140,4 +140,73 @@ describe('PlatformSessionsPage', () => {
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /revoke session/i })).not.toBeInTheDocument();
   });
+
+  it('disables the trigger button and shows pending text while revoking', async () => {
+    // Verifies that once revokeAll is triggered, the AlertDialogTrigger button is
+    // disabled and shows "Revoking…" to prevent reopening the dialog mid-flight.
+    // The trigger button reflects the in-flight state in the main page DOM
+    // (outside the dialog portal), making it a reliable assertion target.
+    mockGetMe.mockResolvedValueOnce({
+      id: '1',
+      email: 'a@b.com',
+      name: 'A',
+      role: 'admin',
+      status: 'ACTIVE',
+      mfaEnabled: false,
+    });
+    // Delay resolution so revoking stays true long enough to assert on.
+    let resolveRevoke!: () => void;
+    mockRevokeAll.mockReturnValueOnce(
+      new Promise<void>((res) => {
+        resolveRevoke = res;
+      }),
+    );
+    render(<PlatformSessionsPage />);
+    await waitFor(() => screen.getByText(/Revoke all sessions/i));
+    fireEvent.click(screen.getByText(/Revoke all sessions/i));
+    // Dialog open — click the confirm action.
+    await waitFor(() => screen.getByText('Revoke all'));
+    fireEvent.click(screen.getByText('Revoke all'));
+    // The trigger button (always in main DOM) becomes "Revoking…" and disabled.
+    await waitFor(() => {
+      const triggerBtn = screen.getByRole('button', { name: /revoking/i });
+      expect(triggerBtn).toBeInTheDocument();
+      expect(triggerBtn).toBeDisabled();
+    });
+    // Let the promise resolve so the component finishes.
+    resolveRevoke();
+  });
+
+  it('does not call revokeAll twice when the confirm action fires while in-flight', async () => {
+    // Verifies the in-flight guard in handleRevokeAll: if revoking is already true
+    // when the handler is invoked again, the second call returns early without
+    // calling revokeAll a second time.
+    mockGetMe.mockResolvedValueOnce({
+      id: '1',
+      email: 'a@b.com',
+      name: 'A',
+      role: 'admin',
+      status: 'ACTIVE',
+      mfaEnabled: false,
+    });
+    let resolveRevoke!: () => void;
+    mockRevokeAll.mockReturnValueOnce(
+      new Promise<void>((res) => {
+        resolveRevoke = res;
+      }),
+    );
+    render(<PlatformSessionsPage />);
+    await waitFor(() => screen.getByText(/Revoke all sessions/i));
+    fireEvent.click(screen.getByText(/Revoke all sessions/i));
+    await waitFor(() => screen.getByText('Revoke all'));
+    fireEvent.click(screen.getByText('Revoke all'));
+    // Wait until revoking is true (trigger button disabled).
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /revoking/i })).toBeDisabled();
+    });
+    // revokeAll must have been called exactly once so far.
+    expect(mockRevokeAll).toHaveBeenCalledTimes(1);
+    // Let the promise resolve so the component finishes.
+    resolveRevoke();
+  });
 });

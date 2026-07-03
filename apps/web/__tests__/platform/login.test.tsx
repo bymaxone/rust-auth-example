@@ -147,12 +147,32 @@ describe('PlatformLoginPage', () => {
 
   it('shows the wrong-domain reason banner when ?reason=wrong-domain is in the URL', async () => {
     // Verifies the ReasonBanner is rendered with the auth.platform_auth_required
-    // message when the edge proxy bounces with ?reason=wrong-domain.
+    // message when a valid but wrong-domain token was detected by the layout guard.
     mockGetParam.mockReturnValue('wrong-domain');
     render(<PlatformLoginPage />);
     await waitFor(() =>
       expect(screen.getByText(/Platform administrator sign-in is required/i)).toBeInTheDocument(),
     );
+  });
+
+  it('shows the session-expired reason banner when ?reason=session-expired is in the URL', async () => {
+    // Verifies the ReasonBanner renders the auth.session_expired message when
+    // the layout guard bounces due to a missing or invalid/expired token.
+    mockGetParam.mockReturnValue('session-expired');
+    render(<PlatformLoginPage />);
+    await waitFor(() => expect(screen.getByText(/Your session has expired/i)).toBeInTheDocument());
+  });
+
+  it('shows no reason banner when no ?reason param is present', () => {
+    // Verifies the ReasonBanner returns null for an absent or unrecognized reason,
+    // so a direct visit to the login page shows no pre-emptive warning.
+    mockGetParam.mockReturnValue(null);
+    render(<PlatformLoginPage />);
+    // Neither the wrong-domain nor session-expired messages should appear.
+    expect(
+      screen.queryByText(/Platform administrator sign-in is required/i),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/Your session has expired/i)).not.toBeInTheDocument();
   });
 
   it('shows an error banner when mfaChallenge throws', async () => {
