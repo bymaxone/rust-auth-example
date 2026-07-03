@@ -24,4 +24,25 @@ describe('Sidebar', () => {
     expect(screen.getByRole('link', { name: /Audit/ })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('link', { name: /Overview/ })).not.toHaveAttribute('aria-current');
   });
+
+  it('lists every dashboard console surface', () => {
+    // Every authenticated surface must be reachable from the primary nav.
+    usePathname.mockReturnValue('/');
+    render(<Sidebar />);
+
+    for (const label of [
+      'Overview',
+      'Trigger Center',
+      'Security',
+      'Sessions',
+      'OAuth',
+      'Invitations',
+      'Audit',
+      'Account',
+    ]) {
+      expect(screen.getByRole('link', { name: new RegExp(label) })).toBeInTheDocument();
+    }
+    // The Overview link points at the console root, not `/dashboard`.
+    expect(screen.getByRole('link', { name: /Overview/ })).toHaveAttribute('href', '/');
+  });
 });

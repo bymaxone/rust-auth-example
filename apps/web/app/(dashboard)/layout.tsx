@@ -1,0 +1,34 @@
+/**
+ * @fileoverview Layout for the authenticated tenant console.
+ *
+ * Wraps the Overview (`/`) and every `/dashboard/*` surface in the shared
+ * `AppShell` (64px topbar + 250px sidebar). A `<Suspense>` boundary satisfies
+ * Next.js's requirement for the pages that read URL state through `nuqs`
+ * (`useQueryState` / `useSearchParams`), so the shell never flashes empty while
+ * those params resolve. The `/dashboard/*` tree is edge-gated by `proxy.ts`; the
+ * Overview at `/` gates itself with `useSession`.
+ *
+ * @module app/(dashboard)/layout
+ */
+
+import { Suspense, type ReactNode } from 'react';
+import { AppShell } from '@/components/shell/AppShell';
+
+/** Skeleton shown while a suspended dashboard page resolves its URL state. */
+function DashboardSkeleton(): React.ReactElement {
+  return (
+    <div className="flex flex-col gap-4" role="status" aria-label="Loading">
+      <div className="h-8 w-48 animate-pulse rounded-md bg-muted" aria-hidden="true" />
+      <div className="h-40 w-full animate-pulse rounded-2xl bg-muted" aria-hidden="true" />
+    </div>
+  );
+}
+
+/** The authenticated console shell wrapping the Overview and dashboard pages. */
+export default function DashboardLayout({ children }: { readonly children: ReactNode }) {
+  return (
+    <AppShell>
+      <Suspense fallback={<DashboardSkeleton />}>{children}</Suspense>
+    </AppShell>
+  );
+}

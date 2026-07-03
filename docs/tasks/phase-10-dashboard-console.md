@@ -1,6 +1,6 @@
 # Phase 10 — Dashboard Console
 
-> **Status**: 📋 ToDo · **Progress**: 0 / 7 tasks · **Last updated**: 2026-06-23
+> **Status**: 🔄 In Progress · **Progress**: 1 / 7 tasks · **Last updated**: 2026-07-03
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P10
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -92,7 +92,7 @@ public `(public)/auth/*` pages were P9.**
 
 | ID | Task | Status | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- | --- |
-| 10.1 | Overview page — auth-health cards | 📋 ToDo | P0 | M | — |
+| 10.1 | Overview page — auth-health cards | ✅ Done | P0 | M | — |
 | 10.2 | Trigger Center — fire-every-feature playground | 📋 ToDo | P0 | L | — |
 | 10.3 | Security / MFA — TOTP enrollment lifecycle | 📋 ToDo | P0 | M | — |
 | 10.4 | Sessions — device manager + live new-session toast | 📋 ToDo | P0 | M | — |
@@ -106,7 +106,7 @@ public `(public)/auth/*` pages were P9.**
 
 ### Task 10.1 — Overview page — auth-health cards
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: —
@@ -119,16 +119,16 @@ MFA-enrolled %, email-provider + OAuth status chips) sourced from the example-ow
 
 #### Acceptance criteria
 
-- [ ] `lib/audit-aggregate.ts` fetches `GET /audit/aggregate` via the shared `authFetch` and returns a typed
+- [x] `lib/audit-aggregate.ts` fetches `GET /audit/aggregate` via the shared `authFetch` and returns a typed
   `AuditAggregate`; no hand-rolled `fetch`.
-- [ ] The Overview page renders, from the aggregate: a login success-rate card, a verify success-rate card, an
+- [x] The Overview page renders, from the aggregate: a login success-rate card, a verify success-rate card, an
   active-session count, an MFA-enrolled %, and an email-provider + OAuth-status chip row, plus a recent-events strip that
   links the Audit tail.
-- [ ] States are honoured: **skeleton cards** while loading, a "Sign in to populate" state when
+- [x] States are honoured: **skeleton cards** while loading, a "Sign in to populate" state when
   `useSession().status === 'unauthenticated'`, and a per-card error with a retry affordance.
-- [ ] All values render with colour **and** icon **and** label (no colour-only encoding); composes `components/ui/*`
+- [x] All values render with colour **and** icon **and** label (no colour-only encoding); composes `components/ui/*`
   verbatim.
-- [ ] 100% Vitest coverage on the new `lib/` + `components/`.
+- [x] 100% Vitest coverage on the new `lib/` + `components/`.
 
 #### Files to create / modify
 
@@ -925,4 +925,4 @@ If any DoD bullet is unmet or CI is red, set P10 to `🟡 Partial`, not `✅`.
 
 > Append-only. One line per completed task: `- <id> ✅ YYYY-MM-DD — <summary>`.
 
-_(empty — no tasks completed yet)_
+- 10.1 ✅ 2026-07-03 — Overview auth-health cards

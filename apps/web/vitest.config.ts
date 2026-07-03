@@ -31,10 +31,12 @@ export default defineConfig({
       provider: 'v8',
       include: [
         'lib/**/*.ts',
+        'hooks/**/*.ts',
         'components/**/*.tsx',
         'proxy.ts',
         'app/providers.tsx',
         'app/api/auth/**/*.ts',
+        'app/api/diagnostics/**/*.ts',
         'app/(public)/auth/**/*.tsx',
       ],
       exclude: [
