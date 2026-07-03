@@ -12,8 +12,10 @@ use bymax_auth_axum::{AuthRouter, AxumAuthConfig, ClientIpSource, RateLimitConfi
 use bymax_auth_core::AuthEngine;
 use bymax_auth_redis::RedisStores;
 use sqlx::PgPool;
+use tokio::sync::broadcast;
 
-use crate::config::RuntimeEnvironment;
+use crate::config::{EmailProviderKind, RuntimeEnvironment};
+use crate::realtime::SessionEvent;
 
 /// Shared, cheaply-cloneable handles every request needs.
 ///
@@ -34,17 +36,25 @@ pub struct AppState {
     pub stores: Arc<RedisStores>,
     /// The fully-wired authentication engine, shared with the mounted auth router.
     pub engine: Arc<AuthEngine>,
+    /// The configured outbound email transport, surfaced by the auth-health aggregate.
+    pub email_provider: EmailProviderKind,
+    /// The realtime session-event fan-out: the audit hook publishes new sessions here and
+    /// each `/ws/example` socket subscribes to forward its own user's frames.
+    pub session_events: broadcast::Sender<SessionEvent>,
 }
 
 impl AppState {
     /// Build the state from the connected handles, the wired engine, compile-time
-    /// metadata, and the deployment environment.
+    /// metadata, the deployment environment, the resolved email transport, and the
+    /// realtime session-event sender (shared with the audit hooks).
     #[must_use]
     pub fn new(
         pool: PgPool,
         stores: Arc<RedisStores>,
         engine: Arc<AuthEngine>,
         app_env: RuntimeEnvironment,
+        email_provider: EmailProviderKind,
+        session_events: broadcast::Sender<SessionEvent>,
     ) -> Self {
         Self {
             version: env!("CARGO_PKG_VERSION"),
@@ -52,6 +62,8 @@ impl AppState {
             pool,
             stores,
             engine,
+            email_provider,
+            session_events,
         }
     }
 }
@@ -122,16 +134,25 @@ impl AppState {
             "rust_auth_example".to_string(),
         )
         .expect("a well-formed redis url yields an infallible lazy handle");
+        let session_events = crate::realtime::channel();
         let engine = Arc::new(
             crate::engine::build_engine(
                 &crate::config::dev_settings(),
                 pool.clone(),
                 Arc::clone(&stores),
                 bymax_auth_core::config::Environment::Development,
+                session_events.clone(),
             )
             .expect("the dev settings fixture yields a valid engine"),
         );
-        Self::new(pool, stores, engine, RuntimeEnvironment::Development)
+        Self::new(
+            pool,
+            stores,
+            engine,
+            RuntimeEnvironment::Development,
+            EmailProviderKind::Mailpit,
+            session_events,
+        )
     }
 }
 

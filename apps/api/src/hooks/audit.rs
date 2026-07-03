@@ -11,6 +11,7 @@
 
 use async_trait::async_trait;
 use sqlx::PgPool;
+use tokio::sync::broadcast;
 
 use bymax_auth_core::traits::email::SessionInfo;
 use bymax_auth_core::traits::hooks::{AuthHooks, HookContext, HookError, OAuthLoginResult};
@@ -18,17 +19,33 @@ use bymax_auth_core::traits::oauth::OAuthProfile;
 use bymax_auth_types::SafeAuthUser;
 
 use crate::hooks::oauth_policy::decide_oauth_login;
+use crate::realtime::SessionEvent;
 
-/// Persists auth lifecycle events to the `audit_log` table.
+/// Persists auth lifecycle events to the `audit_log` table and, when wired, publishes new
+/// sessions onto the realtime fan-out for the example WebSocket.
 pub struct AuditAuthHooks {
     pool: PgPool,
+    session_events: Option<broadcast::Sender<SessionEvent>>,
 }
 
 impl AuditAuthHooks {
-    /// Creates the hooks bound to the audit Postgres pool.
+    /// Creates the hooks bound to the audit Postgres pool. Realtime new-session
+    /// publishing is off until [`with_session_events`](Self::with_session_events) wires a
+    /// sender, so a test can construct the hooks without a broadcast channel.
     #[must_use]
     pub fn new(pool: PgPool) -> Self {
-        Self { pool }
+        Self {
+            pool,
+            session_events: None,
+        }
+    }
+
+    /// Wire the realtime session-event sender so `on_new_session` also publishes a masked
+    /// [`SessionEvent`] onto the fan-out the example WebSocket subscribes to.
+    #[must_use]
+    pub fn with_session_events(mut self, session_events: broadcast::Sender<SessionEvent>) -> Self {
+        self.session_events = Some(session_events);
+        self
     }
 
     /// Insert one masked row: the event name plus the non-secret actor/tenant/request
@@ -180,7 +197,16 @@ impl AuthHooks for AuditAuthHooks {
         _session: &SessionInfo,
         ctx: &HookContext,
     ) -> Result<(), HookError> {
-        // Record the event only — never the session hash carried by `SessionInfo`.
+        // Publish the masked realtime frame first (best-effort: a `send` with no live
+        // subscriber is a no-op), then record the durable audit row. Never the session
+        // hash carried by `SessionInfo`.
+        if let Some(sender) = self.session_events.as_ref() {
+            let _ = sender.send(SessionEvent {
+                sub: user.id.clone(),
+                tenant: user.tenant_id.clone(),
+                ip: ctx.ip.clone(),
+            });
+        }
         self.record("on_new_session", Some(user.id.as_str()), ctx)
             .await
     }
@@ -247,6 +273,37 @@ mod tests {
             last_login_at: None,
             created_at: OffsetDateTime::UNIX_EPOCH,
         }
+    }
+
+    #[tokio::test]
+    async fn on_new_session_publishes_a_masked_frame_to_subscribers() {
+        // The realtime fan-out receives the new session (subject/tenant/ip) even though the
+        // best-effort audit write fails against an unreachable pool: publishing precedes the
+        // durable record, and the frame never carries the session hash.
+        let (sender, mut receiver) = broadcast::channel(4);
+        let pool = sqlx::postgres::PgPoolOptions::new()
+            .acquire_timeout(std::time::Duration::from_millis(200))
+            .connect_lazy("postgres://127.0.0.1:1/does_not_exist")
+            .expect("a well-formed url yields a lazy pool");
+        let hooks = AuditAuthHooks::new(pool).with_session_events(sender);
+        let session = SessionInfo {
+            device: "Chrome".to_owned(),
+            ip: "203.0.113.4".to_owned(),
+            session_hash: SESSION_HASH_MARKER.to_owned(),
+        };
+        let _ = hooks
+            .on_new_session(&safe_user(), &session, &ctx("realtime"))
+            .await;
+        let event = receiver
+            .try_recv()
+            .expect("the new-session frame was published to the subscriber");
+        assert_eq!(event.sub, "user-1");
+        assert_eq!(event.tenant, "acme");
+        assert_eq!(event.ip, "203.0.113.4");
+        assert_ne!(
+            event.ip, SESSION_HASH_MARKER,
+            "the session hash never rides the frame"
+        );
     }
 
     #[tokio::test]

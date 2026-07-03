@@ -16,9 +16,10 @@ use axum::routing::get;
 
 use crate::app::AppState;
 
-/// The audit read-API route group: keyset list + SSE tail.
+/// The audit read-API route group: keyset list + SSE tail + auth-health aggregate.
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/audit/logs", get(routes::list_logs))
         .route("/audit/stream", get(routes::stream_logs))
+        .route("/audit/aggregate", get(routes::aggregate))
 }

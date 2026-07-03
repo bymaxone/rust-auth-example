@@ -1,0 +1,38 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT (SELECT count(*) FROM users) AS total, (SELECT count(*) FROM users WHERE last_login_at IS NOT NULL) AS logged_in, (SELECT count(*) FROM users WHERE email_verified) AS verified, (SELECT count(*) FROM users WHERE mfa_enabled) AS mfa, (SELECT count(*) FROM audit_log WHERE event = 'on_new_session' AND created_at >= $1) AS active_sessions",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "total",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "logged_in",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "verified",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 3,
+        "name": "mfa",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 4,
+        "name": "active_sessions",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": ["Timestamptz"]
+    },
+    "nullable": [null, null, null, null, null]
+  },
+  "hash": "61965c00aee96e89792ac66d573c121b8c412bb0d47b67bcb29cd2c1f8010485"
+}

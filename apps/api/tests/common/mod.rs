@@ -18,6 +18,7 @@ use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
 use tokio::net::TcpListener;
+use tokio::sync::broadcast;
 
 use secrecy::SecretString;
 
@@ -33,10 +34,12 @@ use sqlx::PgPool;
 
 use api::app::{self, AppState};
 use api::config::{EmailProviderKind, RuntimeEnvironment, Settings};
+use api::email::resolve_kind;
 use api::engine::build_engine;
 use api::engine::config::build_auth_config;
 use api::hooks::AuditAuthHooks;
 use api::layers::apply_global_layers;
+use api::realtime::{self, SessionEvent};
 use api::repository::platform_user::SqlxPlatformUserRepository;
 use api::repository::user::SqlxUserRepository;
 
@@ -142,6 +145,9 @@ pub struct TestApp {
     pub tenant_id: String,
     /// A unique end-user email for this run.
     pub email: String,
+    /// The realtime session-event sender wired into the audit hooks and the WebSocket, so a
+    /// test can publish a new-session frame and observe it forwarded to a subscribed socket.
+    pub session_events: broadcast::Sender<SessionEvent>,
 }
 
 /// Build a `Settings` fixture bound to the test stack endpoints.
@@ -211,6 +217,7 @@ pub async fn spawn() -> Option<TestApp> {
     let email_provider = Arc::new(CapturingEmailProvider {
         verification_otps: verification_otps.clone(),
     });
+    let session_events = realtime::channel();
 
     let engine = Arc::new(
         AuthEngine::builder()
@@ -220,7 +227,9 @@ pub async fn spawn() -> Option<TestApp> {
             .platform_user_repository(Arc::new(SqlxPlatformUserRepository::new(pool.clone())))
             .redis_stores(stores.clone())
             .email_provider(email_provider)
-            .hooks(Arc::new(AuditAuthHooks::new(pool.clone())))
+            .hooks(Arc::new(
+                AuditAuthHooks::new(pool.clone()).with_session_events(session_events.clone()),
+            ))
             .build()
             .expect("the engine builds from the test seams"),
     );
@@ -230,6 +239,8 @@ pub async fn spawn() -> Option<TestApp> {
         stores,
         Arc::clone(&engine),
         RuntimeEnvironment::Development,
+        EmailProviderKind::Mailpit,
+        session_events.clone(),
     );
     let router =
         apply_global_layers(app::build_router(state), &settings).expect("global layers apply");
@@ -258,6 +269,7 @@ pub async fn spawn() -> Option<TestApp> {
         verification_otps,
         tenant_id,
         email,
+        session_events,
     })
 }
 
@@ -301,12 +313,14 @@ pub async fn spawn_engine(customize: impl FnOnce(&mut Settings)) -> Option<TestA
         RedisStores::connect(&settings.redis_url, settings.redis_namespace.clone())
             .expect("the redis handle builds"),
     );
+    let session_events = realtime::channel();
     let engine = Arc::new(
         build_engine(
             &settings,
             pool.clone(),
             stores.clone(),
             Environment::Development,
+            session_events.clone(),
         )
         .expect("the engine builds from settings"),
     );
@@ -315,6 +329,8 @@ pub async fn spawn_engine(customize: impl FnOnce(&mut Settings)) -> Option<TestA
         stores,
         Arc::clone(&engine),
         RuntimeEnvironment::Development,
+        resolve_kind(&settings),
+        session_events.clone(),
     );
     let router =
         apply_global_layers(app::build_router(state), &settings).expect("global layers apply");
@@ -344,6 +360,7 @@ pub async fn spawn_engine(customize: impl FnOnce(&mut Settings)) -> Option<TestA
         verification_otps: Arc::new(Mutex::new(HashMap::new())),
         tenant_id,
         email,
+        session_events,
     })
 }
 
