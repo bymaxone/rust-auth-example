@@ -51,4 +51,14 @@ describe('useAuditPivot', () => {
     expect(setActor).toHaveBeenCalledWith(null);
     expect(setEvent).toHaveBeenCalledWith('on_logout');
   });
+
+  it('clears the event facet when only an actor is given', () => {
+    // Pivoting on actor alone must reset the event filter to null.
+    const { result } = renderHook(() => useAuditPivot());
+    act(() => {
+      result.current.pivotTo({ actor: 'user-1' });
+    });
+    expect(setActor).toHaveBeenCalledWith('user-1');
+    expect(setEvent).toHaveBeenCalledWith(null);
+  });
 });

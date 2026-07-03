@@ -1,6 +1,6 @@
 # Phase 10 — Dashboard Console
 
-> **Status**: 🔄 In Progress · **Progress**: 2 / 7 tasks · **Last updated**: 2026-07-03
+> **Status**: 🔄 In Progress · **Progress**: 3 / 7 tasks · **Last updated**: 2026-07-03
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P10
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -94,7 +94,7 @@ public `(public)/auth/*` pages were P9.**
 | --- | --- | --- | --- | --- | --- |
 | 10.1 | Overview page — auth-health cards | ✅ Done | P0 | M | — |
 | 10.2 | Trigger Center — fire-every-feature playground | ✅ Done | P0 | L | — |
-| 10.3 | Security / MFA — TOTP enrollment lifecycle | 📋 ToDo | P0 | M | — |
+| 10.3 | Security / MFA — TOTP enrollment lifecycle | ✅ Done | P0 | M | — |
 | 10.4 | Sessions — device manager + live new-session toast | 📋 ToDo | P0 | M | — |
 | 10.5 | OAuth panel — Continue with Google + decision trace | 📋 ToDo | P1 | M | — |
 | 10.6 | Invitations — admin invite form + pending list | 📋 ToDo | P1 | S | — |
@@ -334,7 +334,7 @@ Completion Protocol (after you finish):
 
 ### Task 10.3 — Security / MFA — TOTP enrollment lifecycle
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: —
@@ -347,15 +347,15 @@ AEAD-sealed-secret explainer.
 
 #### Acceptance criteria
 
-- [ ] `lib/mfa-api.ts` wraps `POST /auth/mfa/setup` (→ `MfaSetupResult { secret, qrCodeUri, recoveryCodes }`),
+- [x] `lib/mfa-api.ts` wraps `POST /auth/mfa/setup` (→ `MfaSetupResult { secret, qrCodeUri, recoveryCodes }`),
   `POST /auth/mfa/verify-enable` (`{ code }`), `POST /auth/mfa/disable` (`{ code }`), and `POST /auth/mfa/recovery-codes`
   (`{ code }` → new codes) over the shared `authFetch`.
-- [ ] The QR enrollment card renders the `otpauth://` QR from `qrCodeUri`, the copyable mono base32 `secret`, and the
+- [x] The QR enrollment card renders the `otpauth://` QR from `qrCodeUri`, the copyable mono base32 `secret`, and the
   recovery-code grid (warned "shown once", with a download/copied affordance).
-- [ ] Verify-enable reuses the `<OtpInput>` 6-digit box; disable and regenerate each require a fresh 6-digit TOTP and use
+- [x] Verify-enable reuses the `<OtpInput>` 6-digit box; disable and regenerate each require a fresh 6-digit TOTP and use
   a destructive-confirm on disable.
-- [ ] A "2FA not enabled — enable it" empty state is shown when MFA is off; an "AEAD-sealed secret" explainer is present.
-- [ ] 100% Vitest coverage on the new `lib/` + `components/`.
+- [x] A "2FA not enabled — enable it" empty state is shown when MFA is off; an "AEAD-sealed secret" explainer is present.
+- [x] 100% Vitest coverage on the new `lib/` + `components/`.
 
 #### Files to create / modify
 
@@ -927,3 +927,4 @@ If any DoD bullet is unmet or CI is red, set P10 to `🟡 Partial`, not `✅`.
 
 - 10.1 ✅ 2026-07-03 — Overview auth-health cards
 - 10.2 ✅ 2026-07-03 — Trigger Center playground
+- 10.3 ✅ 2026-07-03 — Security/MFA enrollment lifecycle

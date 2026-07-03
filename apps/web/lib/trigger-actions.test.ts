@@ -33,12 +33,18 @@ import {
 } from './trigger-actions';
 
 /** Build a minimal Response with a status, JSON body, and Retry-After header. */
-function res(init: { status: number; body?: unknown; retryAfter?: string }): Response {
+function res(init: {
+  status: number;
+  body?: unknown;
+  retryAfter?: string;
+  rejectJson?: boolean;
+}): Response {
   return {
     status: init.status,
     ok: init.status < 400,
     headers: { get: (k: string) => (k === 'Retry-After' ? (init.retryAfter ?? null) : null) },
-    json: () => Promise.resolve(init.body ?? {}),
+    json: () =>
+      init.rejectJson ? Promise.reject(new Error('not json')) : Promise.resolve(init.body ?? {}),
   } as unknown as Response;
 }
 
@@ -167,6 +173,25 @@ describe('hammerLogin', () => {
     expect(result.retryAfterSeconds).toBe(17);
   });
 
+  it('omits retryAfterSeconds when neither a header nor body details are present', async () => {
+    // Without a retry hint the countdown is simply absent.
+    mockAuthFetch.mockResolvedValueOnce(
+      res({ status: 429, body: { error: { code: 'auth.too_many_requests' } } }),
+    );
+    const result = await hammerLogin({ email: 'a@b.co', password: 'p', tenantId: 'acme' }, 3);
+    expect(result.status).toBe(429);
+    expect(result.retryAfterSeconds).toBeUndefined();
+  });
+
+  it('handles a 429 whose body is not JSON, using the header and defaults', async () => {
+    // A non-JSON 429 body must still yield the code default + header countdown.
+    mockAuthFetch.mockResolvedValueOnce(res({ status: 429, retryAfter: '10', rejectJson: true }));
+    const result = await hammerLogin({ email: 'a@b.co', password: 'p', tenantId: 'acme' }, 3);
+    expect(result.code).toBe('auth.too_many_requests');
+    expect(result.retryAfterSeconds).toBe(10);
+    expect(result.response).toEqual({ status: 429 });
+  });
+
   it('reports no 429 when the limit is never tripped', async () => {
     // If the limit is not reached the card says so rather than fabricating a 429.
     mockAuthFetch.mockResolvedValue(res({ status: 200 }));
@@ -186,6 +211,13 @@ describe('diagnostics dispatch actions', () => {
       expect.objectContaining({ method: 'POST' }),
     );
     expect(result).toMatchObject({ status: 200, response: { locked: true } });
+  });
+
+  it('forceLockout tolerates a non-JSON response body', async () => {
+    // A body that is not JSON must not crash the diagnostics card.
+    mockAuthFetch.mockResolvedValueOnce(res({ status: 200, rejectJson: true }));
+    const result = await forceLockout('a@b.co', 'acme');
+    expect(result).toMatchObject({ status: 200, response: {} });
   });
 
   it('dispatchVerifyEmail reports the resend status', async () => {
@@ -221,5 +253,38 @@ describe('provokeInvalidCredentials', () => {
     );
     const result = await provokeInvalidCredentials('a@b.co', 'acme');
     expect(result.code).toBe('auth.invalid_credentials');
+  });
+});
+
+describe('error propagation', () => {
+  it('runRegister catches an AuthClientError', async () => {
+    // A duplicate-email registration is reported, not thrown.
+    authClient.register.mockRejectedValueOnce(
+      new AuthClientError('x', 409, { code: 'auth.email_already_exists', message: 'x' }),
+    );
+    const result = await runRegister({
+      email: 'a@b.co',
+      password: 'p',
+      name: 'A',
+      tenantId: 'acme',
+    });
+    expect(result.code).toBe('auth.email_already_exists');
+  });
+
+  it('dispatchVerifyEmail reports a code-less error with its status only', async () => {
+    // An error carrying no wire code still surfaces the HTTP status.
+    mockAuthFetch.mockRejectedValueOnce(new AuthClientError('x', 500));
+    const result = await dispatchVerifyEmail('a@b.co', 'acme');
+    expect(result.code).toBeUndefined();
+    expect(result.status).toBe(500);
+  });
+
+  it('dispatchPasswordReset catches a thrown error', async () => {
+    // A reset-dispatch failure is reported through the result shape.
+    authClient.forgotPassword.mockRejectedValueOnce(
+      new AuthClientError('x', 500, { code: 'auth.internal', message: 'x' }),
+    );
+    const result = await dispatchPasswordReset('a@b.co', 'acme');
+    expect(result.code).toBe('auth.internal');
   });
 });

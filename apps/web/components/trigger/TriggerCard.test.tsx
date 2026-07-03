@@ -70,8 +70,22 @@ describe('TriggerCard', () => {
         vi.advanceTimersByTime(1000);
       });
       expect(screen.getByText(/Retry-After 2s/)).toBeInTheDocument();
+      // The countdown floors at zero rather than going negative.
+      act(() => {
+        vi.advanceTimersByTime(5000);
+      });
+      expect(screen.getByText(/Retry-After 0s/)).toBeInTheDocument();
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('omits the status badge when a result carries no status', async () => {
+    // An unexpected error yields no status; the badge row must handle that.
+    const result: TriggerResult = { request: { a: 1 }, response: { error: 'x' } };
+    render(<TriggerCard title="Odd" description="…" onFire={() => Promise.resolve(result)} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Fire' }));
+    await waitFor(() => expect(screen.getByText(/"error": "x"/)).toBeInTheDocument());
+    expect(screen.queryByText(/^status /)).not.toBeInTheDocument();
   });
 });
