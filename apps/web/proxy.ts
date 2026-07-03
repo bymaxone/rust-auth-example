@@ -7,9 +7,10 @@
  * middleware that inspects the session cookie and grants or redirects — not a
  * reverse proxy). `/dashboard/*` and the protected `/platform/*` pages are gated
  * by the authoritative WASM `verifyJwtToken`: a missing or unverifiable cookie
- * redirects to the matching login, with no backend round-trip. The verifier
- * never throws (any failure resolves `{ isValid: false }`), so an error can only
- * ever deny access — the gate is fail-closed. The HS256 secret is validated once
+ * redirects to the matching login, with no backend round-trip. The verifier can
+ * reject a malformed token; the gate catches that and treats any failure (rejection
+ * or `{ isValid: false }`) as unverified, so an error can only ever deny access —
+ * the gate is fail-closed. The HS256 secret is validated once
  * (the module refuses to load without it, so the gate can never silently fall
  * back to a non-authoritative decode-only check), is never logged, and is never
  * placed in a URL. This subpath is `server-only`.
