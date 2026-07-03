@@ -272,7 +272,7 @@ pub struct AuditAggregate {
     /// Count of sessions established within the recent window.
     pub active_sessions: i64,
     /// Share of users with MFA enrolled, `0..1`.
-    pub mfa_enrolled_pct: f64,
+    pub mfa_enrolled_share: f64,
     /// The configured outbound email transport.
     pub email_provider: EmailProviderKind,
     /// Whether Google OAuth is configured in this environment.
@@ -314,7 +314,7 @@ fn compute_aggregate(
         login_success_rate: share(counts.logged_in, counts.total, 1.0),
         verify_success_rate: share(counts.verified, counts.total, 1.0),
         active_sessions: counts.active_sessions,
-        mfa_enrolled_pct: share(counts.mfa, counts.total, 0.0),
+        mfa_enrolled_share: share(counts.mfa, counts.total, 0.0),
         email_provider,
         oauth_google_enabled,
     }
@@ -381,7 +381,7 @@ mod tests {
         let agg = compute_aggregate(&counts, EmailProviderKind::Mailpit, true);
         assert!((agg.login_success_rate - 0.9).abs() < f64::EPSILON);
         assert!((agg.verify_success_rate - 0.8).abs() < f64::EPSILON);
-        assert!((agg.mfa_enrolled_pct - 0.5).abs() < f64::EPSILON);
+        assert!((agg.mfa_enrolled_share - 0.5).abs() < f64::EPSILON);
         assert_eq!(agg.active_sessions, 3);
         assert_eq!(agg.email_provider, EmailProviderKind::Mailpit);
         assert!(agg.oauth_google_enabled);
@@ -401,7 +401,7 @@ mod tests {
         let agg = compute_aggregate(&counts, EmailProviderKind::Resend, false);
         assert!((agg.login_success_rate - 1.0).abs() < f64::EPSILON);
         assert!((agg.verify_success_rate - 1.0).abs() < f64::EPSILON);
-        assert!((agg.mfa_enrolled_pct - 0.0).abs() < f64::EPSILON);
+        assert!((agg.mfa_enrolled_share - 0.0).abs() < f64::EPSILON);
         assert_eq!(agg.active_sessions, 0);
         assert_eq!(agg.email_provider, EmailProviderKind::Resend);
         assert!(!agg.oauth_google_enabled);

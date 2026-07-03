@@ -331,7 +331,7 @@ async fn audit_aggregate_returns_the_auth_health_shape() {
     let verify = body["verifySuccessRate"]
         .as_f64()
         .expect("verifySuccessRate");
-    let mfa = body["mfaEnrolledPct"].as_f64().expect("mfaEnrolledPct");
+    let mfa = body["mfaEnrolledShare"].as_f64().expect("mfaEnrolledShare");
     assert!((0.0..=1.0).contains(&login), "login rate is a 0..1 share");
     assert!((0.0..=1.0).contains(&verify), "verify rate is a 0..1 share");
     assert!((0.0..=1.0).contains(&mfa), "mfa share is a 0..1 value");

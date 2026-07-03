@@ -15,12 +15,24 @@ mod common;
 use std::time::Duration;
 
 use api::realtime::SessionEvent;
-use futures_util::StreamExt as _;
+use futures_util::{SinkExt as _, StreamExt as _};
 use tokio_tungstenite::tungstenite::Message;
 
 /// The `ws://` base URL for the spawned app, derived from its `http://` base.
 fn ws_base(app: &common::TestApp) -> String {
     app.base_url.replacen("http://", "ws://", 1)
+}
+
+/// Poll `condition` until it holds, up to a bounded number of short waits, yielding between
+/// checks so a test can await a state the server reaches asynchronously without racing.
+async fn wait_until(mut condition: impl FnMut() -> bool) {
+    for _ in 0..100 {
+        if condition() {
+            return;
+        }
+        tokio::time::sleep(Duration::from_millis(50)).await;
+    }
+    assert!(condition(), "the awaited condition was not reached in time");
 }
 
 /// The library `POST /auth/ws-ticket` mint answers for an authenticated user, and the
@@ -179,4 +191,46 @@ async fn ws_example_forwards_only_the_subjects_own_new_session_frames() {
         frame.get("sub").is_none(),
         "the frame never carries the subject"
     );
+}
+
+/// A connected socket whose client goes away is noticed by the server between events: the
+/// forward task stops and drops its fan-out subscription rather than leaking it. A non-close
+/// inbound frame is ignored (the tail keeps running); a Close frame ends it.
+#[tokio::test]
+async fn ws_example_drops_the_subscription_when_the_client_disconnects() {
+    let Some(app) = common::spawn().await else {
+        return;
+    };
+    let access = common::dashboard_access_token(&app).await;
+
+    let body: serde_json::Value = app
+        .client
+        .post(format!("{}/auth/ws-ticket", app.base_url))
+        .bearer_auth(&access)
+        .send()
+        .await
+        .unwrap()
+        .json()
+        .await
+        .unwrap();
+    let ticket = body["ticket"].as_str().unwrap().to_owned();
+    let ws_base = ws_base(&app);
+
+    let baseline = app.session_events.receiver_count();
+    let (mut socket, _) =
+        tokio_tungstenite::connect_async(format!("{ws_base}/ws/example?ticket={ticket}"))
+            .await
+            .expect("a valid ticket upgrades the connection");
+
+    // Redemption subscribed the socket to the fan-out, so the receiver count rose above the
+    // baseline.
+    wait_until(|| app.session_events.receiver_count() > baseline).await;
+
+    // A non-close inbound frame is ignored — the tail keeps running...
+    socket.send(Message::text("noise")).await.unwrap();
+    // ...but closing the socket makes the server notice the departure and drop the
+    // subscription, so the count returns to the baseline.
+    socket.close(None).await.unwrap();
+
+    wait_until(|| app.session_events.receiver_count() == baseline).await;
 }
