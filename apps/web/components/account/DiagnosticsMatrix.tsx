@@ -134,7 +134,7 @@ function TokenInspectorCard() {
           value={token}
           onChange={(e) => setToken(e.target.value)}
           rows={3}
-          className="border-(--glass-border) bg-(--glass-bg) w-full rounded-xl border p-3 font-mono text-xs text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="border-(--glass-border) bg-(--glass-bg) ring-offset-background w-full rounded-xl border p-3 font-mono text-xs text-foreground transition-shadow duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
         />
         <Button size="sm" disabled={busy} onClick={() => void inspect()}>
           {busy ? 'Inspecting…' : 'Inspect'}

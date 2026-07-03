@@ -25,12 +25,23 @@ export async function POST(request: Request): Promise<Response> {
   if (process.env.NODE_ENV === 'production') {
     return Response.json({ error: 'not available' }, { status: 404 });
   }
-  const body = (await request.json()) as { token?: unknown };
-  const token = body.token;
+  let token: unknown;
+  try {
+    const body = (await request.json()) as { token?: unknown };
+    token = body.token;
+  } catch {
+    return Response.json({ error: 'invalid json body' }, { status: 400 });
+  }
   if (typeof token !== 'string' || token === '') {
     return Response.json({ error: 'a token string is required' }, { status: 400 });
   }
-  const decoded = await decodeJwtToken(token);
+  let decoded: unknown;
+  try {
+    decoded = await decodeJwtToken(token);
+  } catch {
+    // A structurally invalid token decodes to nothing and verifies as rejected.
+    return Response.json({ decoded: null, verified: false });
+  }
   const secret = process.env.AUTH_JWT_SECRET_FOR_PROXY ?? null;
   const verified = await verifyJwtToken(token, secret)
     .then((result) => result.isValid)

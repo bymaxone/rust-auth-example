@@ -15,6 +15,9 @@ import { useState } from 'react';
 import { AlertTriangle, Check, Copy, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+/** How long the "Copied" confirmation stays before reverting. */
+const COPIED_RESET_MS = 2_000;
+
 /** Props for {@link RecoveryCodeGrid}. */
 export interface RecoveryCodeGridProps {
   /** The one-time recovery codes to display. */
@@ -29,6 +32,7 @@ export function RecoveryCodeGrid({ codes }: RecoveryCodeGridProps) {
   async function copy(): Promise<void> {
     await navigator.clipboard.writeText(text);
     setCopied(true);
+    setTimeout(() => setCopied(false), COPIED_RESET_MS);
   }
 
   function download(): void {

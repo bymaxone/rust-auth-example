@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { RecoveryCodeGrid } from './RecoveryCodeGrid';
 
 const writeText = vi.hoisted(() => vi.fn(() => Promise.resolve()));
@@ -30,12 +30,26 @@ describe('RecoveryCodeGrid', () => {
     expect(screen.getByText(/shown only once/i)).toBeInTheDocument();
   });
 
-  it('copies the codes to the clipboard and confirms', async () => {
-    // Copy must place the newline-joined codes on the clipboard.
-    render(<RecoveryCodeGrid codes={['aaa', 'bbb']} />);
-    fireEvent.click(screen.getByRole('button', { name: /Copy/i }));
-    await waitFor(() => expect(screen.getByText('Copied')).toBeInTheDocument());
-    expect(writeText).toHaveBeenCalledWith('aaa\nbbb');
+  it('copies the codes to the clipboard, confirms, then reverts the label', async () => {
+    // Copy places the newline-joined codes on the clipboard and the confirmation
+    // reverts so a repeat copy is visibly acknowledged.
+    vi.useFakeTimers();
+    try {
+      render(<RecoveryCodeGrid codes={['aaa', 'bbb']} />);
+      fireEvent.click(screen.getByRole('button', { name: /Copy recovery codes/i }));
+      await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+      expect(screen.getByText('Copied')).toBeInTheDocument();
+      expect(writeText).toHaveBeenCalledWith('aaa\nbbb');
+      act(() => {
+        vi.advanceTimersByTime(2_000);
+      });
+      expect(screen.getByText('Copy')).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('downloads the codes as a text file', () => {

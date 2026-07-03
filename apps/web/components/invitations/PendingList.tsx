@@ -68,9 +68,9 @@ export function PendingList({ refreshKey }: PendingListProps) {
 
   return (
     <ul className="flex flex-col gap-2" aria-label="Pending invitations">
-      {state.rows.map((invite, index) => (
+      {state.rows.map((invite) => (
         <li
-          key={`${invite.email}-${index}`}
+          key={`${invite.email}-${invite.sentAt}`}
           className="border-(--glass-border) flex items-center justify-between gap-3 rounded-lg border px-4 py-2"
         >
           <div className="flex flex-col">

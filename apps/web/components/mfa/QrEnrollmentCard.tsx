@@ -19,6 +19,9 @@ import { Button } from '@/components/ui/button';
 import { RecoveryCodeGrid } from './RecoveryCodeGrid';
 import type { MfaSetupResult } from '@/lib/mfa-api';
 
+/** How long the "Copied" confirmation stays before reverting. */
+const COPIED_RESET_MS = 2_000;
+
 /** Props for {@link QrEnrollmentCard}. */
 export interface QrEnrollmentCardProps {
   /** The one-time enrollment payload from `mfa/setup`. */
@@ -39,6 +42,7 @@ export function QrEnrollmentCard({ setup }: QrEnrollmentCardProps) {
   async function copySecret(): Promise<void> {
     await navigator.clipboard.writeText(setup.secret);
     setCopied(true);
+    setTimeout(() => setCopied(false), COPIED_RESET_MS);
   }
 
   return (

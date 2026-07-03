@@ -52,6 +52,25 @@ describe('POST /api/diagnostics/inspect-token', () => {
     expect(decodeJwtToken).toHaveBeenCalledWith('a.b.c');
   });
 
+  it('returns 400 on a non-JSON body', async () => {
+    // A malformed body must be a clean 400, not a 500.
+    const req = new Request('http://localhost/api/diagnostics/inspect-token', {
+      method: 'POST',
+      body: 'not-json',
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(400);
+    expect(decodeJwtToken).not.toHaveBeenCalled();
+  });
+
+  it('handles a token that cannot be decoded', async () => {
+    // A structurally invalid token decodes to null and verifies as rejected.
+    decodeJwtToken.mockRejectedValueOnce(new Error('bad token'));
+    const res = await POST(post({ token: 'not.a.jwt' }));
+    await expect(res.json()).resolves.toEqual({ decoded: null, verified: false });
+    expect(verifyJwtToken).not.toHaveBeenCalled();
+  });
+
   it('rejects a request with no token', async () => {
     // An empty token yields a 400 without touching the verifier.
     const res = await POST(post({ token: '' }));

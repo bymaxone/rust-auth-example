@@ -9,7 +9,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 
 const toDataURL = vi.hoisted(() => vi.fn());
 vi.mock('qrcode', () => ({ default: { toDataURL } }));
@@ -47,11 +47,25 @@ describe('QrEnrollmentCard', () => {
   });
 
   it('copies the base32 secret to the clipboard', async () => {
-    // Manual entry requires the secret to be copyable.
-    toDataURL.mockResolvedValueOnce('data:image/png;base64,AAAA');
-    render(<QrEnrollmentCard setup={SETUP} />);
-    fireEvent.click(screen.getByRole('button', { name: /Copy secret/i }));
-    await waitFor(() => expect(writeText).toHaveBeenCalledWith('JBSWY3DPEHPK3PXP'));
+    // Manual entry requires the secret to be copyable; the label then reverts.
+    vi.useFakeTimers();
+    try {
+      toDataURL.mockResolvedValueOnce('data:image/png;base64,AAAA');
+      render(<QrEnrollmentCard setup={SETUP} />);
+      fireEvent.click(screen.getByRole('button', { name: /Copy secret/i }));
+      await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+      expect(writeText).toHaveBeenCalledWith('JBSWY3DPEHPK3PXP');
+      expect(screen.getByRole('button', { name: /Secret copied/i })).toBeInTheDocument();
+      act(() => {
+        vi.advanceTimersByTime(2_000);
+      });
+      expect(screen.getByRole('button', { name: /Copy secret/i })).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('falls back to a skeleton when the QR cannot be rendered', async () => {

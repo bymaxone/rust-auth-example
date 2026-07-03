@@ -12,7 +12,7 @@
 
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AuditLogRow } from '@/lib/audit-api';
 
 /** The live tail state + follow controls. */
@@ -39,11 +39,11 @@ export function useAuditTail(enabled: boolean): UseAuditTail {
   const [pendingCount, setPendingCount] = useState(0);
   const followingRef = useRef(true);
 
-  function setFollowing(next: boolean): void {
+  const setFollowing = useCallback((next: boolean): void => {
     followingRef.current = next;
     setFollowingState(next);
     if (next) setPendingCount(0);
-  }
+  }, []);
 
   useEffect(() => {
     if (!enabled) return;

@@ -84,7 +84,7 @@ export function InviteForm({ onInvited }: InviteFormProps) {
           id="invite-role"
           value={role}
           onChange={(e) => setRole(e.target.value)}
-          className="border-(--glass-border) bg-(--glass-bg) h-12 w-full rounded-full border px-5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="border-(--glass-border) bg-(--glass-bg) ring-offset-background h-12 w-full rounded-full border px-5 text-sm text-foreground transition-shadow duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {ROLES.map((r) => (
             <option key={r} value={r}>
