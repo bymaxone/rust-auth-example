@@ -13,6 +13,7 @@
 
 import 'server-only';
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertTitle } from '@/components/ui/alert';
@@ -45,6 +46,12 @@ async function fetchPlatformUsers(): Promise<AuthPlatformUserClient[]> {
     cache: 'no-store',
   });
 
+  if (res.status === 401 || res.status === 403) {
+    // The edge gate admitted the request, but the platform session lapsed before this
+    // server-side fetch resolved — route the admin back to log in cleanly rather than
+    // surfacing an error boundary.
+    redirect('/platform/login?reason=session-expired');
+  }
   if (!res.ok) {
     throw new Error(`GET /platform/users returned ${String(res.status)}`);
   }
