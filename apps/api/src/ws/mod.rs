@@ -6,15 +6,21 @@
 //! engine's `redeem_ws_ticket`, so a captured URL cannot be replayed. The access JWT never
 //! travels in the URL — the ticket is the sole URL-borne credential and it is an opaque,
 //! one-shot value, not a token.
+//!
+//! Once upgraded, the socket subscribes to the realtime [`SessionEvent`](crate::realtime)
+//! broadcast and forwards, as JSON, only the `on_new_session` frames that target the
+//! authenticated subject and tenant — the live new-session alert the console toasts.
 
 use axum::extract::ws::{Message, WebSocket, WebSocketUpgrade};
 use axum::extract::{Query, State};
 use axum::response::Response;
 use bymax_auth_types::DashboardClaims;
 use serde::Deserialize;
+use tokio::sync::broadcast;
 
 use crate::app::AppState;
 use crate::error::AppError;
+use crate::realtime::{SessionEvent, frame_for};
 
 /// The `?ticket=` query for the WebSocket upgrade — the single URL-borne credential. It is
 /// an opaque, one-shot ticket, never an access JWT.
@@ -42,16 +48,231 @@ pub async fn realtime(
     // Redeem the ticket into the authorization snapshot the socket runs under. Redemption is
     // atomic and single-use, so a replayed ticket is rejected here before any upgrade.
     let claims = state.engine.redeem_ws_ticket(&query.ticket).await?;
-    Ok(upgrade.on_upgrade(move |socket| handle_socket(socket, claims)))
+    let events = state.session_events.subscribe();
+    Ok(upgrade.on_upgrade(move |socket| handle_socket(socket, claims, events)))
 }
 
-/// Echo the authenticated subject once, then close — the demo payload for the example
-/// socket. The claims are an authorization snapshot for the socket's lifetime, never
-/// re-signed and never granting REST access.
-async fn handle_socket(mut socket: WebSocket, claims: DashboardClaims) {
-    let greeting = Message::Text(format!("authenticated: {}", claims.sub).into());
-    if socket.send(greeting).await.is_ok() {
-        // Close the connection cleanly after the single demo payload.
-        let _ = socket.send(Message::Close(None)).await;
+/// A sink the forward loop writes JSON frames to. Abstracts the WebSocket so the loop's
+/// control flow (deliver / lag / close / peer-gone) is unit-testable without a live socket.
+/// `Err(())` means the peer has gone away and the loop should stop.
+trait FrameSink {
+    /// Send one text frame; `Err(())` signals the peer is gone.
+    fn send_text(&mut self, text: String) -> impl std::future::Future<Output = Result<(), ()>>;
+
+    /// Resolve once the peer disconnects — a Close frame, a transport error, or the end of
+    /// the inbound stream all mean the client is gone. Non-close inbound frames are ignored
+    /// so a chatty client never ends the tail. Lets the forward loop notice a peer that goes
+    /// away *between* events, so the subscription/task is dropped rather than leaked.
+    fn closed(&mut self) -> impl std::future::Future<Output = ()>;
+}
+
+/// The production [`FrameSink`]: writes each frame as a WebSocket text message.
+struct WebSocketSink(WebSocket);
+
+impl FrameSink for WebSocketSink {
+    async fn send_text(&mut self, text: String) -> Result<(), ()> {
+        self.0
+            .send(Message::Text(text.into()))
+            .await
+            .map_err(|_| ())
+    }
+
+    async fn closed(&mut self) {
+        // Drain inbound frames until the peer goes away: a Close frame, a transport error, or
+        // the end of the stream all mean the client is gone. Data/ping/pong frames are
+        // ignored so a client that sends anything never tears the tail down.
+        loop {
+            match self.0.recv().await {
+                Some(Ok(Message::Close(_))) | Some(Err(_)) | None => return,
+                Some(Ok(_)) => continue,
+            }
+        }
+    }
+}
+
+/// Forward realtime `on_new_session` frames to the authenticated socket for the lifetime of
+/// the connection. The claims are an authorization snapshot for the socket's lifetime, never
+/// re-signed and never granting REST access; only the subject's own sessions are forwarded,
+/// and a lagging subscriber skips missed frames rather than blocking the publisher.
+async fn handle_socket(
+    socket: WebSocket,
+    claims: DashboardClaims,
+    events: broadcast::Receiver<SessionEvent>,
+) {
+    let mut sink = WebSocketSink(socket);
+    forward_session_events(events, &claims.sub, &claims.tenant_id, &mut sink).await;
+}
+
+/// Drive the fan-out receiver, forwarding only the frames that target `sub`/`tenant` to
+/// `sink`, until the peer disconnects or every publisher is dropped. A lagging subscriber
+/// skips the missed frames and keeps tailing rather than tearing the connection down.
+async fn forward_session_events<S: FrameSink>(
+    mut events: broadcast::Receiver<SessionEvent>,
+    sub: &str,
+    tenant: &str,
+    sink: &mut S,
+) {
+    loop {
+        // Await the next event and the peer's departure at once. Reading from the socket is
+        // what surfaces a client that disconnects between events; without it the task would
+        // block on `events.recv()` forever and leak the subscription. The `closed()` future
+        // only borrows `sink` for the duration of the select, so `send_text` below is free to
+        // reborrow it once the select resolves.
+        let received = tokio::select! {
+            received = events.recv() => received,
+            // The client went away (with or without sending an event first): stop so the
+            // fan-out subscription is dropped rather than leaked.
+            () = sink.closed() => break,
+        };
+        match received {
+            Ok(event) => {
+                if let Some(frame) = frame_for(&event, sub, tenant)
+                    && sink.send_text(frame).await.is_err()
+                {
+                    // The peer has gone away; drop the subscription and stop.
+                    break;
+                }
+            }
+            // The socket fell behind the fan-out buffer: skip the missed frames and keep
+            // tailing rather than tearing the connection down.
+            Err(broadcast::error::RecvError::Lagged(_)) => continue,
+            // Every publisher has been dropped (process shutdown): close cleanly.
+            Err(broadcast::error::RecvError::Closed) => break,
+        }
+    }
+}
+
+#[cfg(test)]
+#[allow(
+    // Panicking is the idiomatic failure signal in tests, so the workspace-level
+    // `unwrap_used`/`expect_used` denials are relaxed for this test module only.
+    clippy::unwrap_used,
+    clippy::expect_used
+)]
+mod tests {
+    use super::*;
+    use crate::realtime;
+
+    /// A test [`FrameSink`] that records delivered frames and can be told to fail (as a peer
+    /// that has gone away) after a chosen number of successful sends. `peer_gone` controls
+    /// the disconnect signal: when set, [`closed`](FrameSink::closed) resolves at once (the
+    /// client has left); otherwise it pends forever so the loop is driven purely by events.
+    struct RecordingSink {
+        sent: Vec<String>,
+        fail_after: usize,
+        peer_gone: bool,
+    }
+
+    impl FrameSink for RecordingSink {
+        async fn send_text(&mut self, text: String) -> Result<(), ()> {
+            if self.sent.len() >= self.fail_after {
+                return Err(());
+            }
+            self.sent.push(text);
+            Ok(())
+        }
+
+        async fn closed(&mut self) {
+            if self.peer_gone {
+                return;
+            }
+            std::future::pending::<()>().await;
+        }
+    }
+
+    fn event(sub: &str) -> SessionEvent {
+        SessionEvent {
+            sub: sub.to_owned(),
+            tenant: "acme".to_owned(),
+            ip: "203.0.113.7".to_owned(),
+        }
+    }
+
+    #[tokio::test]
+    async fn forwards_matching_frames_and_stops_when_the_channel_closes() {
+        // A matching event is delivered; a non-matching one is skipped; dropping the sender
+        // closes the channel and ends the loop.
+        let sender = realtime::channel();
+        let events = sender.subscribe();
+        sender.send(event("user-9")).unwrap(); // different subject -> skipped
+        sender.send(event("user-1")).unwrap(); // this subject -> delivered
+        drop(sender); // closes the channel so the loop terminates deterministically
+
+        let mut sink = RecordingSink {
+            sent: Vec::new(),
+            fail_after: usize::MAX,
+            peer_gone: false,
+        };
+        forward_session_events(events, "user-1", "acme", &mut sink).await;
+
+        assert_eq!(
+            sink.sent.len(),
+            1,
+            "only the subject's own frame is forwarded"
+        );
+        assert!(sink.sent[0].contains("on_new_session"));
+        assert!(sink.sent[0].contains("203.0.113.7"));
+    }
+
+    #[tokio::test]
+    async fn stops_when_the_peer_has_gone_away() {
+        // A send error (the peer disconnected) ends the loop rather than spinning.
+        let sender = realtime::channel();
+        let events = sender.subscribe();
+        sender.send(event("user-1")).unwrap();
+
+        let mut sink = RecordingSink {
+            sent: Vec::new(),
+            fail_after: 0, // the very first send fails
+            peer_gone: false,
+        };
+        forward_session_events(events, "user-1", "acme", &mut sink).await;
+        assert!(
+            sink.sent.is_empty(),
+            "no frame is recorded once the peer is gone"
+        );
+    }
+
+    #[tokio::test]
+    async fn stops_when_the_peer_disconnects_between_events() {
+        // With no event queued, a client that goes away is noticed via the socket and the
+        // forward loop stops instead of blocking forever on `events.recv()`. The sender is
+        // kept alive, so without the disconnect signal `events.recv()` would never resolve
+        // and this test would hang.
+        let sender = realtime::channel();
+        let events = sender.subscribe();
+
+        let mut sink = RecordingSink {
+            sent: Vec::new(),
+            fail_after: usize::MAX,
+            peer_gone: true, // the client has disconnected between events
+        };
+        forward_session_events(events, "user-1", "acme", &mut sink).await;
+        assert!(
+            sink.sent.is_empty(),
+            "nothing is forwarded once the peer has gone"
+        );
+        drop(sender);
+    }
+
+    #[tokio::test]
+    async fn skips_missed_frames_when_the_subscriber_lags() {
+        // Overflowing the buffer surfaces a `Lagged` signal, which the loop tolerates: it
+        // keeps tailing and still delivers a later matching frame.
+        let (sender, receiver) = tokio::sync::broadcast::channel(1);
+        // Two sends into a depth-1 buffer without draining forces the next recv to lag.
+        sender.send(event("user-1")).unwrap();
+        sender.send(event("user-1")).unwrap();
+        sender.send(event("user-1")).unwrap();
+        drop(sender);
+
+        let mut sink = RecordingSink {
+            sent: Vec::new(),
+            fail_after: usize::MAX,
+            peer_gone: false,
+        };
+        forward_session_events(receiver, "user-1", "acme", &mut sink).await;
+        // The lag skipped the overflowed frames; at least the newest retained frame is sent.
+        assert!(!sink.sent.is_empty(), "tailing continues past a lag");
     }
 }

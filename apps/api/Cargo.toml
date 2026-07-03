@@ -83,6 +83,10 @@ tracing-subscriber = { version = "0.3", features = ["json", "env-filter"] }
 # feature is dev-only, so the doubles never compile into the shipped binary.
 bymax-auth-core = { path = "../../../rust-auth/crates/bymax-auth-core", version = "0.0.0", features = ["full", "testing"] }
 figment = { version = "0.10", features = ["env", "test"] }
+# Stream/Sink extension traits (`StreamExt::next`) for reading the `/ws/example` forward
+# frames in the realtime test. Already resolved transitively (axum, tokio-tungstenite), so
+# no new crate version joins the graph; dev-only, so it never ships in the binary.
+futures-util = { version = "0.3", default-features = false, features = ["std"] }
 http-body-util = "0.1"
 tower = { version = "0.5", default-features = false, features = ["util"] }
 # A real WebSocket client for the example `/ws/example` upgrade test. Pinned to the same

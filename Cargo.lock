@@ -68,6 +68,7 @@ dependencies = [
  "bymax-auth-types",
  "figment",
  "futures-core",
+ "futures-util",
  "http-body-util",
  "lettre",
  "reqwest",

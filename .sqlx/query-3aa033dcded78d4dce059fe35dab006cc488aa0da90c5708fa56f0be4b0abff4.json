@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT id, event, actor_email, tenant_id, ip, created_at FROM audit_log WHERE id > $1 AND ($3::text IS NULL OR actor_id = $3 OR actor_email = $3) AND ($4::text IS NULL OR event = $4) AND ($5::text IS NULL OR tenant_id = $5) ORDER BY id ASC LIMIT $2",
+  "query": "SELECT id, event, actor_email, actor_id, tenant_id, ip, created_at, metadata::text AS metadata FROM audit_log ORDER BY id DESC LIMIT $1",
   "describe": {
     "columns": [
       {
@@ -20,24 +20,34 @@
       },
       {
         "ordinal": 3,
-        "name": "tenant_id",
+        "name": "actor_id",
         "type_info": "Text"
       },
       {
         "ordinal": 4,
-        "name": "ip",
+        "name": "tenant_id",
         "type_info": "Text"
       },
       {
         "ordinal": 5,
+        "name": "ip",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
         "name": "created_at",
         "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "metadata",
+        "type_info": "Text"
       }
     ],
     "parameters": {
-      "Left": ["Int8", "Int8", "Text", "Text", "Text"]
+      "Left": ["Int8"]
     },
-    "nullable": [false, false, true, true, true, false]
+    "nullable": [false, false, true, true, true, true, false, null]
   },
-  "hash": "48d1aa93354a620e52737dfa4e5e77ec3f08ee0d5ab847e6675ab1e8e5fb45dc"
+  "hash": "3aa033dcded78d4dce059fe35dab006cc488aa0da90c5708fa56f0be4b0abff4"
 }

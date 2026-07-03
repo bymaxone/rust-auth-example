@@ -15,12 +15,14 @@ use bymax_auth_core::AuthEngine;
 use bymax_auth_core::config::Environment;
 use bymax_auth_redis::RedisStores;
 use sqlx::PgPool;
+use tokio::sync::broadcast;
 
 use crate::config::Settings;
 use crate::email::resolve_email_provider;
 use crate::engine::config::build_auth_config;
 use crate::hooks::AuditAuthHooks;
 use crate::oauth::TlsHttpClientError;
+use crate::realtime::SessionEvent;
 use crate::repository::platform_user::SqlxPlatformUserRepository;
 use crate::repository::user::SqlxUserRepository;
 
@@ -45,7 +47,9 @@ pub enum EngineError {
 ///
 /// The store handle is supplied by the caller so the same pool backs both the engine
 /// and the app state. The platform repository seam is wired separately, once the
-/// platform-admin domain is enabled.
+/// platform-admin domain is enabled. The `session_events` sender is shared with
+/// [`AppState`](crate::app::AppState) so the audit hooks publish new sessions onto the
+/// same fan-out the example WebSocket subscribes to.
 ///
 /// # Errors
 ///
@@ -56,6 +60,7 @@ pub fn build_engine(
     pool: PgPool,
     stores: Arc<RedisStores>,
     environment: Environment,
+    session_events: broadcast::Sender<SessionEvent>,
 ) -> Result<AuthEngine, EngineError> {
     let config = build_auth_config(settings, environment)?;
 
@@ -68,7 +73,9 @@ pub fn build_engine(
         .platform_user_repository(Arc::new(SqlxPlatformUserRepository::new(pool.clone())))
         .redis_stores(Arc::clone(&stores))
         .email_provider(resolve_email_provider(settings)?)
-        .hooks(Arc::new(AuditAuthHooks::new(pool)));
+        .hooks(Arc::new(
+            AuditAuthHooks::new(pool).with_session_events(session_events),
+        ));
 
     // Wire the Google OAuth provider (over the example's TLS transport) and the single-use
     // `state` + PKCE store — both satisfied by the one shared `Arc<RedisStores>` handle —
@@ -113,6 +120,7 @@ mod tests {
             pool,
             stores,
             Environment::Development,
+            crate::realtime::channel(),
         );
         assert!(result.is_ok());
     }
@@ -129,8 +137,14 @@ mod tests {
             Some(secrecy::SecretString::from("client-secret".to_owned()));
         settings.oauth_google_callback_url =
             Some("http://localhost:3000/api/auth/oauth/google/callback".to_owned());
-        let engine = build_engine(&settings, pool, stores, Environment::Development)
-            .expect("an OAuth-enabled engine assembles");
+        let engine = build_engine(
+            &settings,
+            pool,
+            stores,
+            Environment::Development,
+            crate::realtime::channel(),
+        )
+        .expect("an OAuth-enabled engine assembles");
         assert!(engine.oauth_providers().contains_key("google"));
     }
 
@@ -141,7 +155,13 @@ mod tests {
         let (pool, stores) = lazy_handles();
         let mut settings = crate::config::dev_settings();
         settings.smtp_from = "not a mailbox".to_owned();
-        let result = build_engine(&settings, pool, stores, Environment::Development);
+        let result = build_engine(
+            &settings,
+            pool,
+            stores,
+            Environment::Development,
+            crate::realtime::channel(),
+        );
         assert!(matches!(result, Err(EngineError::Email(_))));
     }
 }

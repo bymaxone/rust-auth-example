@@ -10,7 +10,7 @@
 use std::net::SocketAddr;
 use std::sync::Arc;
 
-use api::{app, config, db, engine, layers, stores, telemetry};
+use api::{app, config, db, email, engine, layers, realtime, stores, telemetry};
 use tokio::signal;
 
 /// Maximum size of the shared Postgres connection pool.
@@ -23,6 +23,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let settings = config::Settings::load()?;
     let pool = db::connect_pool(&settings.database_url, MAX_DB_CONNECTIONS).await?;
     let stores = stores::connect_stores(&settings.redis_url, settings.redis_namespace.clone())?;
+    // The realtime session-event fan-out is shared by the audit hooks (publisher) and the
+    // example WebSocket (subscriber), so both sides observe the same live new-session stream.
+    let session_events = realtime::channel();
     // Assemble the engine once at startup over the single shared store handle; a rejected
     // config or unbuildable seam aborts boot with the precise `EngineError` message rather
     // than serving a broken surface. The deployment environment comes from `APP_ENV`.
@@ -31,8 +34,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         pool.clone(),
         Arc::clone(&stores),
         settings.app_env.as_core(),
+        session_events.clone(),
     )?);
-    let state = app::AppState::new(pool, stores, engine, settings.app_env);
+    let email_provider = email::resolve_kind(&settings);
+    let state = app::AppState::new(
+        pool,
+        stores,
+        engine,
+        settings.app_env,
+        email_provider,
+        session_events,
+    );
     let app = layers::apply_global_layers(app::build_router(state), &settings)?;
 
     let addr = SocketAddr::from(([127, 0, 0, 1], settings.api_port));

@@ -11,7 +11,8 @@ runs:
       with:
         repository: bymaxone/rust-auth
         # Pinned to current rust-auth main HEAD — bump this SHA when intentionally updating the consumed library.
-        ref: fc5e2b344feb5c5852e4a82dc9ad6c4518188487
+        # 70e73c8 = #59 (lazy edge WASM + `next/server` resolvability + async decodeJwtToken).
+        ref: 70e73c89ea07ca6a6e4826775987eaa894c9924e
         persist-credentials: false
         path: .sibling-rust-auth
 

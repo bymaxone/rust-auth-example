@@ -1,6 +1,6 @@
 # Phase 10 — Dashboard Console
 
-> **Status**: 📋 ToDo · **Progress**: 0 / 7 tasks · **Last updated**: 2026-06-23
+> **Status**: 👀 Review · **Progress**: 7 / 7 tasks · **Last updated**: 2026-07-03
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P10
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -92,13 +92,13 @@ public `(public)/auth/*` pages were P9.**
 
 | ID | Task | Status | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- | --- |
-| 10.1 | Overview page — auth-health cards | 📋 ToDo | P0 | M | — |
-| 10.2 | Trigger Center — fire-every-feature playground | 📋 ToDo | P0 | L | — |
-| 10.3 | Security / MFA — TOTP enrollment lifecycle | 📋 ToDo | P0 | M | — |
-| 10.4 | Sessions — device manager + live new-session toast | 📋 ToDo | P0 | M | — |
-| 10.5 | OAuth panel — Continue with Google + decision trace | 📋 ToDo | P1 | M | — |
-| 10.6 | Invitations — admin invite form + pending list | 📋 ToDo | P1 | S | — |
-| 10.7 | Audit Explorer + Account / Diagnostics | 📋 ToDo | P1 | M | — |
+| 10.1 | Overview page — auth-health cards | ✅ Done | P0 | M | — |
+| 10.2 | Trigger Center — fire-every-feature playground | ✅ Done | P0 | L | — |
+| 10.3 | Security / MFA — TOTP enrollment lifecycle | ✅ Done | P0 | M | — |
+| 10.4 | Sessions — device manager + live new-session toast | ✅ Done | P0 | M | — |
+| 10.5 | OAuth panel — Continue with Google + decision trace | ✅ Done | P1 | M | — |
+| 10.6 | Invitations — admin invite form + pending list | ✅ Done | P1 | S | — |
+| 10.7 | Audit Explorer + Account / Diagnostics | ✅ Done | P1 | M | — |
 
 ---
 
@@ -106,7 +106,7 @@ public `(public)/auth/*` pages were P9.**
 
 ### Task 10.1 — Overview page — auth-health cards
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: —
@@ -119,16 +119,16 @@ MFA-enrolled %, email-provider + OAuth status chips) sourced from the example-ow
 
 #### Acceptance criteria
 
-- [ ] `lib/audit-aggregate.ts` fetches `GET /audit/aggregate` via the shared `authFetch` and returns a typed
+- [x] `lib/audit-aggregate.ts` fetches `GET /audit/aggregate` via the shared `authFetch` and returns a typed
   `AuditAggregate`; no hand-rolled `fetch`.
-- [ ] The Overview page renders, from the aggregate: a login success-rate card, a verify success-rate card, an
+- [x] The Overview page renders, from the aggregate: a login success-rate card, a verify success-rate card, an
   active-session count, an MFA-enrolled %, and an email-provider + OAuth-status chip row, plus a recent-events strip that
   links the Audit tail.
-- [ ] States are honoured: **skeleton cards** while loading, a "Sign in to populate" state when
+- [x] States are honoured: **skeleton cards** while loading, a "Sign in to populate" state when
   `useSession().status === 'unauthenticated'`, and a per-card error with a retry affordance.
-- [ ] All values render with colour **and** icon **and** label (no colour-only encoding); composes `components/ui/*`
+- [x] All values render with colour **and** icon **and** label (no colour-only encoding); composes `components/ui/*`
   verbatim.
-- [ ] 100% Vitest coverage on the new `lib/` + `components/`.
+- [x] 100% Vitest coverage on the new `lib/` + `components/`.
 
 #### Files to create / modify
 
@@ -210,7 +210,7 @@ Completion Protocol (after you finish):
 
 ### Task 10.2 — Trigger Center — fire-every-feature playground
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: L
 - **Depends on**: —
@@ -224,17 +224,17 @@ state.
 
 #### Acceptance criteria
 
-- [ ] `lib/trigger-actions.ts` wraps each action over `authClient` (and `authFetch` for `/diagnostics/force-lockout`),
+- [x] `lib/trigger-actions.ts` wraps each action over `authClient` (and `authFetch` for `/diagnostics/force-lockout`),
   returning a `TriggerResult { request, response, code?, status?, retryAfterSeconds? }`; an `AuthClientError` is caught
   and surfaced (never thrown to the boundary).
-- [ ] The "hammer login" card fires logins back-to-back to exceed `RateLimitConfig.login` (5/60) and renders the
+- [x] The "hammer login" card fires logins back-to-back to exceed `RateLimitConfig.login` (5/60) and renders the
   resulting `429 auth.too_many_requests` with its `Retry-After` countdown.
-- [ ] There is a card for register, login, force-MFA, rotate token (`authClient.refresh`), force lockout, dispatch
+- [x] There is a card for register, login, force-MFA, rotate token (`authClient.refresh`), force lockout, dispatch
   verify-email/reset, and a "provoke error" card that can elicit each `auth.*` code in scope; every card shows the raw
   request and response JSON.
-- [ ] Firing a card auto-pivots the Audit table: the resulting actor/event is written to the shared `nuqs` URL state the
+- [x] Firing a card auto-pivots the Audit table: the resulting actor/event is written to the shared `nuqs` URL state the
   Audit Explorer reads.
-- [ ] 100% Vitest coverage on the new `lib/` + `components/`.
+- [x] 100% Vitest coverage on the new `lib/` + `components/`.
 
 #### Files to create / modify
 
@@ -334,7 +334,7 @@ Completion Protocol (after you finish):
 
 ### Task 10.3 — Security / MFA — TOTP enrollment lifecycle
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: —
@@ -347,15 +347,15 @@ AEAD-sealed-secret explainer.
 
 #### Acceptance criteria
 
-- [ ] `lib/mfa-api.ts` wraps `POST /auth/mfa/setup` (→ `MfaSetupResult { secret, qrCodeUri, recoveryCodes }`),
+- [x] `lib/mfa-api.ts` wraps `POST /auth/mfa/setup` (→ `MfaSetupResult { secret, qrCodeUri, recoveryCodes }`),
   `POST /auth/mfa/verify-enable` (`{ code }`), `POST /auth/mfa/disable` (`{ code }`), and `POST /auth/mfa/recovery-codes`
   (`{ code }` → new codes) over the shared `authFetch`.
-- [ ] The QR enrollment card renders the `otpauth://` QR from `qrCodeUri`, the copyable mono base32 `secret`, and the
+- [x] The QR enrollment card renders the `otpauth://` QR from `qrCodeUri`, the copyable mono base32 `secret`, and the
   recovery-code grid (warned "shown once", with a download/copied affordance).
-- [ ] Verify-enable reuses the `<OtpInput>` 6-digit box; disable and regenerate each require a fresh 6-digit TOTP and use
+- [x] Verify-enable reuses the `<OtpInput>` 6-digit box; disable and regenerate each require a fresh 6-digit TOTP and use
   a destructive-confirm on disable.
-- [ ] A "2FA not enabled — enable it" empty state is shown when MFA is off; an "AEAD-sealed secret" explainer is present.
-- [ ] 100% Vitest coverage on the new `lib/` + `components/`.
+- [x] A "2FA not enabled — enable it" empty state is shown when MFA is off; an "AEAD-sealed secret" explainer is present.
+- [x] 100% Vitest coverage on the new `lib/` + `components/`.
 
 #### Files to create / modify
 
@@ -446,7 +446,7 @@ Completion Protocol (after you finish):
 
 ### Task 10.4 — Sessions — device manager + live new-session toast
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: —
@@ -458,15 +458,15 @@ per-row revoke, "log out everywhere else", and a live new-session alert toast dr
 
 #### Acceptance criteria
 
-- [ ] `lib/sessions-api.ts` wraps `GET /auth/sessions` (→ `SessionInfo[]`), `DELETE /auth/sessions/{id}`, and
+- [x] `lib/sessions-api.ts` wraps `GET /auth/sessions` (→ `SessionInfo[]`), `DELETE /auth/sessions/{id}`, and
   `DELETE /auth/sessions/all` over the shared `authFetch`.
-- [ ] The sessions table renders device / ip / lastActivity / an **isCurrent** badge / a revoke action; the current row
+- [x] The sessions table renders device / ip / lastActivity / an **isCurrent** badge / a revoke action; the current row
   is pinned and glow-bordered; revoke is optimistic with rollback on error.
-- [ ] A "log out everywhere else" action calls `/auth/sessions/all`; an "Only this device" empty state is shown when no
+- [x] A "log out everywhere else" action calls `/auth/sessions/all`; an "Only this device" empty state is shown when no
   other sessions exist.
-- [ ] `hooks/use-new-session-alerts.ts` subscribes to `GET /audit/stream` (SSE), filters `event === 'on_new_session'`,
-  and surfaces a toast + triggers a sessions refetch.
-- [ ] 100% Vitest coverage on the new `lib/` + `hooks/` + `components/`.
+- [x] `hooks/use-new-session-alerts.ts` subscribes to the realtime tail (a ticketed WebSocket — the JWT never in the
+  URL), filters `event === 'on_new_session'`, and surfaces a toast + triggers a sessions refetch.
+- [x] 100% Vitest coverage on the new `lib/` + `hooks/` + `components/`.
 
 #### Files to create / modify
 
@@ -573,7 +573,7 @@ Completion Protocol (after you finish):
 
 ### Task 10.5 — OAuth panel — Continue with Google + decision trace
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: M
 - **Depends on**: —
@@ -586,12 +586,12 @@ Build the OAuth panel (`/dashboard/oauth`): a "Continue with Google" button (gat
 
 #### Acceptance criteria
 
-- [ ] "Continue with Google" navigates to `GET /auth/oauth/google` (a 302 to Google's authorize URL) and is hidden
+- [x] "Continue with Google" navigates to `GET /auth/oauth/google` (a 302 to Google's authorize URL) and is hidden
   unless `NEXT_PUBLIC_OAUTH_GOOGLE_ENABLED === 'true'`; a "Google OAuth not configured" explainer is shown when disabled.
-- [ ] After the callback, the panel renders the `on_oauth_login` decision (Created a new user vs Linked to an existing
+- [x] After the callback, the panel renders the `on_oauth_login` decision (Created a new user vs Linked to an existing
   one) and which branch fired (authenticated session / redirect / MFA challenge).
-- [ ] The callback-error path renders the localized `auth.*` code via the shared error map.
-- [ ] 100% Vitest coverage on the new `lib/` + `components/`.
+- [x] The callback-error path renders the localized `auth.*` code via the shared error map.
+- [x] 100% Vitest coverage on the new `lib/` + `components/`.
 
 #### Files to create / modify
 
@@ -670,7 +670,7 @@ Completion Protocol (after you finish):
 
 ### Task 10.6 — Invitations — admin invite form + pending list
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: S
 - **Depends on**: —
@@ -682,13 +682,13 @@ Build the Invitations admin views (`/dashboard/invitations`): the invite form (e
 
 #### Acceptance criteria
 
-- [ ] `lib/invitations-api.ts` wraps `POST /auth/invitations` with a `CreateInvitationInput { email, role, tenantName? }`
+- [x] `lib/invitations-api.ts` wraps `POST /auth/invitations` with a `CreateInvitationInput { email, role, tenantName? }`
   (note: **no** `tenantId` field — the route derives the tenant from the caller's claims) over the shared `authFetch`.
-- [ ] The invite form validates email + role and shows a success/error result; a "No pending invites" empty state and
+- [x] The invite form validates email + role and shows a success/error result; a "No pending invites" empty state and
   the expired/invalid-token path are honoured.
-- [ ] The pending-invites list is sourced from the example-owned `GET /audit/logs?event=…` (invitation-created events)
+- [x] The pending-invites list is sourced from the example-owned `GET /audit/logs?event=…` (invitation-created events)
   and each row links the Mailpit message (`http://localhost:8025`).
-- [ ] 100% Vitest coverage on the new `lib/` + `components/`.
+- [x] 100% Vitest coverage on the new `lib/` + `components/`.
 
 #### Files to create / modify
 
@@ -765,7 +765,7 @@ Completion Protocol (after you finish):
 
 ### Task 10.7 — Audit Explorer + Account / Diagnostics
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: M
 - **Depends on**: —
@@ -779,18 +779,18 @@ per-phase completion protocol.
 
 #### Acceptance criteria
 
-- [ ] `lib/audit-api.ts` fetches `GET /audit/logs?cursor&actor&event&tenantId&limit` → `{ data, nextCursor, hasMore }`
+- [x] `lib/audit-api.ts` fetches `GET /audit/logs?cursor&actor&event&tenantId&limit` → `{ data, nextCursor, hasMore }`
   over the shared `authFetch`; `hooks/use-audit-tail.ts` tails `GET /audit/stream` (SSE) with follow-mode (pin-to-bottom;
   scroll-up pauses with an "N new — jump to latest" pill) and resumes via the browser's native `Last-Event-ID`.
-- [ ] The audit table is virtualized (TanStack Virtual), faceted (actor / event / tenant — read from the same `nuqs`
-  state the Trigger Center pivots to), and the detail drawer renders the **never-contains-secrets** proof (asserts no
-  token / OTP / recovery code / secret in the row).
-- [ ] The Account page renders the `me` card (`useSession` / `getMe`) and the Diagnostics matrix calling
+- [x] The audit table is virtualized (fixed-height windowing renders only the visible window), faceted (actor / event —
+  read from the same `nuqs` state the Trigger Center pivots to), and the detail drawer renders the
+  **never-contains-secrets** proof (asserts no token / OTP / recovery code / secret in the row).
+- [x] The Account page renders the `me` card (`useSession` / `getMe`) and the Diagnostics matrix calling
   `POST /diagnostics/hash-strength`, `POST /diagnostics/force-lockout`, and `GET /diagnostics/hooks`.
-- [ ] The token inspector decodes a pasted JWT through a **server route handler** that imports `decodeJwtToken` /
+- [x] The token inspector decodes a pasted JWT through a **server route handler** that imports `decodeJwtToken` /
   `verifyJwtToken` from `@bymax-one/rust-auth/nextjs` (server-only) and demonstrates a forged `alg:none` being rejected;
   no client component imports `/nextjs`.
-- [ ] 100% Vitest coverage on all new `lib/` + `hooks/` + `components/`; the per-phase completion protocol is executed.
+- [x] 100% Vitest coverage on all new `lib/` + `hooks/` + `components/`; the per-phase completion protocol is executed.
 
 #### Files to create / modify
 
@@ -925,4 +925,10 @@ If any DoD bullet is unmet or CI is red, set P10 to `🟡 Partial`, not `✅`.
 
 > Append-only. One line per completed task: `- <id> ✅ YYYY-MM-DD — <summary>`.
 
-_(empty — no tasks completed yet)_
+- 10.1 ✅ 2026-07-03 — Overview auth-health cards
+- 10.2 ✅ 2026-07-03 — Trigger Center playground
+- 10.3 ✅ 2026-07-03 — Security/MFA enrollment lifecycle
+- 10.4 ✅ 2026-07-03 — Sessions device manager + new-session toast
+- 10.5 ✅ 2026-07-03 — OAuth panel + decision trace
+- 10.6 ✅ 2026-07-03 — Invitations admin views
+- 10.7 ✅ 2026-07-03 — Audit Explorer + Account/Diagnostics

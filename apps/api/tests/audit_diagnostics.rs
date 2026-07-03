@@ -235,8 +235,16 @@ async fn diagnostics_hook_log_exposes_only_masked_fields() {
         .expect("the verification OTP was captured");
 
     // The only fields a hook row may expose — a projection over safe columns, never a
-    // token, code, or secret.
-    const ALLOWED_FIELDS: [&str; 6] = ["id", "event", "actorEmail", "tenantId", "ip", "createdAt"];
+    // token, code, or secret. `details` is the masked context payload (empty today).
+    const ALLOWED_FIELDS: [&str; 7] = [
+        "id",
+        "event",
+        "actor",
+        "tenantId",
+        "ip",
+        "createdAt",
+        "details",
+    ];
 
     let rows: Value = app
         .client
@@ -252,6 +260,13 @@ async fn diagnostics_hook_log_exposes_only_masked_fields() {
     for row in array {
         let object = row.as_object().expect("each row is an object");
         assert!(object.contains_key("event"), "each row carries an event");
+        // The masked context payload is always an object and is empty (the hooks write no
+        // metadata), so it can never carry a secret.
+        assert_eq!(
+            object.get("details").and_then(Value::as_object),
+            Some(&serde_json::Map::new()),
+            "details is an empty, masked object"
+        );
         for key in object.keys() {
             assert!(
                 ALLOWED_FIELDS.contains(&key.as_str()),
@@ -285,6 +300,78 @@ async fn diagnostics_recent_hooks_returns_a_masked_view() {
         .unwrap();
     let array = rows.as_array().expect("an array of rows");
     assert!(!array.is_empty());
-    // The masked view exposes the event + actor email, never a secret column.
+    // The masked view exposes the event + display actor, never a secret column.
     assert!(array.iter().all(|row| row.get("event").is_some()));
+    assert!(array.iter().all(|row| row.get("actor").is_some()));
+}
+
+#[tokio::test]
+async fn audit_aggregate_returns_the_auth_health_shape() {
+    let Some(app) = common::spawn().await else {
+        return;
+    };
+    // The aggregate is admin-gated; an isolated admin keeps this run's own login row out of
+    // the caller's tenant. The endpoint reads the whole-population `users` state, so the
+    // assertions bound each field rather than pin an exact value.
+    let admin = common::dashboard_admin_token_isolated(&app).await;
+
+    let body: Value = app
+        .client
+        .get(format!("{}/audit/aggregate", app.base_url))
+        .bearer_auth(&admin)
+        .send()
+        .await
+        .unwrap()
+        .json()
+        .await
+        .unwrap();
+
+    // Every field the Overview consumes is present with the right type/range.
+    let login = body["loginSuccessRate"].as_f64().expect("loginSuccessRate");
+    let verify = body["verifySuccessRate"]
+        .as_f64()
+        .expect("verifySuccessRate");
+    let mfa = body["mfaEnrolledShare"].as_f64().expect("mfaEnrolledShare");
+    assert!((0.0..=1.0).contains(&login), "login rate is a 0..1 share");
+    assert!((0.0..=1.0).contains(&verify), "verify rate is a 0..1 share");
+    assert!((0.0..=1.0).contains(&mfa), "mfa share is a 0..1 value");
+    assert!(
+        body["activeSessions"].as_i64().expect("activeSessions") >= 0,
+        "active sessions is a non-negative count"
+    );
+    assert_eq!(
+        body["emailProvider"], "mailpit",
+        "the test stack resolves the Mailpit transport"
+    );
+    assert!(
+        body["oauthGoogleEnabled"].is_boolean(),
+        "oauthGoogleEnabled is a boolean"
+    );
+}
+
+#[tokio::test]
+async fn audit_aggregate_is_admin_gated() {
+    let Some(app) = common::spawn().await else {
+        return;
+    };
+    // An unauthenticated request is refused before any query runs.
+    let anon = app
+        .client
+        .get(format!("{}/audit/aggregate", app.base_url))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(anon.status().as_u16(), 401, "anonymous is refused");
+
+    // A non-admin dashboard token is forbidden.
+    let user_email = format!("agg-user-{}@example.test", app.tenant_id);
+    let user = common::dashboard_access_token_with_role(&app, &user_email, "user").await;
+    let forbidden = app
+        .client
+        .get(format!("{}/audit/aggregate", app.base_url))
+        .bearer_auth(&user)
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(forbidden.status().as_u16(), 403, "a non-admin is forbidden");
 }

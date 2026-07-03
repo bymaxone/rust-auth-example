@@ -9,10 +9,9 @@ use axum::Json;
 use axum::extract::State;
 use bymax_auth_crypto::password::{PasswordParams, needs_rehash};
 use serde::{Deserialize, Serialize};
-use time::format_description::well_known::Rfc3339;
 
 use crate::app::AppState;
-use crate::audit::routes::AuditRow;
+use crate::audit::routes::{AuditRow, actor_display, details_of, format_ts};
 use crate::error::AppError;
 
 /// How many recent hook-event rows the diagnostics view returns.
@@ -157,7 +156,9 @@ pub async fn platform_whoami(admin: crate::guards::PlatformAdmin) -> Json<WhoAmI
 /// Returns [`AppError`] when the underlying query fails.
 pub async fn recent_hooks(State(state): State<AppState>) -> Result<Json<Vec<AuditRow>>, AppError> {
     let rows = sqlx::query!(
-        "SELECT id, event, actor_email, tenant_id, ip, created_at FROM audit_log \
+        "SELECT id, event, actor_email, actor_id, tenant_id, ip, created_at, \
+                metadata::text AS metadata \
+         FROM audit_log \
          ORDER BY id DESC LIMIT $1",
         RECENT_HOOKS,
     )
@@ -169,10 +170,11 @@ pub async fn recent_hooks(State(state): State<AppState>) -> Result<Json<Vec<Audi
         .map(|row| AuditRow {
             id: row.id,
             event: row.event,
-            actor_email: row.actor_email,
+            actor: actor_display(row.actor_email, row.actor_id),
             tenant_id: row.tenant_id,
             ip: row.ip,
-            created_at: row.created_at.format(&Rfc3339).unwrap_or_default(),
+            created_at: format_ts(row.created_at),
+            details: details_of(row.metadata),
         })
         .collect();
     Ok(Json(data))

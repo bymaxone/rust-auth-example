@@ -13,11 +13,15 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Building2,
+  CircleUser,
+  KeyRound,
   LayoutDashboard,
+  Mail,
   MonitorSmartphone,
   ScrollText,
   ShieldCheck,
   Users,
+  Zap,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -33,10 +37,14 @@ interface NavItem {
 }
 
 const DASHBOARD_NAV: readonly NavItem[] = [
-  { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
+  { href: '/', label: 'Overview', icon: LayoutDashboard },
+  { href: '/dashboard/trigger', label: 'Trigger Center', icon: Zap },
   { href: '/dashboard/security', label: 'Security', icon: ShieldCheck },
   { href: '/dashboard/sessions', label: 'Sessions', icon: MonitorSmartphone },
+  { href: '/dashboard/oauth', label: 'OAuth', icon: KeyRound },
+  { href: '/dashboard/invitations', label: 'Invitations', icon: Mail },
   { href: '/dashboard/audit', label: 'Audit', icon: ScrollText },
+  { href: '/dashboard/account', label: 'Account', icon: CircleUser },
 ];
 
 const PLATFORM_NAV: readonly NavItem[] = [
