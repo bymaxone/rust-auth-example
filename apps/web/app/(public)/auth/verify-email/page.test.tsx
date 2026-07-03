@@ -8,8 +8,8 @@
  * @module app/(public)/auth/verify-email/page.test
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { AuthClientError } from '@bymax-one/rust-auth/shared';
 
 /* ── Hoisted mocks ────────────────────────────────────────────────────── */
@@ -130,5 +130,47 @@ describe('VerifyEmailPage — authenticated', () => {
         screen.getByText('Something went wrong on our side. Please try again.'),
       ).toBeInTheDocument(),
     );
+  });
+});
+
+describe('VerifyEmailPage — resend cooldown', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    mockUseSession.mockReturnValue({
+      user: { email: 'user@example.com', id: '1' },
+      status: 'authenticated',
+    });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('prevents a second resend during the cooldown and allows it once the cooldown elapses', async () => {
+    /* After a successful resend the button must be debounced for 30 s; after that
+       window expires a subsequent resend must reach the API again. */
+    mockAuthFetch.mockResolvedValue({ ok: true });
+    render(<VerifyEmailPage />);
+
+    /* First resend — should reach the API. */
+    fireEvent.click(screen.getByRole('button', { name: /Resend code/i }));
+    /* Flush the resolved promise so the finally block runs. */
+    await act(async () => {});
+    expect(mockAuthFetch).toHaveBeenCalledTimes(1);
+
+    /* Immediate second click — cooldown is active; call count must not increase. */
+    fireEvent.click(screen.getByRole('button', { name: /Resend code/i }));
+    await act(async () => {});
+    expect(mockAuthFetch).toHaveBeenCalledTimes(1);
+
+    /* Advance past the 30-second cooldown window. */
+    act(() => {
+      vi.advanceTimersByTime(30_001);
+    });
+
+    /* Resend is now re-enabled — the next click must reach the API. */
+    fireEvent.click(screen.getByRole('button', { name: /Resend code/i }));
+    await act(async () => {});
+    expect(mockAuthFetch).toHaveBeenCalledTimes(2);
   });
 });

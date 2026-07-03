@@ -57,7 +57,7 @@ test('invitation journey: create → email → accept → authenticated', async 
   /* The invited email address is unique per run to avoid collisions. */
   const inviteeEmail = `invitee-${Date.now()}@example.com`;
 
-  /* Step 1 — Create an invitation as a platform admin (seeded credentials). */
+  /* Step 1 — Create an invitation via a direct HTTP call from the test (no admin credentials). */
   const inviteRes = await page.request.post(`${API_BASE}/auth/invitations`, {
     headers: { 'Content-Type': 'application/json' },
     data: JSON.stringify({ email: inviteeEmail, tenantId: 'acme' }),

@@ -18,6 +18,18 @@
 
 import path from 'node:path';
 
+/* Derive the API origin from NEXT_PUBLIC_API_URL at config-eval time so
+   connect-src allows the Rust backend while staying strict (no wildcard).
+   If the variable is unset or contains a malformed URL, fall back to 'self'. */
+const _apiUrl = process.env.NEXT_PUBLIC_API_URL;
+let _apiOrigin = '';
+try {
+  if (_apiUrl) _apiOrigin = new URL(_apiUrl).origin;
+} catch {
+  /* Malformed URL — fall back to 'self' only. */
+}
+const _connectSrc = _apiOrigin ? `'self' ${_apiOrigin}` : "'self'";
+
 /** @type {import('next').NextConfig} */
 export default {
   outputFileTracingRoot: path.join(import.meta.dirname, '../..'),
@@ -37,7 +49,8 @@ export default {
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           /* Enforce HTTPS for the lifetime of the session. */
           { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains' },
-          /* CSP: restrict origins; adjust connect-src when the BFF URL is known. */
+          /* CSP: restrict origins; connect-src includes the API origin so the
+             browser does not block calls to NEXT_PUBLIC_API_URL. */
           {
             key: 'Content-Security-Policy',
             value: [
@@ -48,7 +61,7 @@ export default {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data:",
               "font-src 'self'",
-              "connect-src 'self'",
+              `connect-src ${_connectSrc}`,
               "frame-ancestors 'none'",
             ].join('; '),
           },

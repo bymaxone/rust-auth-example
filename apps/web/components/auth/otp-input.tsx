@@ -69,7 +69,7 @@ export function OtpInput({
        Defensive: the ref is always populated while an event handler fires,
        but TypeScript requires the guard due to `noUncheckedIndexedAccess`. */
     const input = inputRefs.current[index];
-    /* v8 ignore next */
+    /* v8 ignore next -- defensive null guard; ref is always set while mounted */
     if (input !== null && input !== undefined) input.value = digit;
     if (digit.length > 0 && index < length - 1) {
       focus(index + 1);

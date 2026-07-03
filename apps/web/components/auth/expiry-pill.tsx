@@ -46,12 +46,18 @@ export function ExpiryPill({ expiresAt, onExpired }: ExpiryPillProps): ReactElem
   });
 
   useEffect(() => {
-    /* If already expired on mount, fire once and stop. */
-    if (secondsLeft <= 0) {
-      if (!firedRef.current) {
-        firedRef.current = true;
-        onExpiredRef.current?.();
-      }
+    /* Reset the fired flag so a fresh expiresAt can fire onExpired again. */
+    firedRef.current = false;
+    /* Compute remaining time directly from expiresAt so secondsLeft is not a
+       dependency — this ensures a single stable interval per expiresAt value
+       instead of tearing down and recreating the interval on every tick. */
+    const initial = Math.max(0, Math.floor((expiresAt.getTime() - Date.now()) / 1000));
+    /* Sync display state immediately when expiresAt changes. */
+    setSecondsLeft(initial);
+
+    if (initial <= 0) {
+      firedRef.current = true;
+      onExpiredRef.current?.();
       return;
     }
 
@@ -59,10 +65,8 @@ export function ExpiryPill({ expiresAt, onExpired }: ExpiryPillProps): ReactElem
       const remaining = Math.max(0, Math.floor((expiresAt.getTime() - Date.now()) / 1000));
       setSecondsLeft(remaining);
       if (remaining <= 0) {
-        /* The interval fires exactly once (we clear it before calling onExpired),
-           so there is no race that would make firedRef.current true here. Setting
-           it prevents the effect's early-return path from double-firing on the
-           subsequent re-render triggered by setSecondsLeft(0). */
+        /* Clear before calling onExpired so the callback cannot re-observe a
+           live interval; firedRef prevents any double-fire on subsequent renders. */
         clearInterval(interval);
         firedRef.current = true;
         onExpiredRef.current?.();
@@ -70,7 +74,10 @@ export function ExpiryPill({ expiresAt, onExpired }: ExpiryPillProps): ReactElem
     }, 1_000);
 
     return () => clearInterval(interval);
-  }, [expiresAt, secondsLeft]);
+    /* secondsLeft is intentionally excluded: the interval computes remaining
+       time from expiresAt on each tick, so including secondsLeft would tear
+       down and recreate the interval every second. */
+  }, [expiresAt]);
 
   const isExpired = secondsLeft <= 0;
   const minutes = Math.floor(secondsLeft / 60);

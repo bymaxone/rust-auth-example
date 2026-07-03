@@ -13,7 +13,7 @@
 
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useQueryState } from 'nuqs';
@@ -26,6 +26,9 @@ import { authFetch } from '@/lib/auth-client';
 
 /** Validates that a tenant identifier is a safe lowercase slug. */
 const TENANT_ID_RE = /^[a-z0-9][a-z0-9-]{0,62}$/;
+
+/** Milliseconds the resend button remains disabled after a successful attempt. */
+const RESEND_COOLDOWN_MS = 30_000;
 
 /**
  * Verify-email page. Submits the emailed OTP code and routes to the dashboard
@@ -42,6 +45,16 @@ export default function VerifyEmailPage(): React.ReactElement {
   /* Ref guards: prevent concurrent OTP submissions and rapid resend bursts. */
   const isVerifyingRef = useRef(false);
   const resendDisabledRef = useRef(false);
+  /** Timer handle for the resend cooldown; cleared on unmount to avoid stale mutations. */
+  const resendCooldownRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (resendCooldownRef.current !== null) {
+        clearTimeout(resendCooldownRef.current);
+      }
+    };
+  }, []);
 
   /* Unauthenticated visitors cannot verify — point them to login. */
   if (status === 'unauthenticated') {
@@ -82,7 +95,7 @@ export default function VerifyEmailPage(): React.ReactElement {
   }
 
   async function resend(): Promise<void> {
-    /* Debounce: ignore rapid clicks until the current request has settled. */
+    /* Cooldown guard: ignore clicks until the previous cooldown window elapses. */
     if (resendDisabledRef.current) return;
     resendDisabledRef.current = true;
     try {
@@ -96,6 +109,10 @@ export default function VerifyEmailPage(): React.ReactElement {
     } finally {
       /* Always show the same neutral confirmation (anti-enumeration). */
       setResendMessage('If your email is unverified, a new code is on its way.');
+      /* Re-enable resend after the cooldown window so the user can try again. */
+      resendCooldownRef.current = setTimeout(() => {
+        resendDisabledRef.current = false;
+      }, RESEND_COOLDOWN_MS);
     }
   }
 
