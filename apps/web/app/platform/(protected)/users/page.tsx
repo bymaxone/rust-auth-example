@@ -46,10 +46,11 @@ async function fetchPlatformUsers(): Promise<AuthPlatformUserClient[]> {
     cache: 'no-store',
   });
 
-  if (res.status === 401 || res.status === 403) {
+  if (res.status === 401) {
     // The edge gate admitted the request, but the platform session lapsed before this
     // server-side fetch resolved — route the admin back to log in cleanly rather than
-    // surfacing an error boundary.
+    // surfacing an error boundary. A 403 is an authorization failure (not an expired
+    // session), so it falls through to the error boundary below.
     redirect('/platform/login?reason=session-expired');
   }
   if (!res.ok) {

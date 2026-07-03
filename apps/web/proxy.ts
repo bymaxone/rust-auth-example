@@ -84,7 +84,16 @@ export async function proxy(request: NextRequest): Promise<Response> {
   const expectedType = isPlatform ? 'platform' : 'dashboard';
 
   const token = request.cookies.get(AUTH_ACCESS_COOKIE_NAME)?.value;
-  const decoded = token !== undefined ? await verifyJwtToken(token, accessTokenSecret) : null;
+  // `verifyJwtToken` can reject on a malformed token; treat any failure as an unverified
+  // session (redirect to login) rather than letting the edge middleware crash.
+  let decoded: Awaited<ReturnType<typeof verifyJwtToken>> | null = null;
+  if (token !== undefined) {
+    try {
+      decoded = await verifyJwtToken(token, accessTokenSecret);
+    } catch {
+      decoded = null;
+    }
+  }
 
   if (decoded?.isValid !== true) {
     // Missing token or failed verification — redirect to the domain login (no reason param).

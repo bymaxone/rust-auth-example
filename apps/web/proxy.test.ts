@@ -82,6 +82,17 @@ describe('proxy gate', () => {
     expect(result.headers.get('location')).toContain('/auth/login');
   });
 
+  it('redirects (never crashes) when verifyJwtToken rejects on a malformed token', async () => {
+    // A rejection must be caught and treated as an unverified session — the edge
+    // middleware must not throw.
+    verifyJwtToken.mockRejectedValue(new Error('malformed token'));
+    const result = await proxy(request('/dashboard', 'access_token=broken'));
+
+    expect(verifyJwtToken).toHaveBeenCalled();
+    expect(result.status).toBe(307);
+    expect(result.headers.get('location')).toContain('/auth/login');
+  });
+
   it('admits a dashboard request with a verified dashboard-domain cookie', async () => {
     // Verifies an authoritatively valid dashboard token passes through — no backend call.
     verifyJwtToken.mockResolvedValue({ isValid: true, payload: { type: 'dashboard' } });
