@@ -30,6 +30,14 @@ try {
 }
 const _connectSrc = _apiOrigin ? `'self' ${_apiOrigin}` : "'self'";
 
+/* Next.js (Turbopack) injects inline bootstrap scripts whose content changes on
+   every HMR update, making hash-based CSP impractical in dev mode.  React's
+   dev-mode error overlay also needs eval() for call-stack reconstruction.
+   Allow 'unsafe-inline' and 'unsafe-eval' outside production; a nonce-based
+   policy is the correct replacement for production builds. */
+const _scriptSrc =
+  process.env.NODE_ENV === 'production' ? "'self'" : "'self' 'unsafe-inline' 'unsafe-eval'";
+
 /** @type {import('next').NextConfig} */
 export default {
   outputFileTracingRoot: path.join(import.meta.dirname, '../..'),
@@ -55,7 +63,7 @@ export default {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self'",
+              `script-src ${_scriptSrc}`,
               /* Tailwind's generated styles require unsafe-inline in dev;
                  a nonce-based policy can replace this in production builds. */
               "style-src 'self' 'unsafe-inline'",

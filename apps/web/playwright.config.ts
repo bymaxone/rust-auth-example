@@ -12,10 +12,17 @@
  * Workers are bounded to one for memory safety, and `forbidOnly` guards against
  * a stray `test.only` reaching CI.
  *
+ * The `webServer` starts the Next.js dev server before any browser test runs.
+ * Environment variables fall back to CI-safe placeholder values so no live
+ * infrastructure is required. The invitation spec intercepts all network calls
+ * via `page.route()` — the backend never needs to be reachable.
+ *
  * @module playwright.config
  */
 
 import { defineConfig } from '@playwright/test';
+
+const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
 
 export default defineConfig({
   testDir: './e2e',
@@ -23,4 +30,19 @@ export default defineConfig({
   workers: 1,
   forbidOnly: Boolean(process.env.CI),
   reporter: 'list',
+  use: {
+    baseURL: BASE_URL,
+  },
+  webServer: {
+    command: 'pnpm dev',
+    url: BASE_URL,
+    reuseExistingServer: !process.env.CI,
+    timeout: 120_000,
+    env: {
+      NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080',
+      INTERNAL_API_URL: process.env.INTERNAL_API_URL ?? 'http://localhost:8080',
+      AUTH_JWT_SECRET_FOR_PROXY:
+        process.env.AUTH_JWT_SECRET_FOR_PROXY ?? 'local_build_only_placeholder_secret_min_32',
+    },
+  },
 });
