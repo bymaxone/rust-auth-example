@@ -78,10 +78,11 @@ export function PlatformShell({ children }: { readonly children: ReactNode }): R
     try {
       await platformClient.logout();
     } catch {
-      // A failed logout call does not block navigation — platformClient.logout()
-      // calls the BFF which clears the httpOnly access cookie; if the call fails
-      // the cookie expires naturally. The admin is always routed to login so they
-      // see a clean sign-out experience.
+      // Best-effort sign-out: platformClient.logout() calls the BFF to clear the
+      // httpOnly access cookie. If that call fails the cookie is NOT cleared here and
+      // the server session persists until its natural expiry — navigation still routes
+      // to login for a clean UX, but a production console should surface or retry the
+      // failure rather than assume an effective sign-out.
     } finally {
       router.push('/platform/login');
     }
