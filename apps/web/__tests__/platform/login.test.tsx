@@ -73,12 +73,13 @@ beforeEach(() => {
 });
 
 describe('PlatformLoginPage', () => {
-  it('routes to /platform on a successful login', async () => {
-    // Verifies a non-MFA success routes the admin to /platform.
+  it('routes to /platform/security on a successful login', async () => {
+    // Verifies a non-MFA success routes the admin to /platform/security (the
+    // default landing page) rather than the intermediate /platform redirect.
     mockPlatformLogin.mockResolvedValueOnce({ user: { id: '1' }, accessToken: 'at' });
     render(<PlatformLoginPage />);
     fillAndSubmit();
-    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/platform'));
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/platform/security'));
   });
 
   it('shows the inline MFA step on a mfaRequired result', async () => {
@@ -106,7 +107,7 @@ describe('PlatformLoginPage', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: /verify/i }));
     await waitFor(() => expect(mockPlatformMfaChallenge).toHaveBeenCalledWith('tmp-tok', '123456'));
-    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/platform'));
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/platform/security'));
   });
 
   it('shows an error banner on AuthClientError from login', async () => {

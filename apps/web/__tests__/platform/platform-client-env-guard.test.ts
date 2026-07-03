@@ -8,7 +8,7 @@
  * @module __tests__/platform/platform-client-env-guard.test
  */
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Stub createAuthFetch so the module can be evaluated without a real fetch implementation.
 vi.mock('@bymax-one/rust-auth/client', () => ({
@@ -19,10 +19,29 @@ vi.mock('@bymax-one/rust-auth/shared', () => ({
 }));
 
 describe('platform-client module-level env guard', () => {
+  let savedApiUrl: string | undefined;
+
+  beforeEach(() => {
+    // Save and remove the env var so the module-level guard fires on import,
+    // regardless of what the runner's ambient environment has set.
+    savedApiUrl = process.env.NEXT_PUBLIC_API_URL;
+    // eslint is not relevant here; Vitest does not lint env deletions
+    delete process.env.NEXT_PUBLIC_API_URL;
+  });
+
+  afterEach(() => {
+    // Restore the original value so other test files are not affected.
+    if (savedApiUrl !== undefined) {
+      process.env.NEXT_PUBLIC_API_URL = savedApiUrl;
+    } else {
+      delete process.env.NEXT_PUBLIC_API_URL;
+    }
+  });
+
   it('throws when NEXT_PUBLIC_API_URL is absent at module load time', async () => {
     // Verifies the fail-fast guard (line 24 of platform-client.ts) throws an
     // Error before any fetch is configured, protecting all callers from a silent
-    // undefined baseUrl. NEXT_PUBLIC_API_URL is intentionally absent in this file.
+    // undefined baseUrl.
     expect(process.env.NEXT_PUBLIC_API_URL).toBeUndefined();
 
     // vi.resetModules clears the module cache so the module-level code re-runs

@@ -54,7 +54,16 @@ export default async function PlatformProtectedLayout({
   // Non-authoritative decode — signature is NOT re-verified here; the edge proxy
   // is the authoritative gate. decodeJwtToken reads the payload without checking
   // the signature and is async in the Next.js package build.
-  const decoded = await decodeJwtToken(token);
+  //
+  // decodeJwtToken may reject (throw) when the token is structurally invalid
+  // (e.g. not a valid JWT string). Treat a thrown rejection the same as an
+  // isValid:false result — the admin's session is gone, redirect to sign-in.
+  let decoded: Awaited<ReturnType<typeof decodeJwtToken>>;
+  try {
+    decoded = await decodeJwtToken(token);
+  } catch {
+    redirect('/platform/login?reason=session-expired');
+  }
 
   if (decoded.isValid !== true) {
     // Malformed or expired token — the admin's session is gone, but there is no

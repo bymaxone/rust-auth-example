@@ -4,7 +4,8 @@
  * Authenticates a platform administrator via `platformClient.login`. When the
  * backend demands MFA the temp token is held in React state (never in storage)
  * and an inline OTP step is shown. On a successful login the admin is routed to
- * `/platform`. The page is public; the edge proxy (`proxy.ts`) excludes
+ * `/platform/security` (the default landing page). The page is public; the edge
+ * proxy (`proxy.ts`) excludes
  * `/platform/login` from the session gate.
  *
  * @module app/platform/login/page
@@ -85,7 +86,7 @@ function PlatformLoginForm(): React.ReactElement {
         setMfaTempToken(result.mfaTempToken);
         return;
       }
-      router.push('/platform');
+      router.push('/platform/security');
     } catch (err) {
       setErrorCode(
         err instanceof AuthClientError ? (err.code ?? 'auth.internal') : 'auth.internal',
@@ -102,7 +103,7 @@ function PlatformLoginForm(): React.ReactElement {
     setIsMfaSubmitting(true);
     try {
       await platformClient.mfaChallenge(mfaTempToken, pendingMfaCode);
-      router.push('/platform');
+      router.push('/platform/security');
     } catch (err) {
       setErrorCode(
         err instanceof AuthClientError ? (err.code ?? 'auth.internal') : 'auth.internal',

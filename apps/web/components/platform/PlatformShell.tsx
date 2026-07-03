@@ -78,9 +78,10 @@ export function PlatformShell({ children }: { readonly children: ReactNode }): R
     try {
       await platformClient.logout();
     } catch {
-      // A failed logout call does not block navigation — the session is either
-      // cleared by the proxy on the next request or expires naturally. The admin
-      // is always routed to login so they see a clean sign-out experience.
+      // A failed logout call does not block navigation — platformClient.logout()
+      // calls the BFF which clears the httpOnly access cookie; if the call fails
+      // the cookie expires naturally. The admin is always routed to login so they
+      // see a clean sign-out experience.
     } finally {
       router.push('/platform/login');
     }
@@ -91,7 +92,10 @@ export function PlatformShell({ children }: { readonly children: ReactNode }): R
       {/* Topbar — platform brand; no tenant selector */}
       <header className="fixed inset-x-0 top-0 z-40 flex h-16 items-center justify-between border-b border-(--glass-border) bg-background/80 px-4 backdrop-blur">
         <div className="flex items-center gap-3">
-          <Link href="/platform" className="font-mono text-sm font-semibold text-foreground">
+          <Link
+            href="/platform/security"
+            className="font-mono text-sm font-semibold text-foreground"
+          >
             rust-auth / platform
           </Link>
           <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">

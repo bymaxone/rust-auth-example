@@ -104,6 +104,18 @@ describe('PlatformProtectedLayout auth guard', () => {
     expect(url).toBe('/platform/login?reason=session-expired');
   });
 
+  it('redirects with reason=session-expired when decodeJwtToken rejects', async () => {
+    // decodeJwtToken may throw (not just return isValid:false) for a structurally
+    // invalid token (e.g. not a parseable JWT string). The layout must catch the
+    // rejection and treat it identically to an invalid session.
+    mockCookies.mockResolvedValueOnce(makeCookieJar('not-a-jwt-at-all'));
+    mockDecodeJwtToken.mockRejectedValueOnce(new Error('invalid token structure'));
+
+    const url = await captureRedirect(<span />);
+
+    expect(url).toBe('/platform/login?reason=session-expired');
+  });
+
   it('redirects with reason=wrong-domain when a valid dashboard token is presented', async () => {
     // A structurally valid token exists but its type is "dashboard", not "platform".
     mockCookies.mockResolvedValueOnce(makeCookieJar('valid.dashboard.token'));
