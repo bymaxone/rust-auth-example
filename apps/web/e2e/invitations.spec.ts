@@ -11,6 +11,13 @@
 
 import { test, expect } from '@playwright/test';
 
+/**
+ * The backend origin the browser targets, derived from the same env the app and
+ * the Playwright webServer read. Interception keys off this instead of a
+ * hardcoded literal, so the spec follows a re-pointed `NEXT_PUBLIC_API_URL`.
+ */
+const API_ORIGIN = new URL(process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080').origin;
+
 /** Glob pattern matching the invitation-accept endpoint the page posts to. */
 const ACCEPT_ROUTE = '**/auth/invitations/accept';
 
@@ -24,13 +31,12 @@ const TOKEN = 'test-inv-token';
  * Stub the Rust backend so no live infrastructure is required.
  *
  * `AuthProvider` calls `getMe()` on every mount, targeting the
- * `NEXT_PUBLIC_API_URL` origin (`http://localhost:8080` in the webServer env).
- * Returning 401 keeps the user in the unauthenticated state without causing a
- * network error that could delay hydration or surface an unexpected error banner
- * in any test.
+ * `NEXT_PUBLIC_API_URL` origin (`API_ORIGIN`). Returning 401 keeps the user in
+ * the unauthenticated state without causing a network error that could delay
+ * hydration or surface an unexpected error banner in any test.
  */
 test.beforeEach(async ({ page }) => {
-  await page.route('http://localhost:8080/**', (route) =>
+  await page.route(`${API_ORIGIN}/**`, (route) =>
     route.fulfill({
       status: 401,
       contentType: 'application/json',

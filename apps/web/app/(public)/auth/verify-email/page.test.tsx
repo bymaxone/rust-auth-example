@@ -133,6 +133,37 @@ describe('VerifyEmailPage — authenticated', () => {
   });
 });
 
+describe('VerifyEmailPage — authenticated without an email', () => {
+  beforeEach(() => {
+    /* Defensive edge: authenticated status but a nullish user (no email). */
+    mockUseSession.mockReturnValue({ user: null, status: 'authenticated' });
+  });
+
+  it('does not post an undefined email on verify and shows a generic error', async () => {
+    /* Verify must not issue a request with an undefined email; surface an error. */
+    render(<VerifyEmailPage />);
+    fireEvent.click(screen.getByRole('button', { name: /Enter code/i }));
+    await waitFor(() =>
+      expect(
+        screen.getByText('Something went wrong on our side. Please try again.'),
+      ).toBeInTheDocument(),
+    );
+    expect(mockAuthFetch).not.toHaveBeenCalled();
+  });
+
+  it('does not post an undefined email on resend but keeps the neutral message', async () => {
+    /* Resend must not issue a request with an undefined email; keep anti-enumeration. */
+    render(<VerifyEmailPage />);
+    fireEvent.click(screen.getByRole('button', { name: /Resend code/i }));
+    await waitFor(() =>
+      expect(
+        screen.getByText(/If your email is unverified, a new code is on its way/i),
+      ).toBeInTheDocument(),
+    );
+    expect(mockAuthFetch).not.toHaveBeenCalled();
+  });
+});
+
 describe('VerifyEmailPage — resend cooldown', () => {
   beforeEach(() => {
     vi.useFakeTimers();

@@ -15,6 +15,21 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 /**
+ * Design-system skeleton shown while a suspended auth page resolves its
+ * search params, so the card body never flashes empty. Mirrors the pulsing
+ * `bg-muted` placeholder used elsewhere in the console.
+ */
+function AuthCardSkeleton(): React.ReactElement {
+  return (
+    <div className="flex flex-col gap-4" role="status" aria-label="Loading">
+      <div className="h-4 w-2/3 animate-pulse rounded-md bg-muted" aria-hidden="true" />
+      <div className="h-10 w-full animate-pulse rounded-md bg-muted" aria-hidden="true" />
+      <div className="h-10 w-full animate-pulse rounded-md bg-muted" aria-hidden="true" />
+    </div>
+  );
+}
+
+/**
  * Full-page centered auth card for unauthenticated visitors.
  *
  * @param children - The page-level form or content.
@@ -40,9 +55,10 @@ export default function AuthLayout({ children }: { readonly children: ReactNode 
               Secure, multi-tenant authentication
             </CardDescription>
           </CardHeader>
-          {/* Suspense is required because pages use useSearchParams (via nuqs) */}
+          {/* Suspense is required because pages use useSearchParams (via nuqs);
+              the skeleton fallback avoids an empty-card flash while they resolve. */}
           <CardContent>
-            <Suspense>{children}</Suspense>
+            <Suspense fallback={<AuthCardSkeleton />}>{children}</Suspense>
           </CardContent>
         </Card>
 

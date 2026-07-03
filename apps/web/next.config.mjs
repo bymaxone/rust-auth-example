@@ -30,13 +30,20 @@ try {
 }
 const _connectSrc = _apiOrigin ? `'self' ${_apiOrigin}` : "'self'";
 
-/* Next.js (Turbopack) injects inline bootstrap scripts whose content changes on
-   every HMR update, making hash-based CSP impractical in dev mode.  React's
-   dev-mode error overlay also needs eval() for call-stack reconstruction.
-   Allow 'unsafe-inline' and 'unsafe-eval' outside production; a nonce-based
-   policy is the correct replacement for production builds. */
+/* Scripts require 'unsafe-inline' in BOTH dev and production. A production build
+   serves Next's hydration bootstrap as an inline <script> whose contents change
+   per response, so 'script-src self' silently blocks hydration in a deployed app.
+   The nonce-based alternative is impractical here: these pages are statically
+   prerendered, and Next only stamps a per-request nonce onto its scripts for
+   dynamically rendered pages — a static page's inline bootstrap would carry no
+   nonce and be blocked. Forcing the whole app into per-request dynamic rendering
+   just to satisfy CSP is not worth it for this reference console, so
+   'unsafe-inline' is applied uniformly. 'unsafe-eval' is added in dev only, where
+   Turbopack rewrites inline HMR scripts and React's error overlay needs eval(). */
 const _scriptSrc =
-  process.env.NODE_ENV === 'production' ? "'self'" : "'self' 'unsafe-inline' 'unsafe-eval'";
+  process.env.NODE_ENV === 'production'
+    ? "'self' 'unsafe-inline'"
+    : "'self' 'unsafe-inline' 'unsafe-eval'";
 
 /** @type {import('next').NextConfig} */
 export default {
@@ -52,8 +59,10 @@ export default {
           { key: 'X-Frame-Options', value: 'DENY' },
           /* Block MIME-type sniffing attacks on served assets. */
           { key: 'X-Content-Type-Options', value: 'nosniff' },
-          /* Ensure only the origin (no full URL) is sent as Referer, limiting
-             invitation-token and email-address leakage to third-party sub-resources. */
+          /* Send only the origin as Referer on cross-origin requests (and nothing
+             when downgrading to HTTP), so invitation tokens and email addresses in
+             the path never leak to third parties; same-origin requests still get
+             the full URL. */
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           /* Enforce HTTPS for the lifetime of the session. */
           { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains' },
@@ -64,8 +73,9 @@ export default {
             value: [
               "default-src 'self'",
               `script-src ${_scriptSrc}`,
-              /* Tailwind's generated styles require unsafe-inline in dev;
-                 a nonce-based policy can replace this in production builds. */
+              /* Tailwind and Next inject styles inline in both modes; a style nonce
+                 is impractical alongside static prerendering, so 'unsafe-inline'
+                 stays for styles. */
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data:",
               "font-src 'self'",

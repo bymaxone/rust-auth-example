@@ -16,7 +16,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useQueryState } from 'nuqs';
@@ -49,6 +49,9 @@ export default function ForgotPasswordPage(): React.ReactElement {
   const [email, setEmail] = useState('');
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  /* In-flight guard: OtpInput.onComplete can re-fire while a verify is pending
+     (e.g. the visitor edits a digit), so a repeat must not start a second request. */
+  const isVerifyingRef = useRef(false);
 
   async function onEmailSubmit(e: React.FormEvent<HTMLFormElement>): Promise<void> {
     e.preventDefault();
@@ -75,6 +78,9 @@ export default function ForgotPasswordPage(): React.ReactElement {
   }
 
   async function onOtpComplete(otp: string): Promise<void> {
+    /* Ignore a repeated completion while a verification is already in flight. */
+    if (isVerifyingRef.current) return;
+    isVerifyingRef.current = true;
     setErrorCode(null);
     try {
       const res = await authFetch(AUTH_ROUTES.PASSWORD_VERIFY_OTP, {
@@ -99,6 +105,9 @@ export default function ForgotPasswordPage(): React.ReactElement {
       setErrorCode(
         err instanceof AuthClientError ? (err.code ?? 'auth.internal') : 'auth.internal',
       );
+    } finally {
+      /* Always clear the guard — including the early-return and error paths. */
+      isVerifyingRef.current = false;
     }
   }
 

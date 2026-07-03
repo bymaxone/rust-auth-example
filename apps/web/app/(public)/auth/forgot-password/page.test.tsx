@@ -113,6 +113,31 @@ describe('ForgotPasswordPage — screen 2 (OTP)', () => {
     expect(mockPush).toHaveBeenCalledWith('/auth/reset-password');
   });
 
+  it('issues only one verify request when onComplete fires twice concurrently', async () => {
+    /* OtpInput.onComplete can re-fire while a verify is pending; the in-flight
+       guard must ensure a second concurrent completion does not start a request. */
+    mockForgotPassword.mockResolvedValueOnce(undefined);
+    let resolveFetch: (value: { json: () => Promise<unknown> }) => void = () => {};
+    mockAuthFetch.mockReturnValueOnce(
+      new Promise<{ json: () => Promise<unknown> }>((resolve) => {
+        resolveFetch = resolve;
+      }),
+    );
+    render(<ForgotPasswordPage />);
+    await submitEmail();
+
+    const otpButton = screen.getByRole('button', { name: /Enter OTP/i });
+    /* Two synchronous completions while the first request is still pending. */
+    fireEvent.click(otpButton);
+    fireEvent.click(otpButton);
+    expect(mockAuthFetch).toHaveBeenCalledTimes(1);
+
+    /* Let the single in-flight request finish so the guard clears cleanly. */
+    resolveFetch({ json: () => Promise.resolve({ verifiedToken: 'vt_ok' }) });
+    await waitFor(() => expect(mockSetResetVerifiedToken).toHaveBeenCalledWith('vt_ok'));
+    expect(mockAuthFetch).toHaveBeenCalledTimes(1);
+  });
+
   it('shows a localized error banner when the OTP authFetch throws AuthClientError', async () => {
     /* OTP errors must surface through <AuthError>. */
     mockForgotPassword.mockResolvedValueOnce(undefined);

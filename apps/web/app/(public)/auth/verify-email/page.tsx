@@ -77,12 +77,19 @@ export default function VerifyEmailPage(): React.ReactElement {
 
   async function verify(otp: string): Promise<void> {
     if (isVerifyingRef.current) return;
+    const email = user?.email;
+    if (email === undefined) {
+      /* No authenticated email — do not post an undefined address; surface a
+         generic error instead of issuing a malformed request. */
+      setErrorCode('auth.internal');
+      return;
+    }
     isVerifyingRef.current = true;
     setErrorCode(null);
     try {
       await authFetch(AUTH_ROUTES.VERIFY_EMAIL, {
         method: 'POST',
-        body: JSON.stringify({ email: user?.email, otp, tenantId }),
+        body: JSON.stringify({ email, otp, tenantId }),
       });
       router.push('/dashboard');
     } catch (err) {
@@ -97,11 +104,18 @@ export default function VerifyEmailPage(): React.ReactElement {
   async function resend(): Promise<void> {
     /* Cooldown guard: ignore clicks until the previous cooldown window elapses. */
     if (resendDisabledRef.current) return;
+    const email = user?.email;
+    if (email === undefined) {
+      /* No authenticated email — skip the request but keep the neutral
+         confirmation so account status is never revealed (anti-enumeration). */
+      setResendMessage('If your email is unverified, a new code is on its way.');
+      return;
+    }
     resendDisabledRef.current = true;
     try {
       await authFetch(AUTH_ROUTES.RESEND_VERIFICATION, {
         method: 'POST',
-        body: JSON.stringify({ email: user?.email, tenantId }),
+        body: JSON.stringify({ email, tenantId }),
       });
     } catch {
       /* Swallow errors — the anti-enumeration requirement means we always show

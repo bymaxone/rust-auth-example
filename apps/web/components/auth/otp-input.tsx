@@ -19,7 +19,7 @@
 
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 /** Props for {@link OtpInput}. */
@@ -46,56 +46,45 @@ export function OtpInput({
   digitLabel = 'Digit',
 }: OtpInputProps): React.ReactElement {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-  /** Mutable value slots; not state because we don't need renders on each keystroke. */
-  const valuesRef = useRef<string[]>(Array.from({ length }, () => ''));
+  /* Controlled cell values. Driving the inputs from state means the DOM is never
+     written by hand, so no ref is dereferenced for its `.value` — every cell
+     access is a provably in-bounds `.map`/`.every`, needing no index guard. */
+  const [values, setValues] = useState<string[]>(() => Array.from({ length }, () => ''));
 
-  /** Move focus to the cell at `index` if it exists. */
+  /** Move focus to the cell at `index` if it is mounted. */
   function focus(index: number): void {
     inputRefs.current[index]?.focus();
   }
 
-  /** Notify `onComplete` if every slot is non-empty. */
-  function maybeComplete(): void {
-    if (valuesRef.current.every((v) => v.length > 0)) {
-      onComplete(valuesRef.current.join(''));
+  /** Notify `onComplete` when the next value array has every cell filled. */
+  function notifyIfComplete(next: readonly string[]): void {
+    if (next.every((v) => v.length > 0)) {
+      onComplete(next.join(''));
     }
   }
 
   function handleChange(index: number, rawValue: string): void {
     /* Keep only the last digit typed (handles Android composing-text quirks). */
     const digit = rawValue.replace(/\D/g, '').slice(-1);
-    valuesRef.current[index] = digit;
-    /* Reflect into the DOM so the visual state matches.
-       Defensive: the ref is always populated while an event handler fires,
-       but TypeScript requires the guard due to `noUncheckedIndexedAccess`. */
-    const input = inputRefs.current[index];
-    /* v8 ignore next -- defensive null guard; ref is always set while mounted */
-    if (input !== null && input !== undefined) input.value = digit;
+    const next = values.map((v, i) => (i === index ? digit : v));
+    setValues(next);
     if (digit.length > 0 && index < length - 1) {
       focus(index + 1);
     }
-    maybeComplete();
+    notifyIfComplete(next);
   }
 
   function handleKeyDown(index: number, e: React.KeyboardEvent<HTMLInputElement>): void {
     if (e.key === 'Backspace') {
-      /* valuesRef is initialized with `length` empty strings and only written with
-         valid indices, so [index] is always a string — the ?? fallback is defensive. */
-      /* v8 ignore next -- ?? fallback is unreachable: index is always in-bounds */
-      const cellVal: string = valuesRef.current[index] ?? '';
-      if (cellVal.length === 0 && index > 0) {
+      /* Read the current cell's content straight from the focused element, so no
+         array is indexed and no fallback is needed. */
+      if (e.currentTarget.value === '' && index > 0) {
         /* Cell is empty — clear the previous cell and move focus there. */
-        valuesRef.current[index - 1] = '';
-        const prev = inputRefs.current[index - 1];
-        /* v8 ignore next -- defensive null guard; ref is always set while mounted */
-        if (prev !== null && prev !== undefined) prev.value = '';
+        setValues((prev) => prev.map((v, i) => (i === index - 1 ? '' : v)));
         focus(index - 1);
       } else {
         /* Cell has content (or it is the first cell) — clear it in place. */
-        valuesRef.current[index] = '';
-        const inp = inputRefs.current[index];
-        /* v8 ignore next -- defensive null guard; ref is always set while mounted */
-        if (inp !== null && inp !== undefined) inp.value = '';
+        setValues((prev) => prev.map((v, i) => (i === index ? '' : v)));
       }
     } else if (e.key === 'ArrowLeft' && index > 0) {
       focus(index - 1);
@@ -107,21 +96,19 @@ export function OtpInput({
   /** Distribute pasted digits across cells starting at index 0. */
   function handlePaste(e: React.ClipboardEvent<HTMLInputElement>): void {
     e.preventDefault();
-    const digits = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, length);
-    digits.split('').forEach((d, i) => {
-      valuesRef.current[i] = d;
-      const inp = inputRefs.current[i];
-      /* v8 ignore next -- defensive null guard; ref is always set while mounted */
-      if (inp !== null && inp !== undefined) inp.value = d;
-    });
+    const chars = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, length).split('');
+    /* Pad short pastes so every cell has a definite value (`chars[i]` is undefined
+       past the pasted length — a real, tested fallback, not a defensive guard). */
+    const next = Array.from({ length }, (_, i) => chars[i] ?? '');
+    setValues(next);
     /* Focus the cell after the last pasted digit, or the last cell. */
-    focus(Math.min(digits.length, length - 1));
-    maybeComplete();
+    focus(Math.min(chars.length, length - 1));
+    notifyIfComplete(next);
   }
 
   return (
     <div className="flex justify-center gap-2" role="group" aria-label="One-time code input">
-      {Array.from({ length }, (_, i) => (
+      {values.map((value, i) => (
         <input
           key={i}
           ref={(el) => {
@@ -132,7 +119,7 @@ export function OtpInput({
           autoComplete={i === 0 ? 'one-time-code' : 'off'}
           pattern="[0-9]*"
           maxLength={1}
-          defaultValue=""
+          value={value}
           onChange={(e) => handleChange(i, e.target.value)}
           onKeyDown={(e) => handleKeyDown(i, e)}
           onPaste={i === 0 ? handlePaste : undefined}

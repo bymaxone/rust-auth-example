@@ -905,4 +905,4 @@ If any DoD bullet is unmet or CI is red, set P9 to `🟡 Partial`, not `✅`.
 - 9.3 ✅ 2026-07-02 — Forgot/reset-password 3-screen wizard, OtpInput, ExpiryPill, reset-flow-store
 - 9.4 ✅ 2026-07-02 — Verify-email page with anti-enumeration resend
 - 9.5 ✅ 2026-07-02 — MFA-challenge page with segmented OTP and in-memory temp-token
-- 9.6 ✅ 2026-07-02 — Accept-invitation page; all 6 tasks complete, 203 tests green, 100% coverage
+- 9.6 ✅ 2026-07-02 — Accept-invitation page; all 6 tasks complete, full unit + e2e suites green, 100% coverage

@@ -76,6 +76,19 @@ describe('OtpInput', () => {
     expect(onComplete).toHaveBeenCalledWith('654321');
   });
 
+  it('pads a short paste and does not fire onComplete', () => {
+    /* Pasting fewer digits than cells fills only the leading cells (the empty
+       fallback for the unpasted cells) and must not fire onComplete. */
+    const onComplete = renderOtp();
+    fireEvent.paste(getCell(1), {
+      clipboardData: { getData: () => '12' },
+    });
+    expect(getCell(1).value).toBe('1');
+    expect(getCell(2).value).toBe('2');
+    expect(getCell(3).value).toBe('');
+    expect(onComplete).not.toHaveBeenCalled();
+  });
+
   it('strips non-digit characters from pasted text', () => {
     /* Non-digits in clipboard data are stripped before distribution. */
     renderOtp();
