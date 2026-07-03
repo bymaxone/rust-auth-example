@@ -1,6 +1,6 @@
 # Phase 9 — Public Auth Pages
 
-> **Status**: 📋 ToDo · **Progress**: 0 / 6 tasks · **Last updated**: 2026-06-23
+> **Status**: ✅ Done · **Progress**: 6 / 6 tasks · **Last updated**: 2026-07-02
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P9
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -88,12 +88,12 @@ authenticated dashboard console is P10 and the platform login is P11.**
 
 | ID | Task | Status | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- | --- |
-| 9.1 | Login page (+ MFA branch) + shared `<AuthError>` / MFA-temp holder | 📋 ToDo | P0 | M | — |
-| 9.2 | Register page (tenant selector) | 📋 ToDo | P0 | S | — |
-| 9.3 | Forgot / reset-password 3-screen wizard + `<OtpInput>` / `<ExpiryPill>` | 📋 ToDo | P0 | M | — |
-| 9.4 | Verify-email page (OTP + anti-enum resend) | 📋 ToDo | P1 | S | — |
-| 9.5 | MFA-challenge page (segmented 6-digit) | 📋 ToDo | P1 | M | — |
-| 9.6 | Accept-invitation page (name + password) | 📋 ToDo | P1 | S | — |
+| 9.1 | Login page (+ MFA branch) + shared `<AuthError>` / MFA-temp holder | ✅ Done | P0 | M | — |
+| 9.2 | Register page (tenant selector) | ✅ Done | P0 | S | — |
+| 9.3 | Forgot / reset-password 3-screen wizard + `<OtpInput>` / `<ExpiryPill>` | ✅ Done | P0 | M | — |
+| 9.4 | Verify-email page (OTP + anti-enum resend) | ✅ Done | P1 | S | — |
+| 9.5 | MFA-challenge page (segmented 6-digit) | ✅ Done | P1 | M | — |
+| 9.6 | Accept-invitation page (name + password) | ✅ Done | P1 | S | — |
 
 ---
 
@@ -101,7 +101,7 @@ authenticated dashboard console is P10 and the platform login is P11.**
 
 ### Task 9.1 — Login page (+ MFA branch) + shared `<AuthError>` / MFA-temp holder
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: —
@@ -277,7 +277,7 @@ Completion Protocol (after you finish):
 
 ### Task 9.2 — Register page (tenant selector)
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: S
 - **Depends on**: —
@@ -384,7 +384,7 @@ Completion Protocol (after you finish):
 
 ### Task 9.3 — Forgot / reset-password 3-screen wizard + `<OtpInput>` / `<ExpiryPill>`
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: —
@@ -520,7 +520,7 @@ Completion Protocol (after you finish):
 
 ### Task 9.4 — Verify-email page (OTP + anti-enum resend)
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: S
 - **Depends on**: —
@@ -636,7 +636,7 @@ Completion Protocol (after you finish):
 
 ### Task 9.5 — MFA-challenge page (segmented 6-digit)
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: M
 - **Depends on**: —
@@ -749,7 +749,7 @@ Completion Protocol (after you finish):
 
 ### Task 9.6 — Accept-invitation page (name + password)
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: S
 - **Depends on**: —
@@ -900,4 +900,9 @@ If any DoD bullet is unmet or CI is red, set P9 to `🟡 Partial`, not `✅`.
 
 > Append-only. One line per completed task: `- <id> ✅ YYYY-MM-DD — <summary>`.
 
-_(empty — no tasks completed yet)_
+- 9.1 ✅ 2026-07-02 — Login page, MFA branch, AuthError banner, auth-layout card, mfa-challenge-store
+- 9.2 ✅ 2026-07-02 — Register page with tenant selector
+- 9.3 ✅ 2026-07-02 — Forgot/reset-password 3-screen wizard, OtpInput, ExpiryPill, reset-flow-store
+- 9.4 ✅ 2026-07-02 — Verify-email page with anti-enumeration resend
+- 9.5 ✅ 2026-07-02 — MFA-challenge page with segmented OTP and in-memory temp-token
+- 9.6 ✅ 2026-07-02 — Accept-invitation page; all 6 tasks complete, full unit + e2e suites green, 100% coverage

@@ -270,3 +270,15 @@ export function localizeAuthError(code: string, locale: Locale = 'en'): Resolved
 export const LOCALIZED_AUTH_CODES: readonly AuthErrorCode[] = Object.values(AUTH_ERROR_CODES);
 
 export { ALL_CODES_LOCALIZED };
+
+/**
+ * Returns the English localized message for an auth error code. Unknown codes
+ * fall back to a generic message. Convenience wrapper over {@link localizeAuthError}
+ * for callers that always render in English.
+ *
+ * @param code - The wire auth code (e.g. `'auth.invalid_credentials'`).
+ * @returns The English message string.
+ */
+export function messageForCode(code: string): string {
+  return localizeAuthError(code, 'en').message;
+}

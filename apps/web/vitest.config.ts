@@ -35,6 +35,7 @@ export default defineConfig({
         'proxy.ts',
         'app/providers.tsx',
         'app/api/auth/**/*.ts',
+        'app/(public)/auth/**/*.tsx',
       ],
       exclude: [
         'node_modules',
