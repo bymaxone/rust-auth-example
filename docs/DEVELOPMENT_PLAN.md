@@ -51,7 +51,7 @@ template, reconciled with the current vault standard and adapted to the Rust/axu
 
 ## Progress
 
-- **Overall progress:** 10 / 15 phases · 57 / 86 tasks done (66%)
+- **Overall progress:** 10 / 15 phases · 64 / 86 tasks done (74%)
 - **Active phase:** P10 (Dashboard Console)
 - **Blocked:** none
 
@@ -74,7 +74,7 @@ template, reconciled with the current vault standard and adapted to the Rust/axu
 | P7 | Platform Domain & WebSocket | `phase-07-platform-websocket.md` | ✅ | 5 / 5 | M | 2026-07-02 |
 | P8 | Web Skeleton & Design System | `phase-08-web-skeleton.md` | ✅ | 6 / 6 | M | 2026-07-02 |
 | P9 | Public Auth Pages | `phase-09-public-auth-pages.md` | ✅ | 6 / 6 | M | 2026-07-02 |
-| P10 | Dashboard Console | `phase-10-dashboard-console.md` | 🔄 | 6 / 7 | L | 2026-07-03 |
+| P10 | Dashboard Console | `phase-10-dashboard-console.md` | 👀 | 7 / 7 | L | 2026-07-03 |
 | P11 | Platform Console | `phase-11-platform-console.md` | 📋 | 0 / 4 | M | — |
 | P12 | Testing & 100% Coverage | `phase-12-testing.md` | 📋 | 0 / 6 | L | — |
 | P13 | Mutation Hardening | `phase-13-mutation.md` | 📋 | 0 / 5 | L | — |
