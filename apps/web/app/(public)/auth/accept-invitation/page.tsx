@@ -33,8 +33,8 @@ export default function AcceptInvitationPage(): React.ReactElement {
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  /* No token in the URL — the visitor must open the emailed link. */
-  if (token === null) {
+  /* No token (missing, or an empty `?token=`) — the visitor must open the emailed link. */
+  if (!token) {
     return (
       <div className="flex flex-col items-center gap-6 text-center">
         <p className="text-sm text-muted-foreground">
