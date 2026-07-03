@@ -183,7 +183,17 @@ export default function PlatformSecurityPage(): React.ReactElement {
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
               <OtpInput onComplete={(code) => void verifyEnable(code)} />
-              <Button variant="ghost" size="sm" onClick={() => setMode('off')}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  // Cancelling enrollment discards the one-time secret + recovery codes
+                  // from memory so they are never retained after the flow is abandoned.
+                  setSetup(null);
+                  setErrorCode(null);
+                  setMode('off');
+                }}
+              >
                 Cancel
               </Button>
             </CardContent>
