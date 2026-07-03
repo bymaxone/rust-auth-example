@@ -2,10 +2,11 @@
  * @fileoverview Layout for the authenticated tenant console.
  *
  * Wraps the Overview (`/`) and every `/dashboard/*` surface in the shared
- * `AppShell` (64px topbar + 250px sidebar). A `<Suspense>` boundary satisfies
- * Next.js's requirement for the pages that read URL state through `nuqs`
- * (`useQueryState` / `useSearchParams`), so the shell never flashes empty while
- * those params resolve. The `/dashboard/*` tree is edge-gated by `proxy.ts`; the
+ * `AppShell` (64px topbar + 250px sidebar). The whole shell sits inside one
+ * `<Suspense>` boundary because the topbar controls themselves read URL state
+ * through `nuqs` (`useQueryState` / `useSearchParams`), which would otherwise force
+ * a static-prerender bailout; until those params resolve a skeleton renders in
+ * place of the shell. The `/dashboard/*` tree is edge-gated by `proxy.ts`; the
  * Overview at `/` gates itself with `useSession`.
  *
  * @module app/(dashboard)/layout

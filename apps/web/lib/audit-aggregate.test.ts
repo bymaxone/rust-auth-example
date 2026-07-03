@@ -26,7 +26,7 @@ describe('fetchAuditAggregate', () => {
       loginSuccessRate: 0.98,
       verifySuccessRate: 0.91,
       activeSessions: 12,
-      mfaEnrolledPct: 0.4,
+      mfaEnrolledShare: 0.4,
       emailProvider: 'mailpit',
       oauthGoogleEnabled: true,
     };

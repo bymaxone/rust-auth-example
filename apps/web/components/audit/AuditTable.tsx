@@ -13,7 +13,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ShieldAlert, ShieldCheck } from 'lucide-react';
 import {
   Dialog,
@@ -131,10 +131,24 @@ export function AuditTable({ rows, following, pendingCount, onFollowChange }: Au
   const { actor, event } = useAuditPivot();
   const [scrollTop, setScrollTop] = useState(0);
   const [selected, setSelected] = useState<AuditLogRow | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const filtered = rows.filter(
     (row) => (actor === null || row.actor === actor) && (event === null || row.event === event),
   );
+
+  const maxTop = Math.max(0, filtered.length * ROW_H - VIEWPORT);
+
+  // Follow-mode pins the view to the newest rows: scroll the actual container to the bottom
+  // (the windowing math alone does not move the DOM) and keep `scrollTop` in sync so a later
+  // unfollow resumes from the right place. New rows grow `maxTop`, re-pinning to the latest.
+  useEffect(() => {
+    if (!following) return;
+    const el = scrollRef.current;
+    if (el === null) return;
+    el.scrollTop = maxTop;
+    setScrollTop(maxTop);
+  }, [following, maxTop]);
 
   if (filtered.length === 0) {
     return (
@@ -144,7 +158,6 @@ export function AuditTable({ rows, following, pendingCount, onFollowChange }: Au
     );
   }
 
-  const maxTop = Math.max(0, filtered.length * ROW_H - VIEWPORT);
   const effectiveTop = following ? maxTop : scrollTop;
   const start = Math.max(0, Math.floor(effectiveTop / ROW_H) - OVERSCAN);
   const windowCount = Math.ceil(VIEWPORT / ROW_H) + OVERSCAN * 2;
@@ -177,6 +190,7 @@ export function AuditTable({ rows, following, pendingCount, onFollowChange }: Au
       </div>
 
       <div
+        ref={scrollRef}
         className="overflow-auto"
         style={{ height: VIEWPORT }}
         onScroll={handleScroll}

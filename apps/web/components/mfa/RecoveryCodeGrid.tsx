@@ -11,7 +11,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, Check, Copy, Download, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -28,18 +28,39 @@ export interface RecoveryCodeGridProps {
 export function RecoveryCodeGrid({ codes }: RecoveryCodeGridProps) {
   const [copied, setCopied] = useState(false);
   const [copyFailed, setCopyFailed] = useState(false);
+  const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const text = codes.join('\n');
+
+  // Clear any pending "Copied" / "Copy failed" reset when the component unmounts so the
+  // timer never fires against an unmounted tree.
+  useEffect(
+    () => () => {
+      if (resetTimer.current !== null) clearTimeout(resetTimer.current);
+    },
+    [],
+  );
+
+  // Schedule the label reset, cancelling any timer still in flight so rapid re-copies never
+  // stack multiple pending resets.
+  function scheduleReset(): void {
+    if (resetTimer.current !== null) clearTimeout(resetTimer.current);
+    resetTimer.current = setTimeout(() => {
+      setCopied(false);
+      setCopyFailed(false);
+      resetTimer.current = null;
+    }, COPIED_RESET_MS);
+  }
 
   async function copy(): Promise<void> {
     try {
       await navigator.clipboard.writeText(text);
       setCopyFailed(false);
       setCopied(true);
-      setTimeout(() => setCopied(false), COPIED_RESET_MS);
+      scheduleReset();
     } catch {
       // Clipboard write may be denied (permission or non-secure context).
       setCopyFailed(true);
-      setTimeout(() => setCopyFailed(false), COPIED_RESET_MS);
+      scheduleReset();
     }
   }
 

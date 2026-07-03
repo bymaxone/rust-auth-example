@@ -22,7 +22,7 @@ vi.mock('@/lib/audit-pivot', () => ({ useAuditPivot: () => pivot }));
 
 function makeRows(n: number): AuditLogRow[] {
   return Array.from({ length: n }, (_, i) => ({
-    id: String(i),
+    id: i,
     actor: `user-${i}`,
     event: `evt-${i}`,
     tenantId: null,
@@ -76,6 +76,32 @@ describe('AuditTable', () => {
     );
     expect(screen.getByText('evt-29')).toBeInTheDocument();
     expect(screen.queryByText('evt-0')).not.toBeInTheDocument();
+  });
+
+  it('scrolls the container to the bottom when follow-mode engages', () => {
+    // Follow-mode must move the actual DOM scroll container to the latest rows, not only
+    // compute the window. 30 rows × 44px − 440px viewport = 880px of scroll.
+    const { rerender } = render(
+      <AuditTable
+        rows={makeRows(30)}
+        following={false}
+        pendingCount={0}
+        onFollowChange={vi.fn()}
+      />,
+    );
+    const scroll = screen.getByTestId('audit-scroll');
+    let assigned = 0;
+    Object.defineProperty(scroll, 'scrollTop', {
+      configurable: true,
+      get: () => assigned,
+      set: (v: number) => {
+        assigned = v;
+      },
+    });
+    rerender(
+      <AuditTable rows={makeRows(30)} following={true} pendingCount={0} onFollowChange={vi.fn()} />,
+    );
+    expect(assigned).toBe(880);
   });
 
   it('shows the top window when paused, then re-windows on scroll', () => {
@@ -156,7 +182,7 @@ describe('AuditTable', () => {
     // A malformed timestamp must degrade gracefully.
     const rows: AuditLogRow[] = [
       {
-        id: 'x',
+        id: 900,
         actor: 'a',
         event: 'weird-time',
         tenantId: null,
@@ -184,7 +210,7 @@ describe('AuditTable', () => {
     // A leaked secret must be flagged AND its value redacted, never rendered.
     const rows: AuditLogRow[] = [
       {
-        id: 's',
+        id: 101,
         actor: 'a',
         event: 'leak',
         tenantId: null,
@@ -206,7 +232,7 @@ describe('AuditTable', () => {
     // A secret nested under a plain key must still be detected and redacted.
     const rows: AuditLogRow[] = [
       {
-        id: 'n',
+        id: 202,
         actor: 'a',
         event: 'nested-leak',
         tenantId: null,
@@ -225,7 +251,7 @@ describe('AuditTable', () => {
     // A secret inside an array item must still be detected and redacted.
     const rows: AuditLogRow[] = [
       {
-        id: 'arr',
+        id: 303,
         actor: 'a',
         event: 'array-leak',
         tenantId: null,

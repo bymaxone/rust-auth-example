@@ -230,15 +230,23 @@ describe('hammerLogin', () => {
 });
 
 describe('diagnostics dispatch actions', () => {
-  it('forceLockout posts to the diagnostics route and returns the status', async () => {
-    // Force-lockout drives an account toward lockout via the example route.
+  it('forceLockout posts a tenant-scoped identifier and returns the status', async () => {
+    // Force-lockout drives the store by the opaque `{ identifier }` the route requires,
+    // scoped as `tenant:email`.
     mockAuthFetch.mockResolvedValueOnce(res({ status: 200, body: { locked: true } }));
     const result = await forceLockout('a@b.co', 'acme');
     expect(mockAuthFetch).toHaveBeenCalledWith(
       '/diagnostics/force-lockout',
-      expect.objectContaining({ method: 'POST' }),
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ identifier: 'acme:a@b.co' }),
+      }),
     );
-    expect(result).toMatchObject({ status: 200, response: { locked: true } });
+    expect(result).toMatchObject({
+      status: 200,
+      response: { locked: true },
+      request: { identifier: 'acme:a@b.co' },
+    });
   });
 
   it('forceLockout tolerates a non-JSON response body', async () => {

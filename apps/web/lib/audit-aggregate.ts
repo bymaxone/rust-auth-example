@@ -1,9 +1,9 @@
 /**
  * @fileoverview Client for the example-owned auth-health aggregate.
  *
- * `GET /audit/aggregate` rolls the audit trail into a handful of headline
- * counters — success rates, the active-session count, the MFA-enrolled share,
- * and the configured providers — that the Overview page renders as health cards.
+ * `GET /audit/aggregate` rolls the audit trail and the users table into a handful
+ * of headline counters — success rates, the active-session count, the MFA-enrolled
+ * share, and the configured providers — that the Overview page renders as health cards.
  * Fetched through the shared `authFetch` (via {@link apiJson}); never a
  * hand-rolled `fetch`.
  *
@@ -21,7 +21,7 @@ export interface AuditAggregate {
   /** Count of currently active sessions. */
   readonly activeSessions: number;
   /** Share of users with MFA enrolled, `0..1`. */
-  readonly mfaEnrolledPct: number;
+  readonly mfaEnrolledShare: number;
   /** The configured outbound email provider. */
   readonly emailProvider: 'mailpit' | 'resend';
   /** Whether Google OAuth is configured in this environment. */

@@ -80,4 +80,60 @@ describe('RecoveryCodeGrid', () => {
       vi.useRealTimers();
     }
   });
+
+  it('reschedules the revert so a repeat copy does not flip the label early', async () => {
+    // A second copy cancels the first pending revert; the label only flips after the newest
+    // timer elapses, never at the original deadline.
+    vi.useFakeTimers();
+    try {
+      render(<RecoveryCodeGrid codes={['aaa', 'bbb']} />);
+      fireEvent.click(screen.getByRole('button', { name: /Copy recovery codes/i }));
+      await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+      expect(screen.getByText('Copied')).toBeInTheDocument();
+      act(() => {
+        vi.advanceTimersByTime(1_999);
+      });
+      fireEvent.click(screen.getByRole('button', { name: /Recovery codes copied/i }));
+      await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+      // One tick past the ORIGINAL deadline: still "Copied" because that timer was cancelled.
+      act(() => {
+        vi.advanceTimersByTime(1);
+      });
+      expect(screen.getByText('Copied')).toBeInTheDocument();
+      // The rescheduled timer eventually reverts.
+      act(() => {
+        vi.advanceTimersByTime(2_000);
+      });
+      expect(screen.getByText('Copy')).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('clears a pending revert timer on unmount', async () => {
+    // Unmounting while a copy confirmation is still pending must clear its timer so it never
+    // fires against an unmounted tree.
+    vi.useFakeTimers();
+    const clearSpy = vi.spyOn(globalThis, 'clearTimeout');
+    try {
+      const { unmount } = render(<RecoveryCodeGrid codes={['aaa', 'bbb']} />);
+      fireEvent.click(screen.getByRole('button', { name: /Copy recovery codes/i }));
+      await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+      expect(screen.getByText('Copied')).toBeInTheDocument();
+      unmount();
+      expect(clearSpy).toHaveBeenCalled();
+    } finally {
+      clearSpy.mockRestore();
+      vi.useRealTimers();
+    }
+  });
 });

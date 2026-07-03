@@ -28,13 +28,20 @@ beforeEach(() => {
 });
 
 describe('DiagnosticsMatrix — hash strength', () => {
-  it('shows the algorithm and a needs-rehash badge', async () => {
-    // A weak hash must be flagged for rehashing.
-    apiJson.mockResolvedValueOnce({ algorithm: 'argon2id', needsRehash: true });
+  it('posts a PHC body and flags a stale hash for rehashing', async () => {
+    // The endpoint requires a `{ phc }` body; a legacy hash comes back needing a rehash.
+    apiJson.mockResolvedValueOnce({ needsRehash: true });
     render(<DiagnosticsMatrix />);
     fireEvent.click(screen.getByRole('button', { name: 'Measure' }));
-    await waitFor(() => expect(screen.getByText('argon2id')).toBeInTheDocument());
-    expect(screen.getByText('needs rehash')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText('needs rehash')).toBeInTheDocument());
+    expect(screen.getByText('legacy sample')).toBeInTheDocument();
+    expect(apiJson).toHaveBeenCalledWith(
+      '/diagnostics/hash-strength',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ phc: 'scrypt:00112233:44556677' }),
+      }),
+    );
   });
 
   it('shows an up-to-date badge when no rehash is needed', async () => {
@@ -72,16 +79,31 @@ describe('DiagnosticsMatrix — hash strength', () => {
 });
 
 describe('DiagnosticsMatrix — lockout', () => {
-  it('renders the retry countdown when present', async () => {
-    // A lockout with a window shows the retry countdown.
-    apiJson.mockResolvedValueOnce({ retryAfterSeconds: 30 });
+  it('posts an identifier body and renders the retry countdown when locked', async () => {
+    // The endpoint requires an `{ identifier }` body; a positive countdown is surfaced.
+    apiJson.mockResolvedValueOnce({ locked: true, remainingLockoutSecs: 30 });
     render(<DiagnosticsMatrix />);
     fireEvent.click(screen.getByRole('button', { name: 'Force lockout' }));
     await waitFor(() => expect(screen.getByText(/locked · retry in 30s/i)).toBeInTheDocument());
+    expect(apiJson).toHaveBeenCalledWith(
+      '/diagnostics/force-lockout',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ identifier: 'lockout-demo@example.test' }),
+      }),
+    );
   });
 
-  it('renders a triggered badge when no window is returned', async () => {
-    // A lockout with no window still confirms it fired.
+  it('renders a locked badge when the countdown has elapsed', async () => {
+    // A locked identifier with a zero countdown still reads as locked.
+    apiJson.mockResolvedValueOnce({ locked: true, remainingLockoutSecs: 0 });
+    render(<DiagnosticsMatrix />);
+    fireEvent.click(screen.getByRole('button', { name: 'Force lockout' }));
+    await waitFor(() => expect(screen.getByText('locked')).toBeInTheDocument());
+  });
+
+  it('renders a triggered badge when no lock is reported', async () => {
+    // A response without a lock still confirms the run fired.
     apiJson.mockResolvedValueOnce({});
     render(<DiagnosticsMatrix />);
     fireEvent.click(screen.getByRole('button', { name: 'Force lockout' }));

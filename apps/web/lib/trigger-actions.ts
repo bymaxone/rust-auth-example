@@ -153,9 +153,14 @@ export async function hammerLogin(input: LoginInput, attempts = 7): Promise<Trig
   return { request, response: { note: 'no 429 within attempts' }, status: 200 };
 }
 
-/** Drive an account toward lockout via the example-owned diagnostics route. */
+/**
+ * Drive an account toward lockout via the example-owned diagnostics route. The route keys
+ * the brute-force store by an opaque `identifier`, so the tenant + email are combined into
+ * one for the demo (matching how the login path scopes lockouts per tenant).
+ */
 export async function forceLockout(email: string, tenantId: string): Promise<TriggerResult> {
-  const request = { email, tenantId };
+  const identifier = `${tenantId}:${email}`;
+  const request = { identifier };
   try {
     const res = await authFetch('/diagnostics/force-lockout', {
       method: 'POST',

@@ -133,4 +133,62 @@ describe('QrEnrollmentCard', () => {
       vi.useRealTimers();
     }
   });
+
+  it('reschedules the revert so a repeat copy does not flip the label early', async () => {
+    // A second copy cancels the first pending revert; the label only flips after the newest
+    // timer elapses, never at the original deadline.
+    vi.useFakeTimers();
+    try {
+      toDataURL.mockResolvedValueOnce('data:image/png;base64,AAAA');
+      render(<QrEnrollmentCard setup={SETUP} />);
+      fireEvent.click(screen.getByRole('button', { name: /Copy secret/i }));
+      await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+      expect(screen.getByRole('button', { name: /Secret copied/i })).toBeInTheDocument();
+      act(() => {
+        vi.advanceTimersByTime(1_999);
+      });
+      fireEvent.click(screen.getByRole('button', { name: /Secret copied/i }));
+      await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+      // One tick past the ORIGINAL deadline: still copied because that timer was cancelled.
+      act(() => {
+        vi.advanceTimersByTime(1);
+      });
+      expect(screen.getByRole('button', { name: /Secret copied/i })).toBeInTheDocument();
+      // The rescheduled timer eventually reverts.
+      act(() => {
+        vi.advanceTimersByTime(2_000);
+      });
+      expect(screen.getByRole('button', { name: /Copy secret/i })).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('clears a pending revert timer on unmount', async () => {
+    // Unmounting while a copy confirmation is still pending must clear its timer so it never
+    // fires against an unmounted tree.
+    vi.useFakeTimers();
+    const clearSpy = vi.spyOn(globalThis, 'clearTimeout');
+    try {
+      toDataURL.mockResolvedValueOnce('data:image/png;base64,AAAA');
+      const { unmount } = render(<QrEnrollmentCard setup={SETUP} />);
+      fireEvent.click(screen.getByRole('button', { name: /Copy secret/i }));
+      await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+      expect(screen.getByRole('button', { name: /Secret copied/i })).toBeInTheDocument();
+      unmount();
+      expect(clearSpy).toHaveBeenCalled();
+    } finally {
+      clearSpy.mockRestore();
+      vi.useRealTimers();
+    }
+  });
 });

@@ -10,18 +10,22 @@
 
 import { apiJson } from './api';
 
-/** One audit row. Its `id` is also the keyset cursor / SSE event id. */
+/**
+ * One audit row, matching the wire shape of the Rust `AuditRow`. Its numeric `id` is the
+ * row's monotonic keyset cursor; the SSE tail also carries it as the (stringified) event id
+ * for native `Last-Event-ID` resumption.
+ */
 export interface AuditLogRow {
-  /** The row id (keyset cursor / SSE event id). */
-  readonly id: string;
+  /** The row id — a monotonic number that doubles as the keyset cursor. */
+  readonly id: number;
   /** The acting principal (user id / email / "system"). */
   readonly actor: string;
   /** The hook/event name. */
   readonly event: string;
   /** The tenant, or `null` for tenant-less events. */
   readonly tenantId: string | null;
-  /** The client IP. */
-  readonly ip: string;
+  /** The client IP, or `null` when the request carried none. */
+  readonly ip: string | null;
   /** ISO-8601 creation timestamp. */
   readonly createdAt: string;
   /** The masked, secret-free detail payload. */
@@ -32,16 +36,16 @@ export interface AuditLogRow {
 export interface AuditPage {
   /** The rows in this page. */
   readonly data: readonly AuditLogRow[];
-  /** The cursor for the next page, or `null` at the end. */
-  readonly nextCursor: string | null;
+  /** The cursor (a row id) for the next page, or `null` at the end. */
+  readonly nextCursor: number | null;
   /** Whether more pages remain. */
   readonly hasMore: boolean;
 }
 
 /** Facets + pagination for an audit query. */
 export interface AuditQuery {
-  /** The keyset cursor to page from. */
-  readonly cursor?: string;
+  /** The keyset cursor (a row id) to page from. */
+  readonly cursor?: number;
   /** Filter by actor. */
   readonly actor?: string;
   /** Filter by event name. */

@@ -11,7 +11,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
 import { Check, Copy, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -33,6 +33,7 @@ export function QrEnrollmentCard({ setup }: QrEnrollmentCardProps) {
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [copyFailed, setCopyFailed] = useState(false);
+  const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -48,16 +49,36 @@ export function QrEnrollmentCard({ setup }: QrEnrollmentCardProps) {
     };
   }, [setup.qrCodeUri]);
 
+  // Clear any pending "Copied" / "Copy failed" reset when the component unmounts so the
+  // timer never fires against an unmounted tree.
+  useEffect(
+    () => () => {
+      if (resetTimer.current !== null) clearTimeout(resetTimer.current);
+    },
+    [],
+  );
+
+  // Schedule the label reset, cancelling any timer still in flight so rapid re-copies never
+  // stack multiple pending resets.
+  function scheduleReset(): void {
+    if (resetTimer.current !== null) clearTimeout(resetTimer.current);
+    resetTimer.current = setTimeout(() => {
+      setCopied(false);
+      setCopyFailed(false);
+      resetTimer.current = null;
+    }, COPIED_RESET_MS);
+  }
+
   async function copySecret(): Promise<void> {
     try {
       await navigator.clipboard.writeText(setup.secret);
       setCopyFailed(false);
       setCopied(true);
-      setTimeout(() => setCopied(false), COPIED_RESET_MS);
+      scheduleReset();
     } catch {
       // Clipboard write may be denied (permission or non-secure context).
       setCopyFailed(true);
-      setTimeout(() => setCopyFailed(false), COPIED_RESET_MS);
+      scheduleReset();
     }
   }
 

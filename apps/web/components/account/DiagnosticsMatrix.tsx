@@ -63,17 +63,33 @@ function DiagnosticAction<T>(props: {
   );
 }
 
+/** Wire shape of `POST /diagnostics/hash-strength`. */
 interface HashStrengthResult {
-  readonly algorithm?: string;
   readonly needsRehash?: boolean;
 }
+/** Wire shape of `POST /diagnostics/force-lockout`. */
 interface LockoutResult {
-  readonly retryAfterSeconds?: number;
+  readonly locked?: boolean;
+  readonly remainingLockoutSecs?: number;
 }
 interface InspectResult {
   readonly decoded?: { readonly header?: { readonly alg?: string }; readonly isValid?: boolean };
   readonly verified?: boolean;
 }
+
+/**
+ * A representative legacy `scrypt:` hash the server evaluates against its current password
+ * parameters. It is deliberately stale, so the rehash-on-verify detection is demonstrated;
+ * it is a sample only — no real credential is ever involved.
+ */
+const SAMPLE_LEGACY_PHC = 'scrypt:00112233:44556677';
+
+/**
+ * A throwaway identifier used to drive the brute-force store to its lockout threshold for the
+ * demo. It is not a real account key — the diagnostics route keys the store by this opaque
+ * string directly.
+ */
+const LOCKOUT_DEMO_IDENTIFIER = 'lockout-demo@example.test';
 
 /** Derive the recent hook-event count from the diagnostics payload. */
 function hookCount(data: unknown): number {
@@ -169,12 +185,17 @@ export function DiagnosticsMatrix() {
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <DiagnosticAction<HashStrengthResult>
         title="Password hash strength"
-        description="Reflect the configured Argon2 parameters."
+        description="Check a sample legacy hash against the current password parameters."
         actionLabel="Measure"
-        run={() => apiJson<HashStrengthResult>('/diagnostics/hash-strength', { method: 'POST' })}
+        run={() =>
+          apiJson<HashStrengthResult>('/diagnostics/hash-strength', {
+            method: 'POST',
+            body: JSON.stringify({ phc: SAMPLE_LEGACY_PHC }),
+          })
+        }
         renderResult={(data) => (
           <div className="flex items-center gap-2 text-sm">
-            <span className="font-mono text-foreground">{data.algorithm ?? 'argon2'}</span>
+            <span className="font-mono text-muted-foreground">legacy sample</span>
             {data.needsRehash === true ? (
               <Badge variant="destructive" className="font-mono">
                 needs rehash
@@ -190,17 +211,22 @@ export function DiagnosticsMatrix() {
 
       <DiagnosticAction<LockoutResult>
         title="Brute-force lockout"
-        description="Drive an account to the lockout threshold."
+        description="Drive an identifier to the lockout threshold."
         actionLabel="Force lockout"
-        run={() => apiJson<LockoutResult>('/diagnostics/force-lockout', { method: 'POST' })}
+        run={() =>
+          apiJson<LockoutResult>('/diagnostics/force-lockout', {
+            method: 'POST',
+            body: JSON.stringify({ identifier: LOCKOUT_DEMO_IDENTIFIER }),
+          })
+        }
         renderResult={(data) =>
-          data.retryAfterSeconds !== undefined ? (
+          typeof data.remainingLockoutSecs === 'number' && data.remainingLockoutSecs > 0 ? (
             <Badge variant="destructive" className="w-fit font-mono">
-              locked · retry in {data.retryAfterSeconds}s
+              locked · retry in {data.remainingLockoutSecs}s
             </Badge>
           ) : (
             <Badge variant="outline" className="w-fit font-mono">
-              lockout triggered
+              {data.locked === true ? 'locked' : 'lockout triggered'}
             </Badge>
           )
         }

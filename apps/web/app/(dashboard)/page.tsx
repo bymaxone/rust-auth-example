@@ -136,9 +136,9 @@ export default function OverviewPage(): React.ReactElement {
         />
         <HealthCard
           label="MFA enrolled"
-          value={pct(a.mfaEnrolledPct)}
+          value={pct(a.mfaEnrolledShare)}
           icon={KeyRound}
-          tone={a.mfaEnrolledPct >= 0.5 ? 'positive' : 'neutral'}
+          tone={a.mfaEnrolledShare >= 0.5 ? 'positive' : 'neutral'}
         />
       </div>
 
