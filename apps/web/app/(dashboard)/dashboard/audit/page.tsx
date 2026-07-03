@@ -20,13 +20,16 @@ import { useAuditTail } from '@/hooks/use-audit-tail';
 import { useAuditPivot } from '@/lib/audit-pivot';
 import { fetchAuditPage, type AuditLogRow } from '@/lib/audit-api';
 
+/** The dev-only audit/diagnostics APIs are unavailable in a production build. */
+const DEV_TOOLING = process.env.NODE_ENV !== 'production';
+
 /** The Audit Explorer page. */
 export default function AuditPage(): React.ReactElement {
   const { actor, event, pivotTo } = useAuditPivot();
   const [live, setLive] = useState(true);
   const [pageRows, setPageRows] = useState<readonly AuditLogRow[]>([]);
   const [loadError, setLoadError] = useState(false);
-  const tail = useAuditTail(live);
+  const tail = useAuditTail(DEV_TOOLING && live);
 
   const load = useCallback(async (): Promise<void> => {
     setLoadError(false);
@@ -39,8 +42,22 @@ export default function AuditPage(): React.ReactElement {
   }, []);
 
   useEffect(() => {
-    void load();
+    if (DEV_TOOLING) void load();
   }, [load]);
+
+  if (!DEV_TOOLING) {
+    return (
+      <section className="flex flex-col gap-6">
+        <h1 className="font-mono text-2xl font-bold">Audit Explorer</h1>
+        <Card>
+          <CardContent className="p-6 text-sm text-muted-foreground">
+            The audit read API is development-only, matching the backend. Run the stack in the
+            development environment to explore the hook-event stream here.
+          </CardContent>
+        </Card>
+      </section>
+    );
+  }
 
   const rows = [...pageRows, ...tail.rows];
   const hasFacet = actor !== null || event !== null;

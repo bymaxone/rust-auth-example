@@ -18,6 +18,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DiagnosticsMatrix } from '@/components/account/DiagnosticsMatrix';
 
+/** The dev-only diagnostics API is unavailable in a production build. */
+const DEV_TOOLING = process.env.NODE_ENV !== 'production';
+
 /** One labelled profile field. */
 function Field({ label, value }: { readonly label: string; readonly value: string }) {
   return (
@@ -108,7 +111,15 @@ export default function AccountPage(): React.ReactElement {
 
       <div className="flex flex-col gap-3">
         <h2 className="font-mono text-lg font-semibold">Diagnostics</h2>
-        <DiagnosticsMatrix />
+        {DEV_TOOLING ? (
+          <DiagnosticsMatrix />
+        ) : (
+          <Card>
+            <CardContent className="p-6 text-sm text-muted-foreground">
+              The diagnostics API is development-only, matching the backend.
+            </CardContent>
+          </Card>
+        )}
       </div>
     </section>
   );
