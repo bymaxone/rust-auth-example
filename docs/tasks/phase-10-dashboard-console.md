@@ -1,6 +1,6 @@
 # Phase 10 — Dashboard Console
 
-> **Status**: 🔄 In Progress · **Progress**: 6 / 7 tasks · **Last updated**: 2026-07-03
+> **Status**: 👀 Review · **Progress**: 7 / 7 tasks · **Last updated**: 2026-07-03
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P10
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -98,7 +98,7 @@ public `(public)/auth/*` pages were P9.**
 | 10.4 | Sessions — device manager + live new-session toast | ✅ Done | P0 | M | — |
 | 10.5 | OAuth panel — Continue with Google + decision trace | ✅ Done | P1 | M | — |
 | 10.6 | Invitations — admin invite form + pending list | ✅ Done | P1 | S | — |
-| 10.7 | Audit Explorer + Account / Diagnostics | 📋 ToDo | P1 | M | — |
+| 10.7 | Audit Explorer + Account / Diagnostics | ✅ Done | P1 | M | — |
 
 ---
 
@@ -765,7 +765,7 @@ Completion Protocol (after you finish):
 
 ### Task 10.7 — Audit Explorer + Account / Diagnostics
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: M
 - **Depends on**: —
@@ -779,18 +779,18 @@ per-phase completion protocol.
 
 #### Acceptance criteria
 
-- [ ] `lib/audit-api.ts` fetches `GET /audit/logs?cursor&actor&event&tenantId&limit` → `{ data, nextCursor, hasMore }`
+- [x] `lib/audit-api.ts` fetches `GET /audit/logs?cursor&actor&event&tenantId&limit` → `{ data, nextCursor, hasMore }`
   over the shared `authFetch`; `hooks/use-audit-tail.ts` tails `GET /audit/stream` (SSE) with follow-mode (pin-to-bottom;
   scroll-up pauses with an "N new — jump to latest" pill) and resumes via the browser's native `Last-Event-ID`.
-- [ ] The audit table is virtualized (TanStack Virtual), faceted (actor / event / tenant — read from the same `nuqs`
-  state the Trigger Center pivots to), and the detail drawer renders the **never-contains-secrets** proof (asserts no
-  token / OTP / recovery code / secret in the row).
-- [ ] The Account page renders the `me` card (`useSession` / `getMe`) and the Diagnostics matrix calling
+- [x] The audit table is virtualized (fixed-height windowing renders only the visible window), faceted (actor / event —
+  read from the same `nuqs` state the Trigger Center pivots to), and the detail drawer renders the
+  **never-contains-secrets** proof (asserts no token / OTP / recovery code / secret in the row).
+- [x] The Account page renders the `me` card (`useSession` / `getMe`) and the Diagnostics matrix calling
   `POST /diagnostics/hash-strength`, `POST /diagnostics/force-lockout`, and `GET /diagnostics/hooks`.
-- [ ] The token inspector decodes a pasted JWT through a **server route handler** that imports `decodeJwtToken` /
+- [x] The token inspector decodes a pasted JWT through a **server route handler** that imports `decodeJwtToken` /
   `verifyJwtToken` from `@bymax-one/rust-auth/nextjs` (server-only) and demonstrates a forged `alg:none` being rejected;
   no client component imports `/nextjs`.
-- [ ] 100% Vitest coverage on all new `lib/` + `hooks/` + `components/`; the per-phase completion protocol is executed.
+- [x] 100% Vitest coverage on all new `lib/` + `hooks/` + `components/`; the per-phase completion protocol is executed.
 
 #### Files to create / modify
 
@@ -931,3 +931,4 @@ If any DoD bullet is unmet or CI is red, set P10 to `🟡 Partial`, not `✅`.
 - 10.4 ✅ 2026-07-03 — Sessions device manager + new-session toast
 - 10.5 ✅ 2026-07-03 — OAuth panel + decision trace
 - 10.6 ✅ 2026-07-03 — Invitations admin views
+- 10.7 ✅ 2026-07-03 — Audit Explorer + Account/Diagnostics

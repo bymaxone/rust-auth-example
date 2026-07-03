@@ -24,11 +24,15 @@ function DashboardSkeleton(): React.ReactElement {
   );
 }
 
-/** The authenticated console shell wrapping the Overview and dashboard pages. */
+/**
+ * The authenticated console shell wrapping the Overview and dashboard pages. The
+ * Suspense boundary wraps the whole shell so the topbar's URL-state controls
+ * (`nuqs` `useSearchParams`) resolve without a static-prerender bailout.
+ */
 export default function DashboardLayout({ children }: { readonly children: ReactNode }) {
   return (
-    <AppShell>
-      <Suspense fallback={<DashboardSkeleton />}>{children}</Suspense>
-    </AppShell>
+    <Suspense fallback={<DashboardSkeleton />}>
+      <AppShell>{children}</AppShell>
+    </Suspense>
   );
 }
