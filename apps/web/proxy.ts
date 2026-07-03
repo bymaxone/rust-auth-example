@@ -14,6 +14,11 @@
  * back to a non-authoritative decode-only check), is never logged, and is never
  * placed in a URL. This subpath is `server-only`.
  *
+ * Domain isolation is enforced at the token `type` discriminator: a `"platform"`
+ * token is never admitted to a `/dashboard/*` path, and a `"dashboard"` token is
+ * never admitted to a `/platform/*` path. Cross-domain tokens are redirected to
+ * the correct login with `?reason=wrong-domain`.
+ *
  * @module proxy
  */
 
@@ -41,8 +46,23 @@ const authProxy = createAuthProxy({
 const PROTECTED = [/^\/dashboard(?:\/|$)/, /^\/platform\/(?!login(?:\/|$))/];
 
 /**
+ * Return a redirect to the matching login URL.
+ *
+ * @param base - The base request URL used to resolve an absolute redirect target.
+ * @param loginPath - The login page path (e.g. `/platform/login`).
+ * @param reason - Optional `?reason=…` query parameter appended to the URL.
+ * @returns A 307 redirect response.
+ */
+function loginRedirect(base: string, loginPath: string, reason?: string): Response {
+  const url = new URL(loginPath, base);
+  if (reason !== undefined) url.searchParams.set('reason', reason);
+  return NextResponse.redirect(url);
+}
+
+/**
  * Gate every matched request. Auth traffic is delegated to the proxy; protected
- * pages are admitted only on an authoritatively verified session cookie.
+ * pages are admitted only on an authoritatively verified session cookie whose
+ * domain token type matches the requested path tree.
  *
  * @param request - The incoming edge request.
  * @returns A pass-through, proxy, or redirect response.
@@ -58,14 +78,26 @@ export async function proxy(request: NextRequest): Promise<Response> {
     return NextResponse.next();
   }
 
+  const isPlatform = pathname.startsWith('/platform');
+  const loginPath = isPlatform ? '/platform/login' : '/auth/login';
+  const expectedType = isPlatform ? 'platform' : 'dashboard';
+
   const token = request.cookies.get(AUTH_ACCESS_COOKIE_NAME)?.value;
   const decoded = token !== undefined ? await verifyJwtToken(token, accessTokenSecret) : null;
-  if (decoded?.isValid === true) {
-    return NextResponse.next();
+
+  if (decoded?.isValid !== true) {
+    // Missing token or failed verification — redirect to the domain login (no reason param).
+    return loginRedirect(request.url, loginPath);
   }
 
-  const loginPath = pathname.startsWith('/platform') ? '/platform/login' : '/auth/login';
-  return NextResponse.redirect(new URL(loginPath, request.url));
+  const tokenType = decoded.payload?.type;
+  if (tokenType !== expectedType) {
+    // Valid token but wrong domain — surface the mismatch so the user can log in to the
+    // correct domain rather than seeing an opaque "not found" or infinite loop.
+    return loginRedirect(request.url, loginPath, 'wrong-domain');
+  }
+
+  return NextResponse.next();
 }
 
 /** Only run the gate for auth traffic and the protected page trees. */

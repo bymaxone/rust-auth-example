@@ -1,6 +1,6 @@
 # Phase 11 — Platform Console
 
-> **Status**: 📋 ToDo · **Progress**: 0 / 4 tasks · **Last updated**: 2026-06-23
+> **Status**: ✅ Done · **Progress**: 4 / 4 tasks · **Last updated**: 2026-07-03
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P11
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -48,10 +48,10 @@ When P11 is done, signing in at `/platform/login` (no tenant selector) authentic
 
 | ID | Task | Status | Priority | Size | Depends on |
 |---|---|---|---|---|---|
-| 11.1 | Platform login + protected shell | 📋 ToDo | P0 | M | — |
-| 11.2 | Platform MFA (enroll / challenge / disable) | 📋 ToDo | P1 | M | 11.1 |
-| 11.3 | Platform sessions (revoke-all) | 📋 ToDo | P1 | S | 11.1 |
-| 11.4 | Platform users (read-only) | 📋 ToDo | P2 | S | 11.1 |
+| 11.1 | Platform login + protected shell | ✅ Done | P0 | M | — |
+| 11.2 | Platform MFA (enroll / challenge / disable) | ✅ Done | P1 | M | 11.1 |
+| 11.3 | Platform sessions (revoke-all) | ✅ Done | P1 | S | 11.1 |
+| 11.4 | Platform users (read-only) | ✅ Done | P2 | S | 11.1 |
 
 ---
 
@@ -59,7 +59,7 @@ When P11 is done, signing in at `/platform/login` (no tenant selector) authentic
 
 ### Task 11.1 — Platform login + protected shell
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: —
@@ -250,7 +250,7 @@ Completion Protocol (after you finish):
 
 ### Task 11.2 — Platform MFA (enroll / challenge / disable)
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: M
 - **Depends on**: 11.1
@@ -365,7 +365,7 @@ Completion Protocol (after you finish):
 
 ### Task 11.3 — Platform sessions (revoke-all)
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: S
 - **Depends on**: 11.1
@@ -456,7 +456,7 @@ Completion Protocol (after you finish):
 
 ### Task 11.4 — Platform users (read-only)
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P2
 - **Size**: S
 - **Depends on**: 11.1
@@ -590,4 +590,7 @@ Run this closeout when the **last** task (11.4) is ✅:
 
 > Append-only. One line per completed task: `- <id> ✅ YYYY-MM-DD — <summary>`.
 
-_(empty — no tasks completed yet)_
+- 11.1 ✅ 2026-07-03 — Platform login + protected shell: `lib/platform-client.ts` on `createAuthFetch`, login page with inline MFA step, edge proxy domain isolation, server layout defense-in-depth, `app/api/platform/client-refresh/route.ts`
+- 11.2 ✅ 2026-07-03 — Platform MFA: enroll/verify-enable/disable/regenerate flows in `app/platform/(protected)/security/page.tsx`; fail-closed `auth.mfa_not_enabled` surfaced honestly
+- 11.3 ✅ 2026-07-03 — Platform sessions (bulk-only): `app/platform/(protected)/sessions/page.tsx` with revoke-all confirm dialog; no per-session list or per-row revoke
+- 11.4 ✅ 2026-07-03 — Platform users (read-only): `GET /platform/users` Rust handler (`PlatformAdmin` guard, safe-columns-only SQL, `SafeAuthPlatformUser` response); read-only server-component page with domain-isolation banner

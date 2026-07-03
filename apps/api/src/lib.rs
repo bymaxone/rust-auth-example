@@ -20,6 +20,7 @@ pub mod guards;
 pub mod hooks;
 pub mod layers;
 pub mod oauth;
+pub mod platform;
 pub mod realtime;
 pub mod repository;
 pub mod routes;

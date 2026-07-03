@@ -94,15 +94,18 @@ pub fn build_router(state: AppState) -> Router {
 ///
 /// The health probe and the example WebSocket endpoint mount unconditionally: the WebSocket
 /// upgrade authenticates via a single-use ticket redeemed from an authenticated session, so
-/// it is safe in every environment. The audit read-API (`/audit/*`) and diagnostics surface
-/// (`/diagnostics/*`) are development-only and each requires the appropriate library auth
-/// guard — `DashboardAdmin` for the audit read-API, and per-route guards for diagnostics
-/// (`DashboardUser` for `whoami`, `PlatformAdmin` for `platform`, and none for the lockout
-/// and hook routes). They expose the full audit trail and allow force-locking any account, so
-/// they stay gated to Development and must not be reachable in production.
+/// it is safe in every environment. The platform read-API (`/platform/*`) is guarded per
+/// route by [`crate::guards::PlatformAdmin`] and mounts unconditionally. The audit
+/// read-API (`/audit/*`) and diagnostics surface (`/diagnostics/*`) are development-only
+/// and each requires the appropriate library auth guard — `DashboardAdmin` for the audit
+/// read-API, and per-route guards for diagnostics (`DashboardUser` for `whoami`,
+/// `PlatformAdmin` for `platform`, and none for the lockout and hook routes). They expose the
+/// full audit trail and allow force-locking any account, so they stay gated to Development
+/// and must not be reachable in production.
 fn example_routes(app_env: RuntimeEnvironment) -> Router<AppState> {
     let mut router = Router::new()
         .merge(crate::routes::health::routes())
+        .merge(crate::platform::router())
         .route("/ws/example", axum::routing::get(crate::ws::realtime));
     if app_env == RuntimeEnvironment::Development {
         router = router
@@ -221,5 +224,24 @@ mod tests {
                 "{uri} must be absent outside Development"
             );
         }
+    }
+
+    #[tokio::test]
+    async fn platform_users_route_requires_auth() {
+        // The GET /platform/users route is mounted unconditionally; a request
+        // without a bearer token must be rejected with 401 (PlatformAdmin guard).
+        let router = build_router(AppState::for_test());
+        let response = router
+            .oneshot(
+                Request::builder()
+                    .method("GET")
+                    .uri("/platform/users")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        // 401 from PlatformAdmin (no token present) — the route is reachable but gated.
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
 }

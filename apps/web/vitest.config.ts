@@ -37,7 +37,15 @@ export default defineConfig({
         'app/providers.tsx',
         'app/api/auth/**/*.ts',
         'app/api/diagnostics/**/*.ts',
+        'app/api/platform/**/*.ts',
         'app/(public)/auth/**/*.tsx',
+        // Platform client-side pages (jsdom-testable).
+        'app/platform/login/page.tsx',
+        'app/platform/(protected)/security/page.tsx',
+        'app/platform/(protected)/sessions/page.tsx',
+        // Server components (layout.tsx, users/page.tsx) require the Next.js server
+        // runtime (cookies, redirect, server-side fetch) and are exercised by the
+        // integration suite, not the jsdom unit suite.
       ],
       exclude: [
         'node_modules',

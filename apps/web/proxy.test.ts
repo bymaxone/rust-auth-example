@@ -82,12 +82,22 @@ describe('proxy gate', () => {
     expect(result.headers.get('location')).toContain('/auth/login');
   });
 
-  it('admits a dashboard request with a verified cookie', async () => {
-    // Verifies an authoritatively valid token passes through — no backend call.
-    verifyJwtToken.mockResolvedValue({ isValid: true });
+  it('admits a dashboard request with a verified dashboard-domain cookie', async () => {
+    // Verifies an authoritatively valid dashboard token passes through — no backend call.
+    verifyJwtToken.mockResolvedValue({ isValid: true, payload: { type: 'dashboard' } });
     const result = await proxy(request('/dashboard/sessions', 'access_token=good'));
 
     expect(result.headers.get('x-middleware-next')).toBe('1');
+  });
+
+  it('redirects a dashboard request carrying a platform-domain token to /auth/login?reason=wrong-domain', async () => {
+    // Domain isolation: a platform token must not be admitted to the dashboard tree.
+    verifyJwtToken.mockResolvedValue({ isValid: true, payload: { type: 'platform' } });
+    const result = await proxy(request('/dashboard/sessions', 'access_token=platform-tok'));
+
+    expect(result.status).toBe(307);
+    expect(result.headers.get('location')).toContain('/auth/login');
+    expect(result.headers.get('location')).toContain('reason=wrong-domain');
   });
 
   it('redirects an uncookied protected platform request to /platform/login', async () => {
@@ -96,6 +106,24 @@ describe('proxy gate', () => {
 
     expect(result.status).toBe(307);
     expect(result.headers.get('location')).toContain('/platform/login');
+  });
+
+  it('admits a platform request with a verified platform-domain cookie', async () => {
+    // Verifies an authoritatively valid platform token passes through.
+    verifyJwtToken.mockResolvedValue({ isValid: true, payload: { type: 'platform' } });
+    const result = await proxy(request('/platform/users', 'access_token=platform-tok'));
+
+    expect(result.headers.get('x-middleware-next')).toBe('1');
+  });
+
+  it('redirects a platform request carrying a dashboard-domain token to /platform/login?reason=wrong-domain', async () => {
+    // Domain isolation: a dashboard token must not be admitted to the platform tree.
+    verifyJwtToken.mockResolvedValue({ isValid: true, payload: { type: 'dashboard' } });
+    const result = await proxy(request('/platform/users', 'access_token=dashboard-tok'));
+
+    expect(result.status).toBe(307);
+    expect(result.headers.get('location')).toContain('/platform/login');
+    expect(result.headers.get('location')).toContain('reason=wrong-domain');
   });
 });
 
