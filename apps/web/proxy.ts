@@ -40,10 +40,11 @@ const authProxy = createAuthProxy({
   routePrefix: 'auth',
 });
 
-/** Pages that require a verified session. Only `/platform/login` (and its subpaths) is
- * excluded — the negative lookahead is anchored so `/platform/login-anything` is still
- * gated rather than mistaken for the login page. */
-const PROTECTED = [/^\/dashboard(?:\/|$)/, /^\/platform\/(?!login(?:\/|$))/];
+/** Pages that require a verified session. The platform pattern matches the bare
+ * `/platform` path and every `/platform/…` subpath, while excluding only
+ * `/platform/login` (and its subpaths). The negative lookahead is anchored so
+ * `/platform/login-anything` is still gated rather than mistaken for the login page. */
+const PROTECTED = [/^\/dashboard(?:\/|$)/, /^\/platform(?:$|\/(?!login(?:\/|$)))/];
 
 /**
  * Return a redirect to the matching login URL.

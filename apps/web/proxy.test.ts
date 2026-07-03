@@ -100,6 +100,15 @@ describe('proxy gate', () => {
     expect(result.headers.get('location')).toContain('reason=wrong-domain');
   });
 
+  it('redirects bare /platform (no cookie) to /platform/login', async () => {
+    // Verifies the bare /platform path is gated, not a pass-through.
+    const result = await proxy(request('/platform'));
+
+    expect(result.status).toBe(307);
+    expect(result.headers.get('location')).toContain('/platform/login');
+    expect(verifyJwtToken).not.toHaveBeenCalled();
+  });
+
   it('redirects an uncookied protected platform request to /platform/login', async () => {
     // Verifies the platform tree redirects to its own login.
     const result = await proxy(request('/platform/users'));
