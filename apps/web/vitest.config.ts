@@ -37,7 +37,17 @@ export default defineConfig({
         'app/providers.tsx',
         'app/api/auth/**/*.ts',
         'app/api/diagnostics/**/*.ts',
+        'app/api/platform/**/*.ts',
         'app/(public)/auth/**/*.tsx',
+        // Platform client-side pages (jsdom-testable).
+        'app/platform/login/page.tsx',
+        'app/platform/page.tsx',
+        'app/platform/(protected)/layout.tsx',
+        'app/platform/(protected)/security/page.tsx',
+        'app/platform/(protected)/sessions/page.tsx',
+        // `users/page.tsx` is a pure server component (server-side fetch) with no jsdom
+        // unit test; it is exercised by the integration/e2e suite, so it is not measured
+        // by this jsdom coverage run.
       ],
       exclude: [
         'node_modules',
