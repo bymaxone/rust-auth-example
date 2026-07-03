@@ -12,7 +12,7 @@
 'use client';
 
 import { useState } from 'react';
-import { AlertTriangle, Check, Copy, Download } from 'lucide-react';
+import { AlertTriangle, Check, Copy, Download, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 /** How long the "Copied" confirmation stays before reverting. */
@@ -27,12 +27,20 @@ export interface RecoveryCodeGridProps {
 /** Render the recovery codes with a shown-once warning and save affordances. */
 export function RecoveryCodeGrid({ codes }: RecoveryCodeGridProps) {
   const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
   const text = codes.join('\n');
 
   async function copy(): Promise<void> {
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), COPIED_RESET_MS);
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopyFailed(false);
+      setCopied(true);
+      setTimeout(() => setCopied(false), COPIED_RESET_MS);
+    } catch {
+      // Clipboard write may be denied (permission or non-secure context).
+      setCopyFailed(true);
+      setTimeout(() => setCopyFailed(false), COPIED_RESET_MS);
+    }
   }
 
   function download(): void {
@@ -64,13 +72,21 @@ export function RecoveryCodeGrid({ codes }: RecoveryCodeGridProps) {
       <div className="flex gap-2">
         <Button
           type="button"
-          variant="outline"
+          variant={copyFailed ? 'destructive' : 'outline'}
           size="sm"
-          aria-label={copied ? 'Recovery codes copied' : 'Copy recovery codes'}
+          aria-label={
+            copied ? 'Recovery codes copied' : copyFailed ? 'Copy failed' : 'Copy recovery codes'
+          }
           onClick={() => void copy()}
         >
-          {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-          {copied ? 'Copied' : 'Copy'}
+          {copied ? (
+            <Check className="h-4 w-4" />
+          ) : copyFailed ? (
+            <X className="h-4 w-4" />
+          ) : (
+            <Copy className="h-4 w-4" />
+          )}
+          {copied ? 'Copied' : copyFailed ? 'Copy failed' : 'Copy'}
         </Button>
         <Button type="button" variant="outline" size="sm" onClick={download}>
           <Download className="h-4 w-4" />

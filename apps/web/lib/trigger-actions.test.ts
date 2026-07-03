@@ -199,6 +199,24 @@ describe('hammerLogin', () => {
     expect(result.status).toBe(200);
     expect(result.response).toEqual({ note: 'no 429 within attempts' });
   });
+
+  it('surfaces a non-2xx non-429 response as an error result instead of continuing', async () => {
+    // A 500 mid-loop must not be silently swallowed or mislabeled as success.
+    mockAuthFetch.mockResolvedValueOnce(
+      res({ status: 500, body: { error: { code: 'auth.internal' } } }),
+    );
+    const result = await hammerLogin({ email: 'a@b.co', password: 'p', tenantId: 'acme' }, 5);
+    expect(result.status).toBe(500);
+    expect(result.code).toBe('auth.internal');
+  });
+
+  it('uses http.error code when the non-2xx body carries no wire code', async () => {
+    // A non-2xx body without an auth code must still surface as an error.
+    mockAuthFetch.mockResolvedValueOnce(res({ status: 503, body: {} }));
+    const result = await hammerLogin({ email: 'a@b.co', password: 'p', tenantId: 'acme' }, 5);
+    expect(result.status).toBe(503);
+    expect(result.code).toBe('http.error');
+  });
 });
 
 describe('diagnostics dispatch actions', () => {
@@ -220,11 +238,47 @@ describe('diagnostics dispatch actions', () => {
     expect(result).toMatchObject({ status: 200, response: {} });
   });
 
+  it('forceLockout signals failure on a non-2xx response', async () => {
+    // A non-2xx diagnostics response must be flagged so the caller can react.
+    mockAuthFetch.mockResolvedValueOnce(
+      res({ status: 500, body: { error: { code: 'auth.internal' } } }),
+    );
+    const result = await forceLockout('a@b.co', 'acme');
+    expect(result.status).toBe(500);
+    expect(result.code).toBe('auth.internal');
+  });
+
+  it('forceLockout uses http.error when no wire code is present in a non-2xx body', async () => {
+    // A non-2xx body without an auth code still signals failure.
+    mockAuthFetch.mockResolvedValueOnce(res({ status: 503, body: {} }));
+    const result = await forceLockout('a@b.co', 'acme');
+    expect(result.status).toBe(503);
+    expect(result.code).toBe('http.error');
+  });
+
   it('dispatchVerifyEmail reports the resend status', async () => {
     // Dispatching a verification email reports the neutral status.
     mockAuthFetch.mockResolvedValueOnce(res({ status: 202 }));
     const result = await dispatchVerifyEmail('a@b.co', 'acme');
     expect(result.status).toBe(202);
+  });
+
+  it('dispatchVerifyEmail signals failure on a non-2xx response', async () => {
+    // A non-2xx resend response must be flagged so the caller can react.
+    mockAuthFetch.mockResolvedValueOnce(
+      res({ status: 429, body: { error: { code: 'auth.too_many_requests' } } }),
+    );
+    const result = await dispatchVerifyEmail('a@b.co', 'acme');
+    expect(result.status).toBe(429);
+    expect(result.code).toBe('auth.too_many_requests');
+  });
+
+  it('dispatchVerifyEmail uses http.error when no wire code present in a non-2xx body', async () => {
+    // A non-2xx resend response without a wire code still signals failure.
+    mockAuthFetch.mockResolvedValueOnce(res({ status: 503, body: {} }));
+    const result = await dispatchVerifyEmail('a@b.co', 'acme');
+    expect(result.status).toBe(503);
+    expect(result.code).toBe('http.error');
   });
 
   it('dispatchPasswordReset calls forgotPassword and reports dispatched', async () => {

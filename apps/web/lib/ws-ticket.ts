@@ -26,7 +26,13 @@ export async function mintWsTicket(): Promise<string> {
  * @returns The `ws(s)://…/ws/example?ticket=…` URL.
  */
 export function buildWsUrl(ticket: string): string {
-  const base = process.env.NEXT_PUBLIC_API_URL ?? '';
-  const wsBase = base.replace(/^http/i, 'ws');
-  return `${wsBase}/ws/example?ticket=${encodeURIComponent(ticket)}`;
+  const rawBase = process.env.NEXT_PUBLIC_API_URL ?? '';
+  try {
+    const u = new URL(rawBase);
+    u.protocol = u.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${u.origin}/ws/example?ticket=${encodeURIComponent(ticket)}`;
+  } catch {
+    // Missing or non-absolute API URL: fall back to a relative path.
+    return `/ws/example?ticket=${encodeURIComponent(ticket)}`;
+  }
 }

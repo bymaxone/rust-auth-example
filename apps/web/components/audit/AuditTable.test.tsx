@@ -45,6 +45,21 @@ describe('containsSecret', () => {
     expect(containsSecret({ recoveryCode: 'x' })).toBe(true);
     expect(containsSecret({ email: 'a@b.co', event: 'login' })).toBe(false);
   });
+
+  it('detects a secret-shaped key nested inside a plain object', () => {
+    // A secret buried one level deep must still be detected.
+    expect(containsSecret({ meta: { token: 'x' } })).toBe(true);
+  });
+
+  it('detects a secret-shaped key inside an array element', () => {
+    // A secret inside an array item must still be detected.
+    expect(containsSecret({ codes: [{ recoveryCode: 'x' }] })).toBe(true);
+  });
+
+  it('passes a deeply nested clean payload', () => {
+    // A payload with no secret keys at any depth must not be flagged.
+    expect(containsSecret({ a: { b: { c: 'safe' } }, list: [{ d: 1 }] })).toBe(false);
+  });
 });
 
 describe('AuditTable', () => {
@@ -185,5 +200,43 @@ describe('AuditTable', () => {
     expect(screen.queryByText(/super-secret/)).not.toBeInTheDocument();
     expect(screen.getByText(/<redacted>/)).toBeInTheDocument();
     expect(screen.getByText(/audit/)).toBeInTheDocument();
+  });
+
+  it('flags and redacts a row whose details carry a secret key nested inside an object', () => {
+    // A secret nested under a plain key must still be detected and redacted.
+    const rows: AuditLogRow[] = [
+      {
+        id: 'n',
+        actor: 'a',
+        event: 'nested-leak',
+        tenantId: null,
+        ip: '0',
+        createdAt: '2024-01-01T00:00:00.000Z',
+        details: { context: { token: 'deep-secret' }, label: 'ctx' },
+      },
+    ];
+    render(<AuditTable rows={rows} following={false} pendingCount={0} onFollowChange={vi.fn()} />);
+    fireEvent.click(screen.getByText('nested-leak'));
+    expect(screen.getByText(/Secret-shaped key present/i)).toBeInTheDocument();
+    expect(screen.queryByText(/deep-secret/)).not.toBeInTheDocument();
+  });
+
+  it('flags and redacts a row whose details carry a secret key inside an array element', () => {
+    // A secret inside an array item must still be detected and redacted.
+    const rows: AuditLogRow[] = [
+      {
+        id: 'arr',
+        actor: 'a',
+        event: 'array-leak',
+        tenantId: null,
+        ip: '0',
+        createdAt: '2024-01-01T00:00:00.000Z',
+        details: { items: [{ recoveryCode: 'rc-xyz' }] },
+      },
+    ];
+    render(<AuditTable rows={rows} following={false} pendingCount={0} onFollowChange={vi.fn()} />);
+    fireEvent.click(screen.getByText('array-leak'));
+    expect(screen.getByText(/Secret-shaped key present/i)).toBeInTheDocument();
+    expect(screen.queryByText(/rc-xyz/)).not.toBeInTheDocument();
   });
 });

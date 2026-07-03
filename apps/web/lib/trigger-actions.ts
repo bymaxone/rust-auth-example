@@ -22,7 +22,7 @@ export interface TriggerResult {
   readonly request: unknown;
   /** The (secret-redacted) response body or error envelope. */
   readonly response: unknown;
-  /** The wire `auth.*` code when the action failed. */
+  /** The wire `auth.*` code when the action failed, or `http.error` for a raw HTTP failure. */
   readonly code?: string;
   /** The HTTP status when known. */
   readonly status?: number;
@@ -137,6 +137,18 @@ export async function hammerLogin(input: LoginInput, attempts = 7): Promise<Trig
           : {}),
       };
     }
+    if (!res.ok) {
+      const errBody = (await res.json().catch(() => undefined)) as
+        { error?: { code?: string } } | undefined;
+      return {
+        request,
+        response: redactSecrets(errBody ?? { status: res.status }),
+        status: res.status,
+        ...(errBody?.error?.code !== undefined
+          ? { code: errBody.error.code }
+          : { code: 'http.error' }),
+      };
+    }
   }
   return { request, response: { note: 'no 429 within attempts' }, status: 200 };
 }
@@ -149,8 +161,19 @@ export async function forceLockout(email: string, tenantId: string): Promise<Tri
       method: 'POST',
       body: JSON.stringify(request),
     });
-    const response = (await res.json().catch(() => ({}))) as unknown;
-    return { request, response: redactSecrets(response), status: res.status };
+    const body = (await res.json().catch(() => ({}))) as { error?: { code?: string } } & Record<
+      string,
+      unknown
+    >;
+    if (!res.ok) {
+      return {
+        request,
+        response: redactSecrets(body),
+        status: res.status,
+        ...(body.error?.code !== undefined ? { code: body.error.code } : { code: 'http.error' }),
+      };
+    }
+    return { request, response: redactSecrets(body), status: res.status };
   } catch (err) {
     return fromError(request, err);
   }
@@ -164,6 +187,18 @@ export async function dispatchVerifyEmail(email: string, tenantId: string): Prom
       method: 'POST',
       body: JSON.stringify(request),
     });
+    if (!res.ok) {
+      const errBody = (await res.json().catch(() => undefined)) as
+        { error?: { code?: string } } | undefined;
+      return {
+        request,
+        response: redactSecrets(errBody ?? { status: res.status }),
+        status: res.status,
+        ...(errBody?.error?.code !== undefined
+          ? { code: errBody.error.code }
+          : { code: 'http.error' }),
+      };
+    }
     return { request, response: { status: res.status }, status: res.status };
   } catch (err) {
     return fromError(request, err);

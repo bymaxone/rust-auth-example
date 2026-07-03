@@ -76,4 +76,44 @@ describe('QrEnrollmentCard', () => {
       expect(screen.getByRole('status', { name: /Rendering QR code/i })).toBeInTheDocument(),
     );
   });
+
+  it('does not update state after unmount when the QR promise resolves late', async () => {
+    // A QR promise that resolves after the component unmounts must not cause errors.
+    let resolveQr!: (url: string) => void;
+    toDataURL.mockReturnValueOnce(
+      new Promise<string>((r) => {
+        resolveQr = r;
+      }),
+    );
+    const { unmount } = render(<QrEnrollmentCard setup={SETUP} />);
+    unmount();
+    // Resolving on an unmounted component must be harmlessly swallowed.
+    await act(async () => {
+      resolveQr('data:image/png;base64,LATE');
+      await Promise.resolve();
+    });
+  });
+
+  it('shows a "Copy failed" state when the clipboard write is denied', async () => {
+    // A rejected clipboard write must surface a graceful error state, not crash.
+    vi.useFakeTimers();
+    try {
+      toDataURL.mockResolvedValueOnce('data:image/png;base64,AAAA');
+      const writeText = vi.fn(() => Promise.reject(new DOMException('denied', 'NotAllowedError')));
+      Object.assign(navigator, { clipboard: { writeText } });
+      render(<QrEnrollmentCard setup={SETUP} />);
+      fireEvent.click(screen.getByRole('button', { name: /Copy secret/i }));
+      await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+      expect(screen.getByRole('button', { name: /Copy failed/i })).toBeInTheDocument();
+      act(() => {
+        vi.advanceTimersByTime(2_000);
+      });
+      expect(screen.getByRole('button', { name: /Copy secret/i })).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

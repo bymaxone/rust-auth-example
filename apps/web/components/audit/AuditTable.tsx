@@ -35,22 +35,45 @@ const OVERSCAN = 4;
 /** Keys that would indicate a leaked secret in an audit row. */
 const SECRET_KEY_RE = /token|secret|password|otp|recovery|ticket|\bcode\b/i;
 
-/** True when the row's detail payload contains any secret-shaped key. */
+/** Recursively inspect a value for any secret-shaped key at any depth. */
+function valueContainsSecret(value: unknown): boolean {
+  if (Array.isArray(value)) return value.some(valueContainsSecret);
+  if (value !== null && typeof value === 'object') {
+    return Object.entries(value as Record<string, unknown>).some(
+      ([k, v]) => SECRET_KEY_RE.test(k) || valueContainsSecret(v),
+    );
+  }
+  return false;
+}
+
+/**
+ * True when the row's detail payload contains any secret-shaped key at ANY
+ * depth (top-level, nested object, or inside an array element).
+ */
 export function containsSecret(details: Record<string, unknown>): boolean {
-  return Object.keys(details).some((key) => SECRET_KEY_RE.test(key));
+  return valueContainsSecret(details);
+}
+
+/** Recursively redact all secret-keyed fields in a value. */
+function redactValue(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(redactValue);
+  if (value !== null && typeof value === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const [key, v] of Object.entries(value as Record<string, unknown>)) {
+      out[key] = SECRET_KEY_RE.test(key) ? '<redacted>' : redactValue(v);
+    }
+    return out;
+  }
+  return value;
 }
 
 /**
  * Defense-in-depth redaction: the backend already masks audit rows, but if a
- * secret-shaped key ever slips through, its value is replaced before display so
- * the drawer never renders a real secret.
+ * secret-shaped key ever slips through at any nesting depth, its value is
+ * replaced before display so the drawer never renders a real secret.
  */
 function redactDetails(details: Record<string, unknown>): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(details)) {
-    out[key] = SECRET_KEY_RE.test(key) ? '<redacted>' : value;
-  }
-  return out;
+  return redactValue(details) as Record<string, unknown>;
 }
 
 /** Props for {@link AuditTable}. */

@@ -59,4 +59,25 @@ describe('RecoveryCodeGrid', () => {
     expect(createObjectURL).toHaveBeenCalled();
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:codes');
   });
+
+  it('shows a "Copy failed" state when the clipboard write is denied', async () => {
+    // A rejected clipboard write must surface a graceful error state, not crash.
+    vi.useFakeTimers();
+    try {
+      writeText.mockRejectedValueOnce(new DOMException('denied', 'NotAllowedError'));
+      render(<RecoveryCodeGrid codes={['aaa', 'bbb']} />);
+      fireEvent.click(screen.getByRole('button', { name: /Copy recovery codes/i }));
+      await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+      expect(screen.getByRole('button', { name: /Copy failed/i })).toBeInTheDocument();
+      act(() => {
+        vi.advanceTimersByTime(2_000);
+      });
+      expect(screen.getByRole('button', { name: /Copy recovery codes/i })).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

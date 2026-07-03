@@ -52,4 +52,10 @@ describe('buildWsUrl', () => {
     delete process.env.NEXT_PUBLIC_API_URL;
     expect(buildWsUrl('t')).toBe('/ws/example?ticket=t');
   });
+
+  it('falls back to a relative URL when the origin is not a valid absolute URL', () => {
+    // A non-URL string (e.g. a misconfigured env) must not throw.
+    process.env.NEXT_PUBLIC_API_URL = 'not-a-url';
+    expect(buildWsUrl('t')).toBe('/ws/example?ticket=t');
+  });
 });

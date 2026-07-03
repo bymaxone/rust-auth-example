@@ -13,7 +13,7 @@
 
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
-import { Check, Copy } from 'lucide-react';
+import { Check, Copy, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RecoveryCodeGrid } from './RecoveryCodeGrid';
@@ -32,17 +32,33 @@ export interface QrEnrollmentCardProps {
 export function QrEnrollmentCard({ setup }: QrEnrollmentCardProps) {
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     QRCode.toDataURL(setup.qrCodeUri)
-      .then((url) => setQrDataUrl(url))
-      .catch(() => setQrDataUrl(null));
+      .then((url) => {
+        if (!cancelled) setQrDataUrl(url);
+      })
+      .catch(() => {
+        if (!cancelled) setQrDataUrl(null);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [setup.qrCodeUri]);
 
   async function copySecret(): Promise<void> {
-    await navigator.clipboard.writeText(setup.secret);
-    setCopied(true);
-    setTimeout(() => setCopied(false), COPIED_RESET_MS);
+    try {
+      await navigator.clipboard.writeText(setup.secret);
+      setCopyFailed(false);
+      setCopied(true);
+      setTimeout(() => setCopied(false), COPIED_RESET_MS);
+    } catch {
+      // Clipboard write may be denied (permission or non-secure context).
+      setCopyFailed(true);
+      setTimeout(() => setCopyFailed(false), COPIED_RESET_MS);
+    }
   }
 
   return (
@@ -80,13 +96,19 @@ export function QrEnrollmentCard({ setup }: QrEnrollmentCardProps) {
             </code>
             <Button
               type="button"
-              variant="outline"
+              variant={copyFailed ? 'destructive' : 'outline'}
               size="sm"
-              aria-label={copied ? 'Secret copied' : 'Copy secret'}
+              aria-label={copied ? 'Secret copied' : copyFailed ? 'Copy failed' : 'Copy secret'}
               onClick={() => void copySecret()}
             >
-              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-              {copied ? 'Copied' : 'Copy'}
+              {copied ? (
+                <Check className="h-4 w-4" />
+              ) : copyFailed ? (
+                <X className="h-4 w-4" />
+              ) : (
+                <Copy className="h-4 w-4" />
+              )}
+              {copied ? 'Copied' : copyFailed ? 'Copy failed' : 'Copy'}
             </Button>
           </div>
         </div>
