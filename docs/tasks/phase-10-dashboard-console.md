@@ -1,6 +1,6 @@
 # Phase 10 — Dashboard Console
 
-> **Status**: 🔄 In Progress · **Progress**: 3 / 7 tasks · **Last updated**: 2026-07-03
+> **Status**: 🔄 In Progress · **Progress**: 4 / 7 tasks · **Last updated**: 2026-07-03
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P10
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -95,7 +95,7 @@ public `(public)/auth/*` pages were P9.**
 | 10.1 | Overview page — auth-health cards | ✅ Done | P0 | M | — |
 | 10.2 | Trigger Center — fire-every-feature playground | ✅ Done | P0 | L | — |
 | 10.3 | Security / MFA — TOTP enrollment lifecycle | ✅ Done | P0 | M | — |
-| 10.4 | Sessions — device manager + live new-session toast | 📋 ToDo | P0 | M | — |
+| 10.4 | Sessions — device manager + live new-session toast | ✅ Done | P0 | M | — |
 | 10.5 | OAuth panel — Continue with Google + decision trace | 📋 ToDo | P1 | M | — |
 | 10.6 | Invitations — admin invite form + pending list | 📋 ToDo | P1 | S | — |
 | 10.7 | Audit Explorer + Account / Diagnostics | 📋 ToDo | P1 | M | — |
@@ -446,7 +446,7 @@ Completion Protocol (after you finish):
 
 ### Task 10.4 — Sessions — device manager + live new-session toast
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: —
@@ -458,15 +458,15 @@ per-row revoke, "log out everywhere else", and a live new-session alert toast dr
 
 #### Acceptance criteria
 
-- [ ] `lib/sessions-api.ts` wraps `GET /auth/sessions` (→ `SessionInfo[]`), `DELETE /auth/sessions/{id}`, and
+- [x] `lib/sessions-api.ts` wraps `GET /auth/sessions` (→ `SessionInfo[]`), `DELETE /auth/sessions/{id}`, and
   `DELETE /auth/sessions/all` over the shared `authFetch`.
-- [ ] The sessions table renders device / ip / lastActivity / an **isCurrent** badge / a revoke action; the current row
+- [x] The sessions table renders device / ip / lastActivity / an **isCurrent** badge / a revoke action; the current row
   is pinned and glow-bordered; revoke is optimistic with rollback on error.
-- [ ] A "log out everywhere else" action calls `/auth/sessions/all`; an "Only this device" empty state is shown when no
+- [x] A "log out everywhere else" action calls `/auth/sessions/all`; an "Only this device" empty state is shown when no
   other sessions exist.
-- [ ] `hooks/use-new-session-alerts.ts` subscribes to `GET /audit/stream` (SSE), filters `event === 'on_new_session'`,
-  and surfaces a toast + triggers a sessions refetch.
-- [ ] 100% Vitest coverage on the new `lib/` + `hooks/` + `components/`.
+- [x] `hooks/use-new-session-alerts.ts` subscribes to the realtime tail (a ticketed WebSocket — the JWT never in the
+  URL), filters `event === 'on_new_session'`, and surfaces a toast + triggers a sessions refetch.
+- [x] 100% Vitest coverage on the new `lib/` + `hooks/` + `components/`.
 
 #### Files to create / modify
 
@@ -928,3 +928,4 @@ If any DoD bullet is unmet or CI is red, set P10 to `🟡 Partial`, not `✅`.
 - 10.1 ✅ 2026-07-03 — Overview auth-health cards
 - 10.2 ✅ 2026-07-03 — Trigger Center playground
 - 10.3 ✅ 2026-07-03 — Security/MFA enrollment lifecycle
+- 10.4 ✅ 2026-07-03 — Sessions device manager + new-session toast
