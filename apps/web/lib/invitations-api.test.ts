@@ -1,8 +1,8 @@
 /**
  * @fileoverview Tests for the invitations admin client.
  *
- * Covers: the create body carries no tenantId, and the pending list maps audit
- * rows (with defensive fallbacks) into typed invitations.
+ * Covers: the create body carries no tenantId, and the accepted list maps audit
+ * rows (with a defensive actor fallback) into typed accepted invitations.
  *
  * @module lib/invitations-api.test
  */
@@ -14,7 +14,7 @@ const mockApiFetch = vi.hoisted(() => vi.fn());
 const mockApiJson = vi.hoisted(() => vi.fn());
 vi.mock('./api', () => ({ apiFetch: mockApiFetch, apiJson: mockApiJson }));
 
-import { createInvitation, listPendingInvitations } from './invitations-api';
+import { createInvitation, listAcceptedInvitations } from './invitations-api';
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -32,29 +32,33 @@ describe('createInvitation', () => {
   });
 });
 
-describe('listPendingInvitations', () => {
-  it('maps audit rows into typed pending invitations', async () => {
-    // Each invitation-created event becomes a pending row.
+describe('listAcceptedInvitations', () => {
+  it('queries the accepted event and maps rows into typed invitations', async () => {
+    // Each after_invitation_accepted row becomes an accepted invitation keyed by the actor.
     mockApiJson.mockResolvedValueOnce({
-      data: [{ createdAt: '2024-01-01T00:00:00Z', details: { email: 'x@y.co', role: 'admin' } }],
+      data: [{ createdAt: '2024-01-01T00:00:00Z', actor: 'x@y.co' }],
     });
-    await expect(listPendingInvitations()).resolves.toEqual([
-      { email: 'x@y.co', role: 'admin', sentAt: '2024-01-01T00:00:00Z' },
+    await expect(listAcceptedInvitations()).resolves.toEqual([
+      { email: 'x@y.co', acceptedAt: '2024-01-01T00:00:00Z' },
     ]);
-    expect(mockApiJson).toHaveBeenCalledWith(expect.stringContaining('/audit/logs?event='));
+    expect(mockApiJson).toHaveBeenCalledWith(
+      expect.stringContaining('/audit/logs?event=after_invitation_accepted'),
+    );
   });
 
-  it('applies defensive fallbacks for missing/typed details', async () => {
-    // A malformed row must not crash the list; email falls back and role is dropped.
+  it('falls back to "unknown" when the actor is missing', async () => {
+    // A row without a string actor must not crash the list; the email falls back.
     mockApiJson.mockResolvedValueOnce({
-      data: [{ createdAt: 't', details: { email: 42 } }],
+      data: [{ createdAt: 't' }],
     });
-    await expect(listPendingInvitations()).resolves.toEqual([{ email: 'unknown', sentAt: 't' }]);
+    await expect(listAcceptedInvitations()).resolves.toEqual([
+      { email: 'unknown', acceptedAt: 't' },
+    ]);
   });
 
   it('returns an empty list when the page has no data', async () => {
     // No events yields the empty state upstream.
     mockApiJson.mockResolvedValueOnce({});
-    await expect(listPendingInvitations()).resolves.toEqual([]);
+    await expect(listAcceptedInvitations()).resolves.toEqual([]);
   });
 });

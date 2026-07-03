@@ -4,9 +4,12 @@
  * A card per feature: register, login, force-MFA, rotate token, hammer login to a
  * 429, force lockout, dispatch verify-email / password-reset, and provoke an
  * error. Each card calls the library directly and, on firing, pivots the Audit
- * Explorer to the resulting actor/event through the shared `nuqs` state. The
- * credentials entered here are sent to the API only — the password is never
- * displayed, and every raw response is secret-redacted upstream.
+ * Explorer through the shared `nuqs` state. Only the two audited journeys
+ * (register → `after_register`, login → `after_login`) pivot to a real event
+ * facet; every other feature emits no audit event, so those cards pivot by actor
+ * only and say so — no invented event name is ever written. The credentials
+ * entered here are sent to the API only — the password is never displayed, and
+ * every raw response is secret-redacted upstream.
  *
  * @module app/(dashboard)/dashboard/trigger/page
  */
@@ -38,14 +41,18 @@ export default function TriggerCenterPage(): React.ReactElement {
   const [password, setPassword] = useState('');
   const [tenantId, setTenantId] = useState('acme');
 
-  /** Fire an action, then pivot the Audit table to the resulting actor/event. */
+  /**
+   * Fire an action, then pivot the Audit table by actor — and by `event` only when the
+   * feature actually emits that audit event. Passing no `event` (a non-audited feature)
+   * pivots by actor alone rather than fabricating a facet that would match zero rows.
+   */
   function withPivot(
     run: () => Promise<TriggerResult>,
-    event: string,
+    event?: string,
   ): () => Promise<TriggerResult> {
     return async () => {
       const result = await run();
-      pivotTo({ actor: email, event });
+      pivotTo(event !== undefined ? { actor: email, event } : { actor: email });
       return result;
     };
   }
@@ -100,60 +107,60 @@ export default function TriggerCenterPage(): React.ReactElement {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
         <TriggerCard
           title="Register"
-          description="Create a new tenant user via authClient.register."
+          description="Create a new tenant user via authClient.register. Audited as after_register."
           actionLabel="Register"
-          onFire={withPivot(() => runRegister({ email, password, name, tenantId }), 'on_register')}
-        />
-        <TriggerCard
-          title="Login"
-          description="Sign in via authClient.login."
-          actionLabel="Login"
-          onFire={withPivot(() => runLogin({ email, password, tenantId }), 'on_login_success')}
-        />
-        <TriggerCard
-          title="Force MFA"
-          description="Login as an MFA-enabled user to surface the mfa_required branch."
-          actionLabel="Challenge"
-          onFire={withPivot(() => runLogin({ email, password, tenantId }), 'on_mfa_required')}
-        />
-        <TriggerCard
-          title="Rotate token"
-          description="Rotate the access/refresh pair via authClient.refresh."
-          actionLabel="Rotate"
-          onFire={withPivot(() => rotateToken(), 'on_token_rotated')}
-        />
-        <TriggerCard
-          title="Hammer login → 429"
-          description="Fire logins back-to-back to trip the login rate limit."
-          actionLabel="Hammer"
-          onFire={withPivot(() => hammerLogin({ email, password, tenantId }), 'on_rate_limited')}
-        />
-        <TriggerCard
-          title="Force lockout"
-          description="Drive the account toward lockout via the diagnostics route."
-          actionLabel="Lock out"
-          onFire={withPivot(() => forceLockout(email, tenantId), 'on_account_locked')}
-        />
-        <TriggerCard
-          title="Dispatch verify-email"
-          description="Resend the verification email (anti-enumeration)."
-          actionLabel="Dispatch"
-          onFire={withPivot(() => dispatchVerifyEmail(email, tenantId), 'on_verification_sent')}
-        />
-        <TriggerCard
-          title="Dispatch password reset"
-          description="Send a password-reset email via authClient.forgotPassword."
-          actionLabel="Dispatch"
           onFire={withPivot(
-            () => dispatchPasswordReset(email, tenantId),
-            'on_password_reset_requested',
+            () => runRegister({ email, password, name, tenantId }),
+            'after_register',
           )}
         />
         <TriggerCard
+          title="Login"
+          description="Sign in via authClient.login. Audited as after_login."
+          actionLabel="Login"
+          onFire={withPivot(() => runLogin({ email, password, tenantId }), 'after_login')}
+        />
+        <TriggerCard
+          title="Force MFA"
+          description="Login as an MFA-enabled user to surface the mfa_required branch. No audit event — actor pivot only."
+          actionLabel="Challenge"
+          onFire={withPivot(() => runLogin({ email, password, tenantId }))}
+        />
+        <TriggerCard
+          title="Rotate token"
+          description="Rotate the access/refresh pair via authClient.refresh. No audit event — actor pivot only."
+          actionLabel="Rotate"
+          onFire={withPivot(() => rotateToken())}
+        />
+        <TriggerCard
+          title="Hammer login → 429"
+          description="Fire logins back-to-back to trip the login rate limit. No audit event — actor pivot only."
+          actionLabel="Hammer"
+          onFire={withPivot(() => hammerLogin({ email, password, tenantId }))}
+        />
+        <TriggerCard
+          title="Force lockout"
+          description="Drive the account toward lockout via the diagnostics route. No audit event — actor pivot only."
+          actionLabel="Lock out"
+          onFire={withPivot(() => forceLockout(email, tenantId))}
+        />
+        <TriggerCard
+          title="Dispatch verify-email"
+          description="Resend the verification email (anti-enumeration). No audit event — actor pivot only."
+          actionLabel="Dispatch"
+          onFire={withPivot(() => dispatchVerifyEmail(email, tenantId))}
+        />
+        <TriggerCard
+          title="Dispatch password reset"
+          description="Send a password-reset email via authClient.forgotPassword. No audit event — actor pivot only."
+          actionLabel="Dispatch"
+          onFire={withPivot(() => dispatchPasswordReset(email, tenantId))}
+        />
+        <TriggerCard
           title="Provoke error"
-          description="Sign in with a wrong password to elicit auth.invalid_credentials."
+          description="Sign in with a wrong password to elicit auth.invalid_credentials. No audit event — actor pivot only."
           actionLabel="Provoke"
-          onFire={withPivot(() => provokeInvalidCredentials(email, tenantId), 'on_login_failed')}
+          onFire={withPivot(() => provokeInvalidCredentials(email, tenantId))}
         />
       </div>
     </section>

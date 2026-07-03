@@ -1,8 +1,8 @@
 /**
  * @fileoverview `/dashboard/invitations` — the invitations admin views.
  *
- * Composes the invite form and the pending-invites list. Sending an invitation
- * bumps a refresh key so the pending list re-fetches from the audit trail.
+ * Composes the invite form and the accepted-invitations list. Sending an invitation
+ * bumps a refresh key so the list re-fetches from the audit trail.
  *
  * @module app/(dashboard)/dashboard/invitations/page
  */
@@ -12,7 +12,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { InviteForm } from '@/components/invitations/InviteForm';
-import { PendingList } from '@/components/invitations/PendingList';
+import { AcceptedInvitations } from '@/components/invitations/AcceptedInvitations';
 
 /** The Invitations admin page. */
 export default function InvitationsPage(): React.ReactElement {
@@ -40,11 +40,13 @@ export default function InvitationsPage(): React.ReactElement {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Pending invitations</CardTitle>
-            <CardDescription>Each links the Mailpit inbox for the email.</CardDescription>
+            <CardTitle className="text-base">Accepted invitations</CardTitle>
+            <CardDescription>
+              Creation is not audited; each accepted invite links the Mailpit inbox.
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <PendingList refreshKey={refreshKey} />
+            <AcceptedInvitations refreshKey={refreshKey} />
           </CardContent>
         </Card>
       </div>

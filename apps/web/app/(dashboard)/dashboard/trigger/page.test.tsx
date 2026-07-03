@@ -41,13 +41,21 @@ describe('TriggerCenterPage', () => {
     expect(screen.getByRole('button', { name: 'Hammer' })).toBeInTheDocument();
   });
 
-  it('pivots the Audit table after firing a card', async () => {
-    // Firing must write the resulting actor/event into the shared pivot state.
+  it('pivots the Audit table to the real event after firing an audited card', async () => {
+    // Firing an audited journey writes the actor + the real event name into the pivot.
     runLogin.mockResolvedValueOnce({ request: {}, response: {}, status: 200 });
     render(<TriggerCenterPage />);
     fireEvent.click(screen.getByRole('button', { name: 'Login' }));
     await waitFor(() =>
-      expect(pivotTo).toHaveBeenCalledWith({ actor: 'demo@acme.test', event: 'on_login_success' }),
+      expect(pivotTo).toHaveBeenCalledWith({ actor: 'demo@acme.test', event: 'after_login' }),
     );
+  });
+
+  it('pivots by actor only for a non-audited card', async () => {
+    // A feature that emits no audit event pivots by actor alone — never a fake event facet.
+    runLogin.mockResolvedValueOnce({ request: {}, response: {}, status: 200 });
+    render(<TriggerCenterPage />);
+    fireEvent.click(screen.getByRole('button', { name: 'Challenge' }));
+    await waitFor(() => expect(pivotTo).toHaveBeenCalledWith({ actor: 'demo@acme.test' }));
   });
 });

@@ -217,6 +217,16 @@ describe('hammerLogin', () => {
     expect(result.status).toBe(503);
     expect(result.code).toBe('http.error');
   });
+
+  it('surfaces a non-2xx non-429 response whose body is not JSON', async () => {
+    // A 500 mid-loop whose body cannot be parsed still surfaces as a failed result with
+    // the status echoed and the http.error default — never a masked success.
+    mockAuthFetch.mockResolvedValueOnce(res({ status: 500, rejectJson: true }));
+    const result = await hammerLogin({ email: 'a@b.co', password: 'p', tenantId: 'acme' }, 5);
+    expect(result.status).toBe(500);
+    expect(result.code).toBe('http.error');
+    expect(result.response).toEqual({ status: 500 });
+  });
 });
 
 describe('diagnostics dispatch actions', () => {
@@ -279,6 +289,15 @@ describe('diagnostics dispatch actions', () => {
     const result = await dispatchVerifyEmail('a@b.co', 'acme');
     expect(result.status).toBe(503);
     expect(result.code).toBe('http.error');
+  });
+
+  it('dispatchVerifyEmail surfaces a non-2xx response whose body is not JSON', async () => {
+    // A non-2xx resend whose body cannot be parsed still surfaces the status + http.error.
+    mockAuthFetch.mockResolvedValueOnce(res({ status: 500, rejectJson: true }));
+    const result = await dispatchVerifyEmail('a@b.co', 'acme');
+    expect(result.status).toBe(500);
+    expect(result.code).toBe('http.error');
+    expect(result.response).toEqual({ status: 500 });
   });
 
   it('dispatchPasswordReset calls forgotPassword and reports dispatched', async () => {

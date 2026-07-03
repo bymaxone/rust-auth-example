@@ -94,6 +94,23 @@ describe('QrEnrollmentCard', () => {
     });
   });
 
+  it('does not update state after unmount when the QR promise rejects late', async () => {
+    // A QR promise that rejects after the component unmounts must be harmlessly swallowed,
+    // never attempting a post-unmount state update.
+    let rejectQr!: (error: Error) => void;
+    toDataURL.mockReturnValueOnce(
+      new Promise<string>((_resolve, reject) => {
+        rejectQr = reject;
+      }),
+    );
+    const { unmount } = render(<QrEnrollmentCard setup={SETUP} />);
+    unmount();
+    await act(async () => {
+      rejectQr(new Error('late failure'));
+      await Promise.resolve();
+    });
+  });
+
   it('shows a "Copy failed" state when the clipboard write is denied', async () => {
     // A rejected clipboard write must surface a graceful error state, not crash.
     vi.useFakeTimers();
