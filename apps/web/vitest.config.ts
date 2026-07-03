@@ -45,9 +45,9 @@ export default defineConfig({
         'app/platform/(protected)/layout.tsx',
         'app/platform/(protected)/security/page.tsx',
         'app/platform/(protected)/sessions/page.tsx',
-        // `users/page.tsx` is a pure server component (server-side fetch) with no jsdom
-        // unit test; it is exercised by the integration/e2e suite, so it is not measured
-        // by this jsdom coverage run.
+        // The pure server component is measured through a server-runtime test that mocks
+        // `next/headers`/`next/navigation`/`fetch`, so its branches are covered, not excluded.
+        'app/platform/(protected)/users/page.tsx',
       ],
       exclude: [
         'node_modules',
