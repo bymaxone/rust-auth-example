@@ -94,6 +94,16 @@ tower = { version = "0.5", default-features = false, features = ["util"] }
 # `tokio-tungstenite`. Plaintext `ws://` only (`default-features = false` keeps every TLS
 # backend — and the banned `openssl`/`ring` — off the graph); the local test app is loopback.
 tokio-tungstenite = { version = "0.29", default-features = false, features = ["connect", "handshake"] }
+# The native typed HTTP client, round-tripped against a spawned example server so the
+# service-to-service Rust consumer path is proven end to end. Plaintext loopback only —
+# no TLS backend joins the graph.
+bymax-auth-client = { path = "../../../rust-auth/crates/bymax-auth-client", version = "0.0.0" }
+# The HS256 primitive, named directly so the alg-pinning property test can hand `verify`
+# a forged `alg: none` / `alg: RS256` token and prove it is rejected before any HMAC math.
+bymax-auth-jwt = { path = "../../../rust-auth/crates/bymax-auth-jwt", version = "0.0.0" }
+# Property-based testing for the crypto/JWT edges (TOTP drift, PHC round-trip). Committed
+# `proptest-regressions/` seeds keep a shrunk counterexample reproducible.
+proptest = "1"
 
 [features]
 # Switch the password hasher to Argon2id (the hardened `secure_defaults` profile)

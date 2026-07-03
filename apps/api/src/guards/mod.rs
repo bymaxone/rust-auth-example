@@ -139,3 +139,95 @@ fn map_platform_error(error: AuthError) -> AuthError {
         other => other,
     }
 }
+
+#[cfg(test)]
+#[allow(
+    // Panicking is the idiomatic failure signal in tests, so the workspace-level
+    // `unwrap_used`/`expect_used` denials are relaxed for this test module only.
+    clippy::unwrap_used,
+    clippy::expect_used
+)]
+mod tests {
+    use super::*;
+    use axum::http::Request;
+
+    /// Build request parts carrying a single `Authorization` header value.
+    fn parts_with_authorization(value: &str) -> Parts {
+        Request::builder()
+            .header(AUTHORIZATION, value)
+            .body(())
+            .expect("a well-formed request builds")
+            .into_parts()
+            .0
+    }
+
+    #[test]
+    fn bearer_token_reads_a_bearer_credential_case_insensitively() {
+        // The happy path: a `Bearer <token>` header (any scheme casing) yields the token.
+        let parts = parts_with_authorization("bEaRer  the-access-token");
+        assert_eq!(bearer_token(&parts).as_deref(), Some("the-access-token"));
+    }
+
+    #[test]
+    fn bearer_token_rejects_a_non_bearer_scheme() {
+        // A different auth scheme (e.g. HTTP Basic) is not a bearer credential, so the
+        // guard sees no token and rejects the request as unauthenticated.
+        let parts = parts_with_authorization("Basic dXNlcjpwYXNzd29yZA==");
+        assert!(bearer_token(&parts).is_none());
+    }
+
+    #[test]
+    fn bearer_token_rejects_an_empty_token_after_the_scheme() {
+        // A `Bearer` scheme with only whitespace after it carries no credential, so it is
+        // treated as missing rather than as an empty-string token.
+        let parts = parts_with_authorization("Bearer    ");
+        assert!(bearer_token(&parts).is_none());
+    }
+
+    #[test]
+    fn bearer_token_rejects_a_scheme_without_a_separator() {
+        // A header value with no space cannot split into scheme + credential.
+        let parts = parts_with_authorization("Bearer");
+        assert!(bearer_token(&parts).is_none());
+    }
+
+    #[test]
+    fn bearer_token_is_absent_when_no_header_is_present() {
+        // No `Authorization` header at all is simply an absent credential.
+        let parts = Request::builder()
+            .body(())
+            .expect("a well-formed request builds")
+            .into_parts()
+            .0;
+        assert!(bearer_token(&parts).is_none());
+    }
+
+    #[test]
+    fn map_platform_error_collapses_token_failures_to_platform_auth_required() {
+        // A token-authentication failure (invalid, expired, or revoked) is reported as the
+        // platform 401, mirroring the library's platform guard.
+        for error in [
+            AuthError::TokenInvalid,
+            AuthError::TokenExpired,
+            AuthError::TokenRevoked,
+        ] {
+            assert!(matches!(
+                map_platform_error(error),
+                AuthError::PlatformAuthRequired
+            ));
+        }
+    }
+
+    #[test]
+    fn map_platform_error_passes_an_internal_error_through_unchanged() {
+        // An infrastructure failure must propagate as-is so an outage surfaces as a 500,
+        // never masked as a 401 that would hide the real fault from operators.
+        let internal = AuthError::Internal(Box::<dyn std::error::Error + Send + Sync>::from(
+            "database pool exhausted",
+        ));
+        assert!(matches!(
+            map_platform_error(internal),
+            AuthError::Internal(_)
+        ));
+    }
+}
