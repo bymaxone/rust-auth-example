@@ -1,6 +1,6 @@
 # Phase 10 — Dashboard Console
 
-> **Status**: 🔄 In Progress · **Progress**: 1 / 7 tasks · **Last updated**: 2026-07-03
+> **Status**: 🔄 In Progress · **Progress**: 2 / 7 tasks · **Last updated**: 2026-07-03
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P10
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -93,7 +93,7 @@ public `(public)/auth/*` pages were P9.**
 | ID | Task | Status | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- | --- |
 | 10.1 | Overview page — auth-health cards | ✅ Done | P0 | M | — |
-| 10.2 | Trigger Center — fire-every-feature playground | 📋 ToDo | P0 | L | — |
+| 10.2 | Trigger Center — fire-every-feature playground | ✅ Done | P0 | L | — |
 | 10.3 | Security / MFA — TOTP enrollment lifecycle | 📋 ToDo | P0 | M | — |
 | 10.4 | Sessions — device manager + live new-session toast | 📋 ToDo | P0 | M | — |
 | 10.5 | OAuth panel — Continue with Google + decision trace | 📋 ToDo | P1 | M | — |
@@ -210,7 +210,7 @@ Completion Protocol (after you finish):
 
 ### Task 10.2 — Trigger Center — fire-every-feature playground
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: L
 - **Depends on**: —
@@ -224,17 +224,17 @@ state.
 
 #### Acceptance criteria
 
-- [ ] `lib/trigger-actions.ts` wraps each action over `authClient` (and `authFetch` for `/diagnostics/force-lockout`),
+- [x] `lib/trigger-actions.ts` wraps each action over `authClient` (and `authFetch` for `/diagnostics/force-lockout`),
   returning a `TriggerResult { request, response, code?, status?, retryAfterSeconds? }`; an `AuthClientError` is caught
   and surfaced (never thrown to the boundary).
-- [ ] The "hammer login" card fires logins back-to-back to exceed `RateLimitConfig.login` (5/60) and renders the
+- [x] The "hammer login" card fires logins back-to-back to exceed `RateLimitConfig.login` (5/60) and renders the
   resulting `429 auth.too_many_requests` with its `Retry-After` countdown.
-- [ ] There is a card for register, login, force-MFA, rotate token (`authClient.refresh`), force lockout, dispatch
+- [x] There is a card for register, login, force-MFA, rotate token (`authClient.refresh`), force lockout, dispatch
   verify-email/reset, and a "provoke error" card that can elicit each `auth.*` code in scope; every card shows the raw
   request and response JSON.
-- [ ] Firing a card auto-pivots the Audit table: the resulting actor/event is written to the shared `nuqs` URL state the
+- [x] Firing a card auto-pivots the Audit table: the resulting actor/event is written to the shared `nuqs` URL state the
   Audit Explorer reads.
-- [ ] 100% Vitest coverage on the new `lib/` + `components/`.
+- [x] 100% Vitest coverage on the new `lib/` + `components/`.
 
 #### Files to create / modify
 
@@ -926,3 +926,4 @@ If any DoD bullet is unmet or CI is red, set P10 to `🟡 Partial`, not `✅`.
 > Append-only. One line per completed task: `- <id> ✅ YYYY-MM-DD — <summary>`.
 
 - 10.1 ✅ 2026-07-03 — Overview auth-health cards
+- 10.2 ✅ 2026-07-03 — Trigger Center playground
