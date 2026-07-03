@@ -27,7 +27,7 @@ map into the task files and the rulebook for executing them one task at a time.
 | P9 | [`phase-09-public-auth-pages.md`](./phase-09-public-auth-pages.md) | Public Auth Pages | ✅ |
 | P10 | [`phase-10-dashboard-console.md`](./phase-10-dashboard-console.md) | Dashboard Console | ✅ |
 | P11 | [`phase-11-platform-console.md`](./phase-11-platform-console.md) | Platform Console | ✅ |
-| P12 | [`phase-12-testing.md`](./phase-12-testing.md) | Testing & 100% Coverage | 📋 |
+| P12 | [`phase-12-testing.md`](./phase-12-testing.md) | Testing & 100% Coverage | 🔄 |
 | P13 | [`phase-13-mutation.md`](./phase-13-mutation.md) | Mutation Hardening | 📋 |
 | P14 | [`phase-14-docs-release.md`](./phase-14-docs-release.md) | Docs, Public-Readiness & Release | 📋 |
 
