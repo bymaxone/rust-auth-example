@@ -1,6 +1,6 @@
 # Phase 10 — Dashboard Console
 
-> **Status**: 🔄 In Progress · **Progress**: 4 / 7 tasks · **Last updated**: 2026-07-03
+> **Status**: 🔄 In Progress · **Progress**: 5 / 7 tasks · **Last updated**: 2026-07-03
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P10
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -96,7 +96,7 @@ public `(public)/auth/*` pages were P9.**
 | 10.2 | Trigger Center — fire-every-feature playground | ✅ Done | P0 | L | — |
 | 10.3 | Security / MFA — TOTP enrollment lifecycle | ✅ Done | P0 | M | — |
 | 10.4 | Sessions — device manager + live new-session toast | ✅ Done | P0 | M | — |
-| 10.5 | OAuth panel — Continue with Google + decision trace | 📋 ToDo | P1 | M | — |
+| 10.5 | OAuth panel — Continue with Google + decision trace | ✅ Done | P1 | M | — |
 | 10.6 | Invitations — admin invite form + pending list | 📋 ToDo | P1 | S | — |
 | 10.7 | Audit Explorer + Account / Diagnostics | 📋 ToDo | P1 | M | — |
 
@@ -573,7 +573,7 @@ Completion Protocol (after you finish):
 
 ### Task 10.5 — OAuth panel — Continue with Google + decision trace
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: M
 - **Depends on**: —
@@ -586,12 +586,12 @@ Build the OAuth panel (`/dashboard/oauth`): a "Continue with Google" button (gat
 
 #### Acceptance criteria
 
-- [ ] "Continue with Google" navigates to `GET /auth/oauth/google` (a 302 to Google's authorize URL) and is hidden
+- [x] "Continue with Google" navigates to `GET /auth/oauth/google` (a 302 to Google's authorize URL) and is hidden
   unless `NEXT_PUBLIC_OAUTH_GOOGLE_ENABLED === 'true'`; a "Google OAuth not configured" explainer is shown when disabled.
-- [ ] After the callback, the panel renders the `on_oauth_login` decision (Created a new user vs Linked to an existing
+- [x] After the callback, the panel renders the `on_oauth_login` decision (Created a new user vs Linked to an existing
   one) and which branch fired (authenticated session / redirect / MFA challenge).
-- [ ] The callback-error path renders the localized `auth.*` code via the shared error map.
-- [ ] 100% Vitest coverage on the new `lib/` + `components/`.
+- [x] The callback-error path renders the localized `auth.*` code via the shared error map.
+- [x] 100% Vitest coverage on the new `lib/` + `components/`.
 
 #### Files to create / modify
 
@@ -929,3 +929,4 @@ If any DoD bullet is unmet or CI is red, set P10 to `🟡 Partial`, not `✅`.
 - 10.2 ✅ 2026-07-03 — Trigger Center playground
 - 10.3 ✅ 2026-07-03 — Security/MFA enrollment lifecycle
 - 10.4 ✅ 2026-07-03 — Sessions device manager + new-session toast
+- 10.5 ✅ 2026-07-03 — OAuth panel + decision trace
