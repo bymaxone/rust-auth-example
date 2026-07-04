@@ -12,6 +12,7 @@
 
 import { test, expect, type Page } from '@playwright/test';
 import { latestOtp } from './helpers/mailpit';
+import { expectSignedIn } from './helpers/console';
 
 async function fillOtp(page: Page, code: string): Promise<void> {
   const first = page.locator('[role="group"][aria-label="One-time code input"] input').first();
@@ -29,7 +30,7 @@ test('the OAuth panel offers a Google initiate affordance behind a session', asy
   await page.locator('form button[type="submit"]').click();
   await expect(page).toHaveURL(/\/auth\/verify-email/);
   await fillOtp(page, await latestOtp(email));
-  await expect(page).toHaveURL(/\/dashboard/);
+  await expectSignedIn(page, email);
 
   // Intercept the Google authorization leg so no real provider is contacted; a canned
   // redirect carries a deterministic code/state back to the backend callback.

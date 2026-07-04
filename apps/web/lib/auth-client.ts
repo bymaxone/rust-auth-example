@@ -18,8 +18,12 @@ if (baseUrl === undefined || baseUrl === '') {
   throw new Error('NEXT_PUBLIC_API_URL is required to construct the auth client');
 }
 
-/** Single-flight fetch: one 401 → `/api/auth/client-refresh` → replay; concurrent 401s share it. */
-export const authFetch: AuthFetch = createAuthFetch({ routePrefix: 'auth' });
+/**
+ * Single-flight fetch: one 401 → `/api/auth/client-refresh` → replay; concurrent 401s share it.
+ * `baseUrl` targets the Rust API directly (as `authClient` does), so relative auth routes such
+ * as `/auth/verify-email` reach the backend rather than the same-origin Next page.
+ */
+export const authFetch: AuthFetch = createAuthFetch({ baseUrl, routePrefix: 'auth' });
 
 /** The framework-agnostic typed client the console calls directly. */
 export const authClient: AuthClient = createAuthClient({

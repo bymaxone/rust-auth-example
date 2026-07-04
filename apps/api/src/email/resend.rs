@@ -55,7 +55,9 @@ impl ResendEmailProvider {
                 .connect_timeout(Duration::from_secs(5))
                 .timeout(Duration::from_secs(10))
                 .build()
-                .unwrap_or_else(|_| reqwest::Client::new()),
+                // `Default` for a reqwest client is the zero-config `Client::new()`, the same
+                // fallback, without an uncovered error-only closure.
+                .unwrap_or_default(),
             api_key,
             from,
             endpoint,
@@ -200,9 +202,25 @@ mod tests {
     /// One captured request: the `Authorization` header and the raw JSON body.
     type Captured = Arc<Mutex<Vec<(String, String)>>>;
 
-    /// Spawn a local mock that records each request and replies with `status`,
-    /// returning its base URL and the capture buffer.
-    async fn spawn_mock(status: StatusCode) -> (String, Captured) {
+    /// A running mock endpoint plus the trigger that shuts its server down gracefully.
+    struct MockServer {
+        endpoint: String,
+        captured: Captured,
+        shutdown: tokio::sync::oneshot::Sender<()>,
+        handle: tokio::task::JoinHandle<()>,
+    }
+
+    impl MockServer {
+        /// Signal graceful shutdown and await the server task, so it runs to completion
+        /// rather than being aborted when the test process exits.
+        async fn stop(self) {
+            let _ = self.shutdown.send(());
+            let _ = self.handle.await;
+        }
+    }
+
+    /// Spawn a local mock that records each request and replies with `status`.
+    async fn spawn_mock(status: StatusCode) -> MockServer {
         let captured: Captured = Arc::new(Mutex::new(Vec::new()));
         let state = (captured.clone(), status);
         let app = Router::new()
@@ -225,10 +243,20 @@ mod tests {
             .with_state(state);
         let listener = TcpListener::bind("127.0.0.1:0").await.expect("bind mock");
         let addr = listener.local_addr().expect("mock addr");
-        tokio::spawn(async move {
-            let _ = axum::serve(listener, app).await;
+        let (shutdown, rx) = tokio::sync::oneshot::channel();
+        let handle = tokio::spawn(async move {
+            let _ = axum::serve(listener, app)
+                .with_graceful_shutdown(async move {
+                    let _ = rx.await;
+                })
+                .await;
         });
-        (format!("http://{addr}/emails"), captured)
+        MockServer {
+            endpoint: format!("http://{addr}/emails"),
+            captured,
+            shutdown,
+            handle,
+        }
     }
 
     fn session() -> SessionInfo {
@@ -252,11 +280,11 @@ mod tests {
     async fn posts_every_message_with_bearer_auth() {
         // Each of the seven sends reaches `/emails` with the bearer key and the rendered
         // body, and the mock's 2xx maps to `Ok`.
-        let (endpoint, captured) = spawn_mock(StatusCode::OK).await;
+        let mock = spawn_mock(StatusCode::OK).await;
         let provider = ResendEmailProvider::with_endpoint(
             SecretString::from("re_key_123".to_owned()),
             "no-reply@auth.local".to_owned(),
-            endpoint,
+            mock.endpoint.clone(),
         );
         let to = "recipient@example.test";
         provider
@@ -288,27 +316,46 @@ mod tests {
             .await
             .expect("invitation posts");
 
-        let calls = captured.lock().expect("capture buffer lock");
-        assert_eq!(calls.len(), 7);
-        for (auth, body) in calls.iter() {
-            assert_eq!(auth, "Bearer re_key_123");
-            assert!(body.contains("\"from\":\"no-reply@auth.local\""));
+        {
+            let calls = mock.captured.lock().expect("capture buffer lock");
+            assert_eq!(calls.len(), 7);
+            for (auth, body) in calls.iter() {
+                assert_eq!(auth, "Bearer re_key_123");
+                assert!(body.contains("\"from\":\"no-reply@auth.local\""));
+            }
+            // The verification body carries the emailed OTP.
+            assert!(calls[0].1.contains("123456"));
         }
-        // The verification body carries the emailed OTP.
-        assert!(calls[0].1.contains("123456"));
+        mock.stop().await;
     }
 
     #[tokio::test]
     async fn non_success_status_maps_to_delivery_error() {
         // A provider 5xx surfaces as the opaque delivery error rather than a silent success.
-        let (endpoint, _captured) = spawn_mock(StatusCode::INTERNAL_SERVER_ERROR).await;
+        let mock = spawn_mock(StatusCode::INTERNAL_SERVER_ERROR).await;
         let provider = ResendEmailProvider::with_endpoint(
             SecretString::from("re_key_123".to_owned()),
             "no-reply@auth.local".to_owned(),
-            endpoint,
+            mock.endpoint.clone(),
         );
         let result = provider
             .send_email_verification_otp("recipient@example.test", "123456", None)
+            .await;
+        assert!(matches!(result, Err(EmailError::Delivery(_))));
+        mock.stop().await;
+    }
+
+    #[tokio::test]
+    async fn a_network_failure_maps_to_a_delivery_error() {
+        // Pointing the provider at a port with no listener makes the POST fail to connect,
+        // exercising the transport-error arm rather than an HTTP-status arm.
+        let provider = ResendEmailProvider::with_endpoint(
+            SecretString::from("re_key_123".to_owned()),
+            "no-reply@auth.local".to_owned(),
+            "http://127.0.0.1:1/emails".to_owned(),
+        );
+        let result = provider
+            .send_mfa_enabled("recipient@example.test", None)
             .await;
         assert!(matches!(result, Err(EmailError::Delivery(_))));
     }

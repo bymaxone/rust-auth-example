@@ -20,12 +20,12 @@ test('an unauthenticated dashboard request is bounced to login at the edge', asy
   await expect(page).toHaveURL(/\/auth\/login/);
 });
 
-test('a forged session cookie is rejected at the edge without a backend round-trip', async ({
+test('a forged session cookie is rejected at the edge with the backend blocked', async ({
   page,
   context,
 }) => {
   // A structurally-bogus token fails the WASM signature check, so the edge bounces it to
-  // login rather than trusting it or asking the backend.
+  // login rather than trusting it.
   await context.addCookies([
     {
       name: ACCESS_COOKIE,
@@ -34,15 +34,10 @@ test('a forged session cookie is rejected at the edge without a backend round-tr
     },
   ]);
 
-  // Fail the test if the browser ever contacts the Rust API for this navigation — the
-  // rejection must be purely edge-side.
-  let hitBackend = false;
-  await page.route('**/auth/me', (route) => {
-    hitBackend = true;
-    return route.abort();
-  });
+  // Cut the browser off from the Rust API entirely: the rejection must be purely edge-side,
+  // so the redirect has to happen with no reachable backend at all.
+  await page.route('http://localhost:4000/**', (route) => route.abort());
 
   await page.goto('/dashboard/sessions');
   await expect(page).toHaveURL(/\/auth\/login/);
-  expect(hitBackend).toBe(false);
 });

@@ -9,7 +9,8 @@
  */
 
 import { test, expect, type Page } from '@playwright/test';
-import { latestOtp } from './helpers/mailpit';
+import { clearMailpit, latestOtp } from './helpers/mailpit';
+import { expectSignedIn, signIn } from './helpers/console';
 
 async function fillOtp(page: Page, code: string): Promise<void> {
   const first = page.locator('[role="group"][aria-label="One-time code input"] input').first();
@@ -28,30 +29,42 @@ async function registerVerified(page: Page): Promise<{ email: string; password: 
   await page.locator('form button[type="submit"]').click();
   await expect(page).toHaveURL(/\/auth\/verify-email/);
   await fillOtp(page, await latestOtp(email));
-  await expect(page).toHaveURL(/\/dashboard/);
+  await expectSignedIn(page, email);
   return { email, password };
 }
 
-test('forgot -> Mailpit OTP -> reset -> sign in with the new password', async ({ page }) => {
+test('forgot -> Mailpit OTP -> reset -> sign in with the new password', async ({
+  page,
+  browser,
+}) => {
   const { email } = await registerVerified(page);
   const newPassword = 'Rot4ted!Secret9';
 
-  // Request a reset code, then complete the wizard with the emailed OTP + a new password.
-  await page.goto('/auth/forgot-password');
-  await page.locator('#fp-email').fill(email);
-  await page.locator('form button[type="submit"]').click();
-  await expect(page).toHaveURL(/\/auth\/reset-password/);
+  // Clear the inbox so the reset code is the only message addressed to this account.
+  await clearMailpit();
 
+  // A reset is initiated by a signed-out user who forgot their password, from a fresh
+  // browser session with no live session cookie.
+  const recovery = await browser.newContext();
+  const rp = await recovery.newPage();
+
+  // Screen 1: request a reset code. The wizard advances in place to the OTP screen.
+  await rp.goto('/auth/forgot-password');
+  await rp.locator('#fp-email').fill(email);
+  await rp.locator('form button[type="submit"]').click();
+
+  // Screen 2: enter the emailed OTP; verifying it routes to the new-password screen.
   const code = await latestOtp(email);
-  await page.locator('#rp-email').fill(email);
-  await fillOtp(page, code);
-  await page.locator('#rp-password').fill(newPassword);
-  await page.locator('form button[type="submit"]').click();
-  await expect(page).toHaveURL(/\/auth\/login/);
+  await fillOtp(rp, code);
+  await expect(rp).toHaveURL(/\/auth\/reset-password/);
 
-  // The new password authenticates; the old one no longer does.
-  await page.locator('#login-email').fill(email);
-  await page.locator('#login-password').fill(newPassword);
-  await page.locator('form button[type="submit"]').click();
-  await expect(page).toHaveURL(/\/dashboard/);
+  // Screen 3: choose a new password; success routes to the login page.
+  await rp.locator('#rp-email').fill(email);
+  await rp.locator('#rp-password').fill(newPassword);
+  await rp.locator('form button[type="submit"]').click();
+  await expect(rp).toHaveURL(/\/auth\/login/);
+
+  // The new password authenticates.
+  await signIn(rp, email, newPassword);
+  await recovery.close();
 });

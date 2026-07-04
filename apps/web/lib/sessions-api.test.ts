@@ -1,8 +1,9 @@
 /**
  * @fileoverview Tests for the sessions device-manager client.
  *
- * Covers: list returns the typed array, revoke encodes the id into the path, and
- * revoke-all targets the all-sessions route — all through the shared helper.
+ * Covers: list normalizes the `{ sessions }` envelope (hash → id, epoch-ms → ISO),
+ * revoke encodes the id into the path, and revoke-all targets the all-sessions route
+ * — all through the shared helper.
  *
  * @module lib/sessions-api.test
  */
@@ -21,11 +22,32 @@ beforeEach(() => {
 });
 
 describe('listSessions', () => {
-  it('returns the typed session list from GET /auth/sessions', async () => {
-    // The device manager renders whatever the sessions route returns.
-    const rows = [{ id: '1', device: 'Mac', ip: '1.1.1.1', lastActivity: 'now', isCurrent: true }];
-    mockApiJson.mockResolvedValueOnce(rows);
-    await expect(listSessions()).resolves.toEqual(rows);
+  it('normalizes the { sessions } envelope from GET /auth/sessions', async () => {
+    // The API wraps the list in `{ sessions }` and carries the full hash plus an
+    // epoch-millisecond activity time; the client unwraps it, keeps the hash as the
+    // revoke `id`, and renders the timestamp as ISO.
+    const hash = 'abcd1234'.repeat(8);
+    mockApiJson.mockResolvedValueOnce({
+      sessions: [
+        {
+          id: 'abcd1234',
+          sessionHash: hash,
+          device: 'Mac',
+          ip: '1.1.1.1',
+          lastActivityAt: 0,
+          isCurrent: true,
+        },
+      ],
+    });
+    await expect(listSessions()).resolves.toEqual([
+      {
+        id: hash,
+        device: 'Mac',
+        ip: '1.1.1.1',
+        lastActivity: '1970-01-01T00:00:00.000Z',
+        isCurrent: true,
+      },
+    ]);
     expect(mockApiJson).toHaveBeenCalledWith(AUTH_ROUTES.SESSIONS_LIST);
   });
 });

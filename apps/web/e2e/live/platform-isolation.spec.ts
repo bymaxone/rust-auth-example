@@ -10,6 +10,7 @@
 
 import { test, expect, type Page } from '@playwright/test';
 import { latestOtp } from './helpers/mailpit';
+import { expectSignedIn } from './helpers/console';
 
 async function fillOtp(page: Page, code: string): Promise<void> {
   const first = page.locator('[role="group"][aria-label="One-time code input"] input').first();
@@ -27,7 +28,7 @@ test('a dashboard session cannot enter the platform console', async ({ page }) =
   await page.locator('form button[type="submit"]').click();
   await expect(page).toHaveURL(/\/auth\/verify-email/);
   await fillOtp(page, await latestOtp(email));
-  await expect(page).toHaveURL(/\/dashboard/);
+  await expectSignedIn(page, email);
 
   // The dashboard cookie is not a platform credential: the platform area rejects it.
   await page.goto('/platform/users');

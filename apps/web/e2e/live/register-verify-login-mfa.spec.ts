@@ -13,6 +13,7 @@
 
 import { test, expect } from '@playwright/test';
 import { latestOtp } from './helpers/mailpit';
+import { expectSignedIn, signIn } from './helpers/console';
 
 /** Type a six-digit code into the segmented OTP input by focusing its first cell. */
 async function fillOtp(page: import('@playwright/test').Page, code: string): Promise<void> {
@@ -23,6 +24,7 @@ async function fillOtp(page: import('@playwright/test').Page, code: string): Pro
 
 test('register -> verify via Mailpit OTP -> land on the dashboard, then re-login', async ({
   page,
+  browser,
 }) => {
   const email = `e2e-${Date.now()}@auth.local`;
   const password = 'Sup3rSecret!pw';
@@ -38,12 +40,11 @@ test('register -> verify via Mailpit OTP -> land on the dashboard, then re-login
   await expect(page).toHaveURL(/\/auth\/verify-email/);
   const code = await latestOtp(email);
   await fillOtp(page, code);
-  await expect(page).toHaveURL(/\/dashboard/);
+  await expectSignedIn(page, email);
 
-  // Sign out, then sign back in with the verified credentials.
-  await page.goto('/auth/login');
-  await page.locator('#login-email').fill(email);
-  await page.locator('#login-password').fill(password);
-  await page.locator('form button[type="submit"]').click();
-  await expect(page).toHaveURL(/\/dashboard/);
+  // Sign back in from a fresh browser session (a returning user on a new device):
+  // the verified credentials authenticate cleanly and land on the console.
+  const returning = await browser.newContext();
+  await signIn(await returning.newPage(), email, password);
+  await returning.close();
 });

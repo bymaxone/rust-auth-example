@@ -12,9 +12,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 
 const apiJson = vi.hoisted(() => vi.fn());
-const authFetch = vi.hoisted(() => vi.fn());
+const fetchMock = vi.hoisted(() => vi.fn());
 vi.mock('@/lib/api', () => ({ apiJson }));
-vi.mock('@/lib/auth-client', () => ({ authFetch }));
+// The token inspector calls the same-origin `/api/diagnostics/inspect-token` route with a
+// direct `fetch` (not `authFetch`, which would rebase it onto the backend), so stub `fetch`.
+vi.stubGlobal('fetch', fetchMock);
 
 import { DiagnosticsMatrix } from './DiagnosticsMatrix';
 
@@ -149,12 +151,12 @@ describe('DiagnosticsMatrix — delivery + token inspector', () => {
     render(<DiagnosticsMatrix />);
     fireEvent.click(screen.getByRole('button', { name: 'Inspect' }));
     await waitFor(() => expect(screen.getByText('Paste a JWT to inspect.')).toBeInTheDocument());
-    expect(authFetch).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('shows a valid signature + algorithm for a verified token', async () => {
     // A verified token reports its algorithm and a valid signature.
-    authFetch.mockResolvedValueOnce(
+    fetchMock.mockResolvedValueOnce(
       res(true, { decoded: { header: { alg: 'HS256' } }, verified: true }),
     );
     render(<DiagnosticsMatrix />);
@@ -166,7 +168,7 @@ describe('DiagnosticsMatrix — delivery + token inspector', () => {
 
   it('shows rejected for a forged token and an unknown algorithm', async () => {
     // A forged alg:none token is rejected; a missing alg reads "unknown".
-    authFetch.mockResolvedValueOnce(res(true, { verified: false }));
+    fetchMock.mockResolvedValueOnce(res(true, { verified: false }));
     render(<DiagnosticsMatrix />);
     fireEvent.change(screen.getByLabelText('JWT to inspect'), { target: { value: 'forged' } });
     fireEvent.click(screen.getByRole('button', { name: 'Inspect' }));
@@ -176,7 +178,7 @@ describe('DiagnosticsMatrix — delivery + token inspector', () => {
 
   it('shows an error when the inspect route responds non-ok', async () => {
     // A non-2xx inspect response surfaces an error.
-    authFetch.mockResolvedValueOnce(res(false));
+    fetchMock.mockResolvedValueOnce(res(false));
     render(<DiagnosticsMatrix />);
     fireEvent.change(screen.getByLabelText('JWT to inspect'), { target: { value: 'x' } });
     fireEvent.click(screen.getByRole('button', { name: 'Inspect' }));
@@ -187,7 +189,7 @@ describe('DiagnosticsMatrix — delivery + token inspector', () => {
 
   it('shows an error when the inspect request throws', async () => {
     // A network failure is caught, not surfaced as a crash.
-    authFetch.mockRejectedValueOnce(new Error('network'));
+    fetchMock.mockRejectedValueOnce(new Error('network'));
     render(<DiagnosticsMatrix />);
     fireEvent.change(screen.getByLabelText('JWT to inspect'), { target: { value: 'x' } });
     fireEvent.click(screen.getByRole('button', { name: 'Inspect' }));

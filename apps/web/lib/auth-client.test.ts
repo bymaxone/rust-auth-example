@@ -35,7 +35,10 @@ describe('auth-client', () => {
     process.env.NEXT_PUBLIC_API_URL = 'https://api.example.com';
     const mod = await import('./auth-client');
 
-    expect(createAuthFetch).toHaveBeenCalledWith({ routePrefix: 'auth' });
+    expect(createAuthFetch).toHaveBeenCalledWith({
+      baseUrl: 'https://api.example.com',
+      routePrefix: 'auth',
+    });
     expect(createAuthClient).toHaveBeenCalledWith({
       baseUrl: 'https://api.example.com',
       credentials: 'include',
