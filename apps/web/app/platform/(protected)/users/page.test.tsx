@@ -11,7 +11,7 @@
  * @module app/platform/(protected)/users/page.test
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 /* ── Hoisted mocks ─────────────────────────────────────────────────────── */
 
@@ -55,12 +55,17 @@ interface AdminRow {
   lastLoginAt: string | null;
 }
 
-/** A cookie jar returning `token` for the access cookie, or nothing when omitted. */
+/**
+ * A cookie jar returning `token` only for the access cookie the page actually reads, so a
+ * lookup of the wrong cookie name yields nothing (the test fails instead of passing blindly).
+ */
 function jar(token: string | undefined): { get: (name: string) => { value: string } | undefined } {
-  return { get: () => (token !== undefined ? { value: token } : undefined) };
+  return {
+    get: (name) => (name === 'access_token' && token !== undefined ? { value: token } : undefined),
+  };
 }
 
-/** Install a `fetch` stub returning the given status/body for the users request. */
+/** Install a `fetch` stub (restored in `afterEach`) returning the given status/body. */
 function stubFetch(status: number, body: AdminRow[]): ReturnType<typeof vi.fn> {
   const fetchMock = vi.fn(() =>
     Promise.resolve({
@@ -69,12 +74,17 @@ function stubFetch(status: number, body: AdminRow[]): ReturnType<typeof vi.fn> {
       json: () => Promise.resolve(body),
     } as Response),
   );
-  globalThis.fetch = fetchMock;
+  vi.stubGlobal('fetch', fetchMock);
   return fetchMock;
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
+});
+
+afterEach(() => {
+  // Restore any `fetch` stub so it never leaks into another suite sharing the worker.
+  vi.unstubAllGlobals();
 });
 
 /* ── Tests ───────────────────────────────────────────────────────────────── */
@@ -187,6 +197,10 @@ describe('PlatformUsersPage', () => {
         'INTERNAL_API_URL is required for the platform users page',
       );
     }
-    process.env.INTERNAL_API_URL = previous;
+    if (previous === undefined) {
+      delete process.env.INTERNAL_API_URL;
+    } else {
+      process.env.INTERNAL_API_URL = previous;
+    }
   });
 });

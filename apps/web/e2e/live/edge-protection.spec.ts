@@ -14,6 +14,9 @@ import { test, expect } from '@playwright/test';
 /** The access-cookie name the edge middleware inspects. */
 const ACCESS_COOKIE = 'access_token';
 
+/** The console origin under test — overridable so the journey is host/port-portable. */
+const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
+
 test('an unauthenticated dashboard request is bounced to login at the edge', async ({ page }) => {
   // No session cookie at all: the middleware redirects before the route renders.
   await page.goto('/dashboard');
@@ -30,7 +33,7 @@ test('a forged session cookie is rejected at the edge with the backend blocked',
     {
       name: ACCESS_COOKIE,
       value: 'forged.not-a-real.jwt',
-      url: 'http://localhost:3000',
+      url: BASE_URL,
     },
   ]);
 

@@ -44,14 +44,18 @@ export async function clearMailpit(): Promise<void> {
 export async function latestOtp(to: string, timeoutMs = 15_000): Promise<string> {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
-    const list = (await fetch(`${MAILPIT_URL}/api/v1/messages`).then((r) =>
-      r.json(),
-    )) as MailpitList;
-    const match = list.messages.find((m) => m.To.some((a) => a.Address === to));
+    const listRes = await fetch(`${MAILPIT_URL}/api/v1/messages`);
+    if (!listRes.ok) throw new Error(`Mailpit list request failed: ${String(listRes.status)}`);
+    const list = (await listRes.json()) as MailpitList;
+    // Pick the most recent matching message: the reset flow can leave an earlier verification
+    // email to the same address, and `latestOtp` must read the freshest code, not the first.
+    const match = list.messages
+      .filter((m) => m.To.some((a) => a.Address === to))
+      .sort((a, b) => b.Created.localeCompare(a.Created))[0];
     if (match !== undefined) {
-      const body = (await fetch(`${MAILPIT_URL}/api/v1/message/${match.ID}`).then((r) =>
-        r.json(),
-      )) as MailpitMessage;
+      const bodyRes = await fetch(`${MAILPIT_URL}/api/v1/message/${match.ID}`);
+      if (!bodyRes.ok) throw new Error(`Mailpit message request failed: ${String(bodyRes.status)}`);
+      const body = (await bodyRes.json()) as MailpitMessage;
       const code = /\b(\d{6})\b/.exec(body.Text)?.[1];
       if (code !== undefined) return code;
     }

@@ -14,6 +14,9 @@ import { test, expect, type Page } from '@playwright/test';
 import { latestOtp } from './helpers/mailpit';
 import { expectSignedIn } from './helpers/console';
 
+/** The console origin under test — overridable so the journey is host/port-portable. */
+const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
+
 async function fillOtp(page: Page, code: string): Promise<void> {
   const first = page.locator('[role="group"][aria-label="One-time code input"] input').first();
   await first.click();
@@ -38,7 +41,7 @@ test('the OAuth panel offers a Google initiate affordance behind a session', asy
     route.fulfill({
       status: 302,
       headers: {
-        location: 'http://localhost:3000/dashboard/oauth?decision=create&branch=new_account',
+        location: `${BASE_URL}/dashboard/oauth?decision=create&branch=new_account`,
       },
       body: '',
     }),

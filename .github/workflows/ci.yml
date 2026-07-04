@@ -288,6 +288,10 @@ jobs:
           DATABASE_URL_TEST: postgres://postgres@localhost:5432/example_app_test
       - name: API coverage — pass 2 (DATABASE_URL_TEST unset → skip guards)
         run: cargo llvm-cov nextest -p api --no-tests=pass --no-report
+        env:
+          # Exercise the Mailpit delivery test's skip arm so the merged report covers it while
+          # keeping the test hermetic (it still skips on its own when no relay is reachable).
+          MAILPIT_FORCE_SKIP: '1'
       - name: API coverage — merge + gate at 100% lines & functions
         run: >-
           cargo llvm-cov report --lcov --output-path lcov.info

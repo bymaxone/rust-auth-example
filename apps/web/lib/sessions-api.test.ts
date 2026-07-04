@@ -30,7 +30,6 @@ describe('listSessions', () => {
     mockApiJson.mockResolvedValueOnce({
       sessions: [
         {
-          id: 'abcd1234',
           sessionHash: hash,
           device: 'Mac',
           ip: '1.1.1.1',

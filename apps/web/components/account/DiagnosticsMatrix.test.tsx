@@ -8,15 +8,12 @@
  * @module components/account/DiagnosticsMatrix.test
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 
 const apiJson = vi.hoisted(() => vi.fn());
 const fetchMock = vi.hoisted(() => vi.fn());
 vi.mock('@/lib/api', () => ({ apiJson }));
-// The token inspector calls the same-origin `/api/diagnostics/inspect-token` route with a
-// direct `fetch` (not `authFetch`, which would rebase it onto the backend), so stub `fetch`.
-vi.stubGlobal('fetch', fetchMock);
 
 import { DiagnosticsMatrix } from './DiagnosticsMatrix';
 
@@ -27,6 +24,14 @@ function res(ok: boolean, body?: unknown): Response {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // The token inspector calls the same-origin `/api/diagnostics/inspect-token` route with a
+  // direct `fetch` (not `authFetch`, which would rebase it onto the backend). Stub `fetch` per
+  // test and restore it after, so the global stays clean for other suites sharing the worker.
+  vi.stubGlobal('fetch', fetchMock);
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 describe('DiagnosticsMatrix — hash strength', () => {
