@@ -11,9 +11,9 @@
 import { AUTH_ROUTES } from '@bymax-one/rust-auth/shared';
 import { apiFetch, apiJson } from './api';
 
-/** A device session as returned by `GET /auth/sessions`. */
+/** A device session, normalized for the console from the `GET /auth/sessions` payload. */
 export interface SessionInfo {
-  /** The opaque session id. */
+  /** The full session hash — the identifier `revokeSession` deletes by. */
   readonly id: string;
   /** A human-readable device / user-agent summary. */
   readonly device: string;
@@ -25,9 +25,31 @@ export interface SessionInfo {
   readonly isCurrent: boolean;
 }
 
-/** List the caller's active sessions. */
+/**
+ * The wire shape of one session inside the `{ sessions: [...] }` envelope: the API
+ * returns the full `sessionHash` (the revoke identifier) and epoch-millisecond
+ * activity timestamps, which the console normalizes to {@link SessionInfo}.
+ */
+interface WireSession {
+  readonly sessionHash: string;
+  readonly device: string;
+  readonly ip: string;
+  readonly lastActivityAt: number;
+  readonly isCurrent: boolean;
+}
+
+/** List the caller's active sessions, normalizing the wire payload to {@link SessionInfo}. */
 export async function listSessions(): Promise<SessionInfo[]> {
-  return apiJson<SessionInfo[]>(AUTH_ROUTES.SESSIONS_LIST);
+  const { sessions } = await apiJson<{ sessions: readonly WireSession[] }>(
+    AUTH_ROUTES.SESSIONS_LIST,
+  );
+  return sessions.map((session) => ({
+    id: session.sessionHash,
+    device: session.device,
+    ip: session.ip,
+    lastActivity: new Date(session.lastActivityAt).toISOString(),
+    isCurrent: session.isCurrent,
+  }));
 }
 
 /** Revoke a single session by id. Resolves on success. */

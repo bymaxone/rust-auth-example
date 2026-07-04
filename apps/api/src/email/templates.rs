@@ -340,6 +340,15 @@ mod tests {
     }
 
     #[test]
+    fn render_err_maps_a_template_failure_to_a_delivery_error() {
+        // A render failure must surface as a typed `Delivery` error so callers propagate it
+        // instead of panicking; a well-formed template never fails, so the mapping is proven
+        // by handing it a synthetic formatting error directly.
+        let mapped = render_err(askama::Error::Fmt);
+        assert!(matches!(mapped, EmailError::Delivery(_)));
+    }
+
+    #[test]
     fn otp_bodies_carry_the_code_and_default_to_english() {
         // The verification and reset OTP bodies embed the code and, with no locale, render
         // the English heading.

@@ -1,6 +1,6 @@
 # Phase 12 — Testing & 100% Coverage
 
-> **Status**: 📋 ToDo · **Progress**: 0 / 6 tasks · **Last updated**: 2026-06-23
+> **Status**: 🔄 In Progress · **Progress**: 3 / 6 tasks (12.2/12.3/12.4 done; 12.1/12.5/12.6 partial) · **Last updated**: 2026-07-03
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P12
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -45,12 +45,12 @@ When P12 is done, `cargo llvm-cov nextest -p api` reports 100% on all metrics, `
 
 | ID | Task | Status | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- | --- |
-| 12.1 | API unit coverage → 100% | 📋 ToDo | P0 | L | — |
-| 12.2 | API integration tests + native client | 📋 ToDo | P0 | M | — |
-| 12.3 | Property / RFC-KAT crypto & JWT edges | 📋 ToDo | P1 | M | — |
-| 12.4 | Web Vitest unit/component → 100% | 📋 ToDo | P0 | L | — |
-| 12.5 | Playwright live journeys | 📋 ToDo | P1 | M | 12.2, 12.4 |
-| 12.6 | CI coverage jobs green @ 100% gate | 📋 ToDo | P1 | M | 12.1, 12.4 |
+| 12.1 | API unit coverage → 100% | 🟡 Partial | P0 | L | — |
+| 12.2 | API integration tests + native client | ✅ Done | P0 | M | — |
+| 12.3 | Property / RFC-KAT crypto & JWT edges | ✅ Done | P1 | M | — |
+| 12.4 | Web Vitest unit/component → 100% | ✅ Done | P0 | L | — |
+| 12.5 | Playwright live journeys | 🟡 Partial | P1 | M | 12.2, 12.4 |
+| 12.6 | CI coverage jobs green @ 100% gate | 🟡 Partial | P1 | M | 12.1, 12.4 |
 
 ---
 
@@ -58,7 +58,7 @@ When P12 is done, `cargo llvm-cov nextest -p api` reports 100% on all metrics, `
 
 ### Task 12.1 — API unit coverage → 100%
 
-- **Status**: 📋 ToDo
+- **Status**: 🟡 Partial
 - **Priority**: P0
 - **Size**: L
 - **Depends on**: —
@@ -170,7 +170,7 @@ Completion Protocol (after you finish):
 
 ### Task 12.2 — API integration tests + native client
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: M
 - **Depends on**: —
@@ -288,7 +288,7 @@ Completion Protocol (after you finish):
 
 ### Task 12.3 — Property / RFC-KAT crypto & JWT edges
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P1
 - **Size**: M
 - **Depends on**: —
@@ -404,7 +404,7 @@ Completion Protocol (after you finish):
 
 ### Task 12.4 — Web Vitest unit/component → 100%
 
-- **Status**: 📋 ToDo
+- **Status**: ✅ Done
 - **Priority**: P0
 - **Size**: L
 - **Depends on**: —
@@ -519,7 +519,7 @@ Completion Protocol (after you finish):
 
 ### Task 12.5 — Playwright live journeys
 
-- **Status**: 📋 ToDo
+- **Status**: 🟡 Partial
 - **Priority**: P1
 - **Size**: M
 - **Depends on**: 12.2, 12.4
@@ -631,7 +631,7 @@ Completion Protocol (after you finish):
 
 ### Task 12.6 — CI coverage jobs green @ 100% gate
 
-- **Status**: 📋 ToDo
+- **Status**: 🟡 Partial
 - **Priority**: P1
 - **Size**: M
 - **Depends on**: 12.1, 12.4
@@ -750,4 +750,7 @@ Run this closeout when the LAST task (12.6) is ✅:
 
 > Append-only. One line per completed task: `- <id> ✅ YYYY-MM-DD — <summary>`.
 
-_(empty — no tasks completed yet)_
+- 12.4 ✅ 2026-07-03 — Web Vitest at 100% on all metrics (945 statements, 434 branches, 267 functions, 894 lines across 470 tests); the `users` platform server component now has a server-runtime test (mocked `next/headers`/`next/navigation`/`fetch`) and is measured in the coverage scope rather than excluded.
+- 12.3 ✅ 2026-07-03 — Added `tests/property.rs`: RFC 4226/6238 HOTP/TOTP known-answer vectors, a `proptest` ±2-step drift property, a PHC round-trip + rehash-on-strengthen check, the HS256 alg-pin rejection (`none`/`RS256`), and a store-level refresh-reuse-past-grace `RotateOutcome::Invalid` test; committed `proptest-regressions/property.txt`.
+- 12.2 ✅ 2026-07-03 — Added `tests/native_client.rs`: the native `bymax_auth_client::AuthClient` round-trips against the spawned example server for the full authenticated lifecycle (`register`/`me`/`refresh`/`logout`) and the MFA branch (`login` → `AuthOutcome::MfaRequired` → `mfa_challenge`). The mounted HTTP surface + rate-limit `Retry-After` were already covered by `tests/auth_surface.rs`.
+- 12.1 🟡 2026-07-03 — Added `.config/nextest.toml` (capped threads), closed the deferred `guards` branches (non-Bearer scheme, empty-token, `map_platform_error` internal passthrough) and `email::templates::render_err`; single-run coverage is now lines 99.06% / functions 99.04% / regions 98.09%. The residual line/function gaps are `#[cfg(test)]` DB/relay skip-guards, uncoverable together with their DB-backed bodies in one run — a two-pass (with-DB + without-DB) coverage MERGE reaches 100% lines/functions (see the CI note). Region 100% is not reachable on stable without excluding genuinely-defensive error closures.

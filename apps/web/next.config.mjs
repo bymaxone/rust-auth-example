@@ -28,7 +28,12 @@ try {
 } catch {
   /* Malformed URL — fall back to 'self' only. */
 }
-const _connectSrc = _apiOrigin ? `'self' ${_apiOrigin}` : "'self'";
+/* The realtime WebSocket (`ws-ticket` → `ws(s)://…/ws/example`) targets the same API
+   origin upgraded to the `ws`/`wss` scheme. CSP treats `ws:`/`wss:` as origins distinct
+   from `http:`/`https:`, so the upgraded origin must be listed explicitly or the browser
+   blocks the socket (which would crash the sessions device-manager). */
+const _wsOrigin = _apiOrigin ? _apiOrigin.replace(/^http/, 'ws') : '';
+const _connectSrc = _apiOrigin ? `'self' ${_apiOrigin} ${_wsOrigin}` : "'self'";
 
 /* Scripts require 'unsafe-inline' in BOTH dev and production. A production build
    serves Next's hydration bootstrap as an inline <script> whose contents change

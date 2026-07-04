@@ -19,8 +19,10 @@ use crate::email::resend::ResendEmailProvider;
 
 /// Validate that `from` is a well-formed RFC 5321 mailbox.
 ///
-/// Both the Resend and Mailpit paths call this before constructing a provider so
-/// an invalid `SMTP_FROM` is always reported as the same typed [`EmailError`].
+/// The Resend path calls this before constructing a provider (the Resend transport
+/// does not parse `from` itself); the Mailpit transport performs the same validation
+/// while it builds, so an invalid `SMTP_FROM` is always reported as the same typed
+/// [`EmailError`] regardless of the selected transport.
 fn parse_smtp_from(from: &str) -> Result<(), EmailError> {
     from.parse::<::lettre::message::Mailbox>()
         .map(|_| ())
@@ -44,8 +46,8 @@ pub fn resolve_kind(settings: &Settings) -> EmailProviderKind {
 /// - `mailpit` → builds the zero-credential lettre → Mailpit transport (even when a
 ///   `RESEND_API_KEY` happens to be set — the explicit choice wins).
 ///
-/// `SMTP_FROM` is validated as a well-formed mailbox on both paths before any
-/// provider is constructed.
+/// `SMTP_FROM` is validated as a well-formed mailbox on both paths: the Resend path
+/// checks it explicitly, the Mailpit path while building the transport.
 ///
 /// # Errors
 ///
@@ -53,12 +55,11 @@ pub fn resolve_kind(settings: &Settings) -> EmailProviderKind {
 /// `RESEND_API_KEY` is absent, when `SMTP_FROM` is not a valid mailbox, or when the
 /// lettre transport cannot be built.
 pub fn resolve_email_provider(settings: &Settings) -> Result<Arc<dyn EmailProvider>, EmailError> {
-    // Validate smtp_from upfront so both paths produce the same typed error on
-    // an invalid SMTP_FROM.
-    parse_smtp_from(&settings.smtp_from)?;
-
     match settings.email_provider {
         EmailProviderKind::Resend => {
+            // The Resend transport does not parse `from` itself, so validate it here to
+            // return the same typed error as the Mailpit path, before the key check.
+            parse_smtp_from(&settings.smtp_from)?;
             let key = settings.resend_api_key.as_ref().ok_or_else(|| {
                 EmailError::Delivery(
                     "`EMAIL_PROVIDER` is `resend` but `RESEND_API_KEY` is not configured".into(),
@@ -69,6 +70,8 @@ pub fn resolve_email_provider(settings: &Settings) -> Result<Arc<dyn EmailProvid
                 settings.smtp_from.clone(),
             )))
         }
+        // The Mailpit transport validates `from` while building, so an invalid `SMTP_FROM`
+        // surfaces from this `?` as the same typed error.
         EmailProviderKind::Mailpit => Ok(Arc::new(LettreEmailProvider::new(
             &settings.smtp_host,
             settings.smtp_port,

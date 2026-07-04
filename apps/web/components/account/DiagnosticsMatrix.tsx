@@ -1,12 +1,13 @@
 /**
  * @fileoverview The Diagnostics matrix — the example-owned server-only primitives.
  *
- * Exercises the dev diagnostics API via the shared `authFetch`: password
+ * Exercises the dev diagnostics API via the shared `apiJson` helper: password
  * hash-strength (+ needs-rehash), a brute-force lockout (+ countdown), and the
  * recent hook-event count. The token inspector posts a pasted JWT to the
- * server-only `/api/diagnostics/inspect-token` route (which alone imports the
- * `/nextjs` decode/verify) and shows a forged `alg:none` being rejected. A chip
- * surfaces the configured token-delivery mode.
+ * server-only `/api/diagnostics/inspect-token` route (a same-origin Next handler
+ * that alone imports the `/nextjs` decode/verify) with a direct `fetch`, and
+ * shows a forged `alg:none` being rejected. A chip surfaces the configured
+ * token-delivery mode.
  *
  * @module components/account/DiagnosticsMatrix
  */
@@ -20,7 +21,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DeliveryModeChip } from '@/components/controls/DeliveryModeChip';
 import { apiJson } from '@/lib/api';
-import { authFetch } from '@/lib/auth-client';
 
 /** The lifecycle for a one-shot diagnostic action. */
 type ActionState<T> =
@@ -120,7 +120,9 @@ function TokenInspectorCard() {
     }
     setBusy(true);
     try {
-      const res = await authFetch('/api/diagnostics/inspect-token', {
+      // A same-origin Next route (never the Rust API), so call it directly rather than
+      // through `authFetch`, whose `baseUrl` would rebase this onto the backend.
+      const res = await fetch('/api/diagnostics/inspect-token', {
         method: 'POST',
         body: JSON.stringify({ token }),
       });

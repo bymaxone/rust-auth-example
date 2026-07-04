@@ -26,6 +26,9 @@ const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
 
 export default defineConfig({
   testDir: './e2e',
+  // The live-stack journeys have their own config (`playwright.live.config.ts`); keep them
+  // out of the hermetic runner, which points the app at a placeholder backend.
+  testIgnore: '**/live/**',
   fullyParallel: false,
   workers: 1,
   forbidOnly: Boolean(process.env.CI),

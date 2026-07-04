@@ -1,0 +1,13 @@
+# Bound the worker pool so the path-linked library is not duplicated across more
+# forks than the machine can hold. The `path`/`file:` library graph reloads into
+# every test process, so an unbounded pool can exhaust memory on a laptop; half the
+# logical cores keeps peak memory bounded while still parallelizing the suite.
+[profile.default]
+test-threads = "num-cpus/2"
+fail-fast = false
+
+# CI runs on fixed two-core runners; a hard cap of four keeps the reserved-for-DB
+# integration processes from oversubscribing the box.
+[profile.ci]
+test-threads = 4
+fail-fast = false

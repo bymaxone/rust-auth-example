@@ -7,7 +7,9 @@
 
 use std::collections::HashMap;
 
-use bymax_auth_core::config::{ControllerToggles, Environment, MfaConfig, TokenDelivery};
+use bymax_auth_core::config::{
+    ControllerToggles, Environment, MfaConfig, ResetMethod, TokenDelivery,
+};
 use bymax_auth_core::{AuthConfig, ConfigError};
 
 use crate::config::Settings;
@@ -54,6 +56,11 @@ pub fn build_auth_config(
     // Deliver tokens as both HttpOnly cookies and the response body, so the reference
     // surface serves cookie-based browser clients and bearer-token API clients alike.
     config.token_delivery = TokenDelivery::Both;
+
+    // Deliver password resets as a short-lived numeric OTP rather than the default link
+    // token, matching the console's OTP-based forgot-password wizard (which verifies the
+    // emailed code at `/auth/password/verify-otp`).
+    config.password_reset.method = ResetMethod::Otp;
 
     // The dashboard role hierarchy is fully denormalized: each role lists every role it
     // transitively includes, so a satisfaction check is a single-level lookup.
@@ -179,6 +186,7 @@ mod tests {
             .expect("a valid development configuration must build");
         assert_eq!(config.jwt.secret.expose_secret(), TEST_JWT);
         assert_eq!(config.token_delivery, TokenDelivery::Both);
+        assert_eq!(config.password_reset.method, ResetMethod::Otp);
         assert!(config.controllers.sessions);
         assert!(config.controllers.mfa);
         assert!(!config.controllers.oauth);

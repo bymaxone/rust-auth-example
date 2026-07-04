@@ -164,14 +164,16 @@ mod tests {
     use std::time::Duration;
     use time::OffsetDateTime;
 
+    /// Parse an optional `SMTP_PORT` value, falling back to the Mailpit default when it
+    /// is absent or not a valid port number.
+    fn parse_port(raw: Option<String>) -> u16 {
+        raw.and_then(|p| p.parse().ok()).unwrap_or(1025)
+    }
+
     /// The Mailpit SMTP host/port, from the environment or the local default.
     fn mailpit_endpoint() -> (String, u16) {
         let host = std::env::var("SMTP_HOST").unwrap_or_else(|_| "localhost".to_owned());
-        let port = std::env::var("SMTP_PORT")
-            .ok()
-            .and_then(|p| p.parse().ok())
-            .unwrap_or(1025);
-        (host, port)
+        (host, parse_port(std::env::var("SMTP_PORT").ok()))
     }
 
     /// Whether a Mailpit SMTP relay is reachable, so the delivery test can run.
@@ -189,6 +191,41 @@ mod tests {
         assert!(matches!(result, Err(EmailError::Delivery(_))));
     }
 
+    #[test]
+    fn parse_port_reads_a_valid_value_and_falls_back_otherwise() {
+        // A numeric value is honoured; a non-numeric value or an absent one falls back to
+        // the Mailpit default, so the endpoint is always well-formed.
+        assert_eq!(parse_port(Some("2525".to_owned())), 2525);
+        assert_eq!(parse_port(Some("not-a-port".to_owned())), 1025);
+        assert_eq!(parse_port(None), 1025);
+    }
+
+    #[test]
+    fn an_unresolvable_host_is_reported_unreachable() {
+        // A name reserved never to resolve fails address lookup, so reachability is false
+        // without opening a socket (the `.invalid` TLD is guaranteed non-resolvable).
+        assert!(!mailpit_reachable("relay.invalid", 1025));
+    }
+
+    #[test]
+    fn a_closed_port_is_reported_unreachable() {
+        // Address resolution succeeds but nothing is listening, so the connect attempt is
+        // refused and reachability is false.
+        assert!(!mailpit_reachable("127.0.0.1", 1));
+    }
+
+    #[tokio::test]
+    async fn a_transport_failure_is_a_delivery_error() {
+        // A provider pointed at a port with no SMTP listener fails to deliver, exercising
+        // the transport-error arm (the send `map_err`) rather than a formatting arm.
+        let provider = LettreEmailProvider::new("127.0.0.1", 1, "no-reply@auth.local".to_owned())
+            .expect("a valid from address builds the provider");
+        let result = provider
+            .send_mfa_enabled("recipient@example.test", None)
+            .await;
+        assert!(matches!(result, Err(EmailError::Delivery(_))));
+    }
+
     #[tokio::test]
     async fn a_malformed_recipient_is_a_delivery_error() {
         // A valid provider still fails fast when the recipient address is malformed, hitting
@@ -203,11 +240,18 @@ mod tests {
     #[tokio::test]
     async fn delivers_every_message_to_mailpit() {
         // Against a live Mailpit relay every one of the seven sends renders and delivers,
-        // exercising the transport end to end. The test skips when no relay is reachable so
-        // an SMTP-free run still passes.
+        // exercising the transport end to end. Hermetic by default: with no relay reachable
+        // (a fresh checkout or a dev box without the test stack) the test skips; CI provides
+        // the Mailpit service, so the delivery path is still exercised there.
         let (host, port) = mailpit_endpoint();
-        if !mailpit_reachable(&host, port) {
-            eprintln!("skipping lettre delivery test: no Mailpit SMTP relay at {host}:{port}");
+        // Skip when no relay is reachable (a fresh checkout / a dev box without the test stack).
+        // The coverage pass sets `MAILPIT_FORCE_SKIP` so this skip arm is exercised
+        // deterministically — that keeps the two-pass gate at 100% without needing a
+        // Mailpit-less pass, which would collide with the SMTP-defaults config test.
+        if std::env::var_os("MAILPIT_FORCE_SKIP").is_some() || !mailpit_reachable(&host, port) {
+            eprintln!(
+                "skipping Mailpit delivery test: {host}:{port} unreachable or MAILPIT_FORCE_SKIP set"
+            );
             return;
         }
         let provider = LettreEmailProvider::new(&host, port, "no-reply@auth.local".to_owned())
