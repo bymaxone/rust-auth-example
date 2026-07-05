@@ -911,9 +911,10 @@ Concretely:
 ## 21. License, Attribution & Status
 
 - **License.** MIT © Bymax One. `bymax-auth` / `@bymax-one/rust-auth` is MIT © Bymax One.
-- **Status.** 📝 Specification draft — `docs/` only (this blueprint + the shared design system). No `apps/` code yet.
-  The sibling `docs/*.md` (DASHBOARD, DEVELOPMENT_PLAN, GETTING_STARTED, FEATURES, ARCHITECTURE, …) and the README badge
-  header are authored in the documentation phase of the build.
+- **Status.** ✅ Build complete — both workspaces (`apps/api` axum + `apps/web` Next.js) are implemented, tested
+  (100% coverage + mutation ≥ 95 on both), and documented. The public-readiness prep is merged; the first `v*` tag
+  and the public-visibility flip are the remaining manual release steps. See
+  [`DEVELOPMENT_PLAN.md`](./DEVELOPMENT_PLAN.md) for the phase dashboard.
 - **Document version.** OVERVIEW `1.0.0`, reconciled against the shipped `pub` surface of the consumed crates +
   the `@bymax-one/rust-auth` npm package, and audited (lib-coverage + structure + Rust-contracts) on the date of writing.
 

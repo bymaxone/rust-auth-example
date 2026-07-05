@@ -51,8 +51,9 @@ template, reconciled with the current vault standard and adapted to the Rust/axu
 
 ## Progress
 
-- **Overall progress:** 14 / 15 phases · 79 / 86 tasks done (92%)
-- **Active phase:** P14 (Docs, Public-Readiness & Release)
+- **Overall progress:** 14 / 15 phases · 85 / 86 tasks done (99%)
+- **Active phase:** none — P14 prep is merged; the one remaining task (the first `v*` tag + the
+  public-visibility flip) is a deferred manual release step.
 - **Blocked:** none
 
 > All 15 Layer-3 task files are scaffolded under [`docs/tasks/`](./tasks/) (86 tasks total). Execute one phase at a time
@@ -78,7 +79,7 @@ template, reconciled with the current vault standard and adapted to the Rust/axu
 | P11 | Platform Console | `phase-11-platform-console.md` | ✅ | 4 / 4 | M | 2026-07-03 |
 | P12 | Testing & 100% Coverage | `phase-12-testing.md` | ✅ | 6 / 6 | L | 2026-07-04 |
 | P13 | Mutation Hardening | `phase-13-mutation.md` | ✅ | 5 / 5 | L | 2026-07-05 |
-| P14 | Docs, Public-Readiness & Release | `phase-14-docs-release.md` | 🔄 | 6 / 7 | L | 2026-07-05 |
+| P14 | Docs, Public-Readiness & Release | `phase-14-docs-release.md` | 🟡 | 6 / 7 | L | 2026-07-05 |
 
 ---
 
