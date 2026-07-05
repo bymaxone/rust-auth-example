@@ -36,7 +36,6 @@ export function ExpiryPill({ expiresAt, onExpired }: ExpiryPillProps): ReactElem
   const [secondsLeft, setSecondsLeft] = useState<number>(() =>
     Math.max(0, Math.floor((expiresAt.getTime() - Date.now()) / 1000)),
   );
-  const firedRef = useRef(false);
   /* Callback ref: always points to the latest `onExpired` without being a dep.
      This prevents a new inline arrow prop (e.g. `() => setState(true)`) from
      tearing down and restarting the interval on every parent re-render. */
@@ -46,8 +45,6 @@ export function ExpiryPill({ expiresAt, onExpired }: ExpiryPillProps): ReactElem
   });
 
   useEffect(() => {
-    /* Reset the fired flag so a fresh expiresAt can fire onExpired again. */
-    firedRef.current = false;
     /* Compute remaining time directly from expiresAt so secondsLeft is not a
        dependency — this ensures a single stable interval per expiresAt value
        instead of tearing down and recreating the interval on every tick. */
@@ -56,7 +53,6 @@ export function ExpiryPill({ expiresAt, onExpired }: ExpiryPillProps): ReactElem
     setSecondsLeft(initial);
 
     if (initial <= 0) {
-      firedRef.current = true;
       onExpiredRef.current?.();
       return;
     }
@@ -66,9 +62,8 @@ export function ExpiryPill({ expiresAt, onExpired }: ExpiryPillProps): ReactElem
       setSecondsLeft(remaining);
       if (remaining <= 0) {
         /* Clear before calling onExpired so the callback cannot re-observe a
-           live interval; firedRef prevents any double-fire on subsequent renders. */
+           live interval; clearing the interval also prevents any double-fire. */
         clearInterval(interval);
-        firedRef.current = true;
         onExpiredRef.current?.();
       }
     }, 1_000);

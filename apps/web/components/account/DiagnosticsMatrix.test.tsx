@@ -107,6 +107,8 @@ describe('DiagnosticsMatrix — lockout', () => {
     render(<DiagnosticsMatrix />);
     fireEvent.click(screen.getByRole('button', { name: 'Force lockout' }));
     await waitFor(() => expect(screen.getByText('locked')).toBeInTheDocument());
+    // A zero countdown is not surfaced as a retry timer.
+    expect(screen.queryByText(/retry in/i)).not.toBeInTheDocument();
   });
 
   it('renders a triggered badge when no lock is reported', async () => {
@@ -119,12 +121,13 @@ describe('DiagnosticsMatrix — lockout', () => {
 });
 
 describe('DiagnosticsMatrix — hook log', () => {
-  it('counts an array payload', async () => {
-    // An array of events counts by length.
+  it('counts an array payload from the hooks endpoint', async () => {
+    // An array of events counts by length, fetched from the diagnostics hooks route.
     apiJson.mockResolvedValueOnce([1, 2, 3]);
     render(<DiagnosticsMatrix />);
     fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
     await waitFor(() => expect(screen.getByText('3')).toBeInTheDocument());
+    expect(apiJson).toHaveBeenCalledWith('/diagnostics/hooks');
   });
 
   it('counts an object payload with a count field', async () => {
@@ -142,6 +145,31 @@ describe('DiagnosticsMatrix — hook log', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
     await waitFor(() => expect(screen.getByText('0')).toBeInTheDocument());
   });
+
+  it('counts an object without a numeric count as zero', async () => {
+    // An object that lacks a numeric `count` is not entered as a match; it reads zero.
+    apiJson.mockResolvedValueOnce({});
+    render(<DiagnosticsMatrix />);
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    await waitFor(() => expect(screen.getByText('0')).toBeInTheDocument());
+  });
+
+  it('counts a null payload as zero without dereferencing it', async () => {
+    // A null payload short-circuits the object guard rather than reading a property off null.
+    apiJson.mockResolvedValueOnce(null);
+    render(<DiagnosticsMatrix />);
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    await waitFor(() => expect(screen.getByText('0')).toBeInTheDocument());
+  });
+
+  it('counts a non-object payload carrying a numeric count as zero', async () => {
+    // Only genuine objects are inspected for a count; a function exposing one stays zero.
+    const payload = Object.assign(() => undefined, { count: 7 });
+    apiJson.mockResolvedValueOnce(payload);
+    render(<DiagnosticsMatrix />);
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    await waitFor(() => expect(screen.getByText('0')).toBeInTheDocument());
+  });
 });
 
 describe('DiagnosticsMatrix — delivery + token inspector', () => {
@@ -149,6 +177,16 @@ describe('DiagnosticsMatrix — delivery + token inspector', () => {
     // The configured token delivery is surfaced read-only.
     render(<DiagnosticsMatrix />);
     expect(screen.getByText('Cookie')).toBeInTheDocument();
+  });
+
+  it('renders every action idle and enabled before any run', () => {
+    // Each diagnostic action starts idle: its own action label, enabled, with no result yet.
+    render(<DiagnosticsMatrix />);
+    expect(screen.getByRole('button', { name: 'Measure' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Force lockout' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Refresh' })).toBeEnabled();
+    expect(screen.queryByText('Running…')).not.toBeInTheDocument();
+    expect(screen.queryByText('Request failed.')).not.toBeInTheDocument();
   });
 
   it('guards against an empty token', async () => {
@@ -164,11 +202,19 @@ describe('DiagnosticsMatrix — delivery + token inspector', () => {
     fetchMock.mockResolvedValueOnce(
       res(true, { decoded: { header: { alg: 'HS256' } }, verified: true }),
     );
-    render(<DiagnosticsMatrix />);
+    const { container } = render(<DiagnosticsMatrix />);
     fireEvent.change(screen.getByLabelText('JWT to inspect'), { target: { value: 'a.b.c' } });
     fireEvent.click(screen.getByRole('button', { name: 'Inspect' }));
     await waitFor(() => expect(screen.getByText('Signature valid')).toBeInTheDocument());
     expect(screen.getByText('alg: HS256')).toBeInTheDocument();
+    // The pasted token is POSTed verbatim to the same-origin server-only route.
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/diagnostics/inspect-token',
+      expect.objectContaining({ method: 'POST', body: JSON.stringify({ token: 'a.b.c' }) }),
+    );
+    // A completed inspection clears the in-flight state and renders no error line.
+    expect(screen.getByRole('button', { name: 'Inspect' })).toBeEnabled();
+    expect(container.querySelector('p.text-destructive')).toBeNull();
   });
 
   it('shows rejected for a forged token and an unknown algorithm', async () => {
@@ -179,6 +225,8 @@ describe('DiagnosticsMatrix — delivery + token inspector', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Inspect' }));
     await waitFor(() => expect(screen.getByText(/Rejected/i)).toBeInTheDocument());
     expect(screen.getByText('alg: unknown')).toBeInTheDocument();
+    // An unverified token never surfaces the valid-signature badge.
+    expect(screen.queryByText('Signature valid')).not.toBeInTheDocument();
   });
 
   it('shows an error when the inspect route responds non-ok', async () => {
@@ -201,5 +249,40 @@ describe('DiagnosticsMatrix — delivery + token inspector', () => {
     await waitFor(() =>
       expect(screen.getByText('Could not inspect the token.')).toBeInTheDocument(),
     );
+  });
+
+  it('treats a whitespace-only token as empty and never calls the route', async () => {
+    // Trimming a blank paste yields the same guard as an empty field; no request is made.
+    render(<DiagnosticsMatrix />);
+    fireEvent.change(screen.getByLabelText('JWT to inspect'), { target: { value: '   ' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect' }));
+    await waitFor(() => expect(screen.getByText('Paste a JWT to inspect.')).toBeInTheDocument());
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('disables the button and shows an inspecting label while in flight', async () => {
+    // The button reflects the in-flight state until the inspect route resolves.
+    let resolveFetch: (value: Response) => void = () => undefined;
+    fetchMock.mockReturnValueOnce(
+      new Promise<Response>((r) => {
+        resolveFetch = r;
+      }),
+    );
+    render(<DiagnosticsMatrix />);
+    fireEvent.change(screen.getByLabelText('JWT to inspect'), { target: { value: 'a.b.c' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Inspecting…' })).toBeDisabled());
+    resolveFetch(res(true, { decoded: { header: { alg: 'HS256' } }, verified: true }));
+    await waitFor(() => expect(screen.getByText('Signature valid')).toBeInTheDocument());
+  });
+
+  it('reads an unknown algorithm when a decoded token omits its header', async () => {
+    // With a decoded payload but no header present, the algorithm safely reads "unknown".
+    fetchMock.mockResolvedValueOnce(res(true, { verified: true, decoded: {} }));
+    render(<DiagnosticsMatrix />);
+    fireEvent.change(screen.getByLabelText('JWT to inspect'), { target: { value: 'a.b' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect' }));
+    await waitFor(() => expect(screen.getByText('alg: unknown')).toBeInTheDocument());
+    expect(screen.getByText('Signature valid')).toBeInTheDocument();
   });
 });

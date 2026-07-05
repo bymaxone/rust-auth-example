@@ -109,4 +109,28 @@ describe('useNewSessionAlerts', () => {
     });
     expect(MockWebSocket.instances).toHaveLength(0);
   });
+
+  it('reopens the socket when the alert callback changes', async () => {
+    // The effect keys on onAlert: a new callback must close the old socket and open a fresh one.
+    mintWsTicket.mockResolvedValueOnce('TCK').mockResolvedValueOnce('TCK2');
+    const first = vi.fn();
+    const second = vi.fn();
+    const { rerender } = renderHook(
+      ({ cb }: { cb: (ip: string) => void }) => useNewSessionAlerts(cb),
+      { initialProps: { cb: first } },
+    );
+    await flush();
+    expect(MockWebSocket.instances).toHaveLength(1);
+    const firstSocket = MockWebSocket.instances[0];
+
+    rerender({ cb: second });
+    await flush();
+    // The old socket is torn down and a second socket opens for the new callback.
+    expect(MockWebSocket.instances).toHaveLength(2);
+    expect(firstSocket?.closed).toBe(true);
+
+    MockWebSocket.instances[1]?.emit(JSON.stringify({ event: 'on_new_session', ip: '2.2.2.2' }));
+    expect(second).toHaveBeenCalledWith('2.2.2.2');
+    expect(first).not.toHaveBeenCalled();
+  });
 });

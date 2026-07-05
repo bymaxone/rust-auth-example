@@ -34,6 +34,29 @@ describe('AcceptedInvitations', () => {
       'href',
       'http://localhost:8025',
     );
+    // The ready list replaces the skeleton entirely.
+    expect(screen.getByRole('list', { name: /Accepted invitations/i })).toBeInTheDocument();
+    expect(screen.queryByRole('status', { name: /Loading/i })).not.toBeInTheDocument();
+  });
+
+  it('gives each row a distinct key so React does not warn about duplicates', async () => {
+    // Composing email + acceptedAt yields a unique key per row; a blank key would
+    // collide across siblings and trigger React's duplicate-key warning.
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    listAcceptedInvitations.mockResolvedValueOnce([
+      { email: 'a@b.co', acceptedAt: 't' },
+      { email: 'c@d.co', acceptedAt: 'u' },
+    ]);
+    render(<AcceptedInvitations refreshKey={0} />);
+    await waitFor(() => expect(screen.getByText('a@b.co')).toBeInTheDocument());
+    const sawDuplicateKeyWarning = errorSpy.mock.calls.some((args: readonly unknown[]) =>
+      args
+        .map((arg) => String(arg))
+        .join(' ')
+        .includes('same key'),
+    );
+    expect(sawDuplicateKeyWarning).toBe(false);
+    errorSpy.mockRestore();
   });
 
   it('shows the empty state when there are no invitations', async () => {

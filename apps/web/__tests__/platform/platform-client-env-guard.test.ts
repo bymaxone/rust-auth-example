@@ -52,4 +52,28 @@ describe('platform-client module-level env guard', () => {
       'NEXT_PUBLIC_API_URL is required',
     );
   });
+
+  it('loads without throwing when NEXT_PUBLIC_API_URL is a non-empty string', async () => {
+    // Verifies the false branch of the fail-fast guard: with a valid, non-empty
+    // origin the module evaluates and exports the platform client instead of
+    // throwing. Without this the guard could be short-circuited to always throw
+    // and no test would notice.
+    process.env.NEXT_PUBLIC_API_URL = 'http://api.example.com';
+    vi.resetModules();
+
+    await expect(import('@/lib/platform-client')).resolves.toHaveProperty('platformClient');
+  });
+
+  it('throws when NEXT_PUBLIC_API_URL is the empty string at module load time', async () => {
+    // Verifies the second arm of the guard: an empty-string origin is rejected
+    // exactly like an absent one. A blank base URL can never build a usable
+    // client, so the module must throw instead of silently accepting `''` — the
+    // empty check is a real comparison against `''`, not against any other value.
+    process.env.NEXT_PUBLIC_API_URL = '';
+    vi.resetModules();
+
+    await expect(import('@/lib/platform-client')).rejects.toThrow(
+      'NEXT_PUBLIC_API_URL is required',
+    );
+  });
 });

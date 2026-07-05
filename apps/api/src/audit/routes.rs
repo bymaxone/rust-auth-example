@@ -125,6 +125,19 @@ pub(crate) fn format_ts(ts: OffsetDateTime) -> String {
     ts.format(&Rfc3339).unwrap_or_default()
 }
 
+/// Whether a keyset page has a next page. The query fetches `limit + 1` rows, so strictly more
+/// than `limit` rows returned means at least one more page exists. Extracted so the boundary is
+/// unit-testable without a database.
+fn page_has_more(fetched: usize, limit: i64) -> bool {
+    i64::try_from(fetched).unwrap_or(i64::MAX) > limit
+}
+
+/// The lower bound of the aggregate's recent-activity window: `AGGREGATE_WINDOW_HOURS` in the
+/// past. Extracted so the direction of the window (past, never future) is unit-testable.
+fn aggregate_cutoff(now: OffsetDateTime) -> OffsetDateTime {
+    now - TimeDuration::hours(AGGREGATE_WINDOW_HOURS)
+}
+
 /// `GET /audit/logs` — a keyset page over `audit_log` (id DESC, `id < cursor`).
 ///
 /// Admin-only: the [`DashboardAdmin`](crate::guards::DashboardAdmin) guard rejects an
@@ -159,7 +172,7 @@ pub async fn list_logs(
     .fetch_all(&state.pool)
     .await?;
 
-    let has_more = i64::try_from(rows.len()).unwrap_or(i64::MAX) > limit;
+    let has_more = page_has_more(rows.len(), limit);
     let data: Vec<AuditRow> = rows
         .into_iter()
         .take(usize::try_from(limit).unwrap_or(usize::MAX))
@@ -334,7 +347,7 @@ pub async fn aggregate(
     _admin: DashboardAdmin,
     State(state): State<AppState>,
 ) -> Result<Json<AuditAggregate>, AppError> {
-    let cutoff = OffsetDateTime::now_utc() - TimeDuration::hours(AGGREGATE_WINDOW_HOURS);
+    let cutoff = aggregate_cutoff(OffsetDateTime::now_utc());
     let row = sqlx::query!(
         "SELECT \
            (SELECT count(*) FROM users) AS total, \
@@ -427,5 +440,32 @@ mod tests {
             details_of(Some(r#"{"k":"v"}"#.to_owned())),
             json!({ "k": "v" })
         );
+    }
+
+    #[test]
+    fn format_ts_renders_the_rfc3339_string() {
+        // A known instant renders as its RFC 3339 form, never the empty fallback.
+        assert_eq!(
+            format_ts(OffsetDateTime::UNIX_EPOCH),
+            "1970-01-01T00:00:00Z"
+        );
+    }
+
+    #[test]
+    fn page_has_more_only_strictly_past_the_limit() {
+        // The query fetches `limit + 1`: exactly `limit` rows is the last page (no more), and
+        // one extra row means a further page follows.
+        assert!(!page_has_more(5, 5));
+        assert!(page_has_more(6, 5));
+        assert!(!page_has_more(0, 5));
+    }
+
+    #[test]
+    fn aggregate_cutoff_is_the_window_in_the_past() {
+        // The window's lower bound is `AGGREGATE_WINDOW_HOURS` before `now`, never after it.
+        let now = OffsetDateTime::UNIX_EPOCH;
+        let cutoff = aggregate_cutoff(now);
+        assert!(cutoff < now);
+        assert_eq!(now - cutoff, TimeDuration::hours(AGGREGATE_WINDOW_HOURS));
     }
 }

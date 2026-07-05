@@ -98,6 +98,37 @@ describe('PlatformShell', () => {
     expect(usersLink).not.toHaveAttribute('aria-current', 'page');
   });
 
+  it('applies active-glow tokens to the current nav link and muted tokens to the rest', () => {
+    // Pins the exact class strings on both branches: the active platform link
+    // carries the primary glow, inactive links stay muted, and every link keeps
+    // the shared layout tokens. Dropping any of the three class literals diverges
+    // the rendered className.
+    mockPathname.mockReturnValue('/platform/security');
+    render(
+      <PlatformShell>
+        <div />
+      </PlatformShell>,
+    );
+
+    const active = screen.getByRole('link', { name: /security/i });
+    const inactive = screen.getByRole('link', { name: /users/i });
+
+    // Shared base tokens (present regardless of active state).
+    expect(active).toHaveClass('rounded-md');
+    expect(active).toHaveClass('transition-colors');
+    expect(inactive).toHaveClass('rounded-md');
+    expect(inactive).toHaveClass('transition-colors');
+
+    // Active branch tokens.
+    expect(active).toHaveClass('bg-primary/10');
+    expect(active).toHaveClass('text-primary');
+    expect(active).not.toHaveClass('text-muted-foreground');
+
+    // Inactive branch tokens.
+    expect(inactive).toHaveClass('text-muted-foreground');
+    expect(inactive).not.toHaveClass('bg-primary/10');
+  });
+
   it('calls platformClient.logout and routes to /platform/login when Sign out is clicked', async () => {
     // Verifies the sign-out button terminates the server-side session (clears the
     // HttpOnly cookie) before navigating to the login page. The server-side logout

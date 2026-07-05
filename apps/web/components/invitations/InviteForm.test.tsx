@@ -22,14 +22,33 @@ beforeEach(() => {
 });
 
 describe('InviteForm', () => {
-  it('blocks submission of an invalid email', async () => {
-    // A malformed email must be caught before any request is issued.
+  it('renders an idle form with an empty email, the default role, and no messages', () => {
+    // Before any interaction the form is pristine: an empty email, the 'member'
+    // default role, a field flagged valid, and neither an error nor a success
+    // banner, with the button enabled and showing its idle label.
     render(<InviteForm />);
-    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'not-an-email' } });
+    expect(screen.getByLabelText('Email')).toHaveValue('');
+    expect(screen.getByLabelText('Role')).toHaveValue('member');
+    expect(screen.getByLabelText('Email')).toHaveAttribute('aria-invalid', 'false');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Send invitation' })).toBeEnabled();
+  });
+
+  it('blocks submission of an invalid email and flags the field', async () => {
+    // A malformed email must be caught before any request is issued, and the
+    // field must flip to invalid so assistive technology announces it.
+    render(<InviteForm />);
+    const emailField = screen.getByLabelText('Email');
+    expect(emailField).toHaveAttribute('aria-invalid', 'false');
+    fireEvent.change(emailField, { target: { value: 'not-an-email' } });
     fireEvent.click(screen.getByRole('button', { name: /Send invitation/i }));
     await waitFor(() =>
       expect(screen.getByText('Enter a valid email address.')).toBeInTheDocument(),
     );
+    // The message is an assertive alert and the field is now flagged invalid.
+    expect(screen.getByRole('alert')).toHaveTextContent('Enter a valid email address.');
+    expect(emailField).toHaveAttribute('aria-invalid', 'true');
     expect(createInvitation).not.toHaveBeenCalled();
   });
 
@@ -86,5 +105,51 @@ describe('InviteForm', () => {
         screen.getByText('Something went wrong on our side. Please try again.'),
       ).toBeInTheDocument(),
     );
+  });
+
+  it('submits the default member role when the role is left untouched', async () => {
+    // Leaving the role select alone must post role 'member', not an empty value.
+    createInvitation.mockResolvedValueOnce(undefined);
+    render(<InviteForm />);
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'c@d.co' } });
+    fireEvent.click(screen.getByRole('button', { name: /Send invitation/i }));
+    await waitFor(() => expect(screen.getByText('Invitation sent to c@d.co.')).toBeInTheDocument());
+    expect(createInvitation).toHaveBeenCalledWith({ email: 'c@d.co', role: 'member' });
+  });
+
+  it('shows a pending label and disables the button while the request is in flight', async () => {
+    // During the request the button reports progress and is disabled; once the
+    // request settles it returns to its idle label and becomes enabled again.
+    let resolveRequest: () => void = () => {};
+    createInvitation.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        resolveRequest = () => {
+          resolve();
+        };
+      }),
+    );
+    render(<InviteForm />);
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'a@b.co' } });
+    fireEvent.click(screen.getByRole('button', { name: /Send invitation/i }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Sending…' })).toBeDisabled());
+    resolveRequest();
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Send invitation' })).toBeEnabled(),
+    );
+  });
+
+  it('confirms success without an onInvited callback and shows no error', async () => {
+    // A successful invite with no parent callback still confirms via the status
+    // banner and must never surface an error banner.
+    createInvitation.mockResolvedValueOnce(undefined);
+    render(<InviteForm />);
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'a@b.co' } });
+    fireEvent.click(screen.getByRole('button', { name: /Send invitation/i }));
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent('Invitation sent to a@b.co.'),
+    );
+    expect(
+      screen.queryByText('Something went wrong on our side. Please try again.'),
+    ).not.toBeInTheDocument();
   });
 });

@@ -31,6 +31,8 @@ describe('TriggerCard', () => {
     await waitFor(() => expect(screen.getByText('status 200')).toBeInTheDocument());
     expect(screen.getByText(/"email": "a@b.co"/)).toBeInTheDocument();
     expect(screen.getByText(/"ok": true/)).toBeInTheDocument();
+    // The finally clause must clear the pending flag so the button re-enables after firing.
+    expect(screen.getByRole('button', { name: 'Fire' })).toBeEnabled();
   });
 
   it('shows a pending label while the action is in flight', async () => {
@@ -51,6 +53,7 @@ describe('TriggerCard', () => {
   it('renders the error code badge and a ticking Retry-After countdown', async () => {
     // A 429 result must show the wire code and a live countdown.
     vi.useFakeTimers();
+    const clearIntervalSpy = vi.spyOn(globalThis, 'clearInterval');
     try {
       const result: TriggerResult = {
         request: {},
@@ -59,7 +62,9 @@ describe('TriggerCard', () => {
         status: 429,
         retryAfterSeconds: 3,
       };
-      render(<TriggerCard title="Hammer" description="…" onFire={() => Promise.resolve(result)} />);
+      const { unmount } = render(
+        <TriggerCard title="Hammer" description="…" onFire={() => Promise.resolve(result)} />,
+      );
       fireEvent.click(screen.getByRole('button', { name: 'Fire' }));
       await act(async () => {
         await Promise.resolve();
@@ -75,17 +80,70 @@ describe('TriggerCard', () => {
         vi.advanceTimersByTime(5000);
       });
       expect(screen.getByText(/Retry-After 0s/)).toBeInTheDocument();
+      // Unmounting must tear down the interval so it never ticks against a dead tree.
+      unmount();
+      expect(clearIntervalSpy).toHaveBeenCalled();
     } finally {
+      clearIntervalSpy.mockRestore();
       vi.useRealTimers();
     }
   });
 
-  it('omits the status badge when a result carries no status', async () => {
-    // An unexpected error yields no status; the badge row must handle that.
+  it('omits the status, code, and retry badges when a result carries none', async () => {
+    // An unexpected error yields no status/code/retry; the badge row must stay empty of them.
     const result: TriggerResult = { request: { a: 1 }, response: { error: 'x' } };
-    render(<TriggerCard title="Odd" description="…" onFire={() => Promise.resolve(result)} />);
+    const { container } = render(
+      <TriggerCard title="Odd" description="…" onFire={() => Promise.resolve(result)} />,
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Fire' }));
     await waitFor(() => expect(screen.getByText(/"error": "x"/)).toBeInTheDocument());
-    expect(screen.queryByText(/^status /)).not.toBeInTheDocument();
+    // No status badge (the guard must gate rendering on a defined status).
+    expect(screen.queryByText(/^status/)).not.toBeInTheDocument();
+    // No Retry-After countdown (the guard must gate on a defined retryAfterSeconds).
+    expect(screen.queryByText(/Retry-After/i)).not.toBeInTheDocument();
+    // No error-code badge: the only destructive-styled badges are the code and retry ones,
+    // so with none present there must be zero destructive badges in the tree.
+    expect(container.querySelectorAll('.bg-destructive')).toHaveLength(0);
+  });
+
+  it('resets the countdown to the new window when a re-fire returns a fresh Retry-After', async () => {
+    // A second fire carrying a different Retry-After must restart the countdown at the new
+    // value rather than keep ticking the previous one — the effect depends on the seconds prop.
+    vi.useFakeTimers();
+    try {
+      const firstResult: TriggerResult = {
+        request: {},
+        response: {},
+        status: 429,
+        retryAfterSeconds: 5,
+      };
+      const secondResult: TriggerResult = {
+        request: {},
+        response: {},
+        status: 429,
+        retryAfterSeconds: 9,
+      };
+      const onFire = vi.fn(() => Promise.resolve(firstResult));
+      onFire.mockResolvedValueOnce(firstResult);
+      onFire.mockResolvedValueOnce(secondResult);
+      render(<TriggerCard title="Hammer" description="…" onFire={onFire} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Fire' }));
+      await act(async () => {
+        await Promise.resolve();
+      });
+      expect(screen.getByText(/Retry-After 5s/)).toBeInTheDocument();
+      act(() => {
+        vi.advanceTimersByTime(1000);
+      });
+      expect(screen.getByText(/Retry-After 4s/)).toBeInTheDocument();
+      // Re-fire: the countdown must jump to the new server-provided window, not stay at 4s.
+      fireEvent.click(screen.getByRole('button', { name: 'Fire' }));
+      await act(async () => {
+        await Promise.resolve();
+      });
+      expect(screen.getByText(/Retry-After 9s/)).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

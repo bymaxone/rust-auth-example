@@ -87,6 +87,13 @@ describe('platformClient', () => {
 
       await expect(platformClient.login('x@y.com', 'wrong')).rejects.toThrow();
     });
+
+    it('maps a non-2xx body with no error envelope to the status alone', async () => {
+      // A body carrying no `error` object must still surface as an AuthClientError from the
+      // status — parsing the absent envelope must not throw on a missing `error`.
+      fetchMock.mockResolvedValue(mockResponse(400, { notAnError: true }));
+      await expect(platformClient.login('x@y.com', 'wrong')).rejects.toMatchObject({ status: 400 });
+    });
   });
 
   describe('mfaChallenge', () => {
@@ -275,6 +282,84 @@ describe('platformApiFetch — readErrorBody edge cases', () => {
     });
 
     await expect(platformClient.login('x@y.com', 'wrong')).rejects.toThrow('Request failed');
+  });
+
+  it('surfaces the exact wire message and code when both fields are strings', async () => {
+    // Verifies readErrorBody parses a well-formed { error: { code, message } }
+    // envelope: the thrown AuthClientError carries the wire message and code
+    // verbatim, never the statusText fallback. Both fields must be present.
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 400,
+      statusText: 'Bad Request',
+      json: vi.fn().mockResolvedValue({
+        error: { code: 'auth.structured', message: 'Structured failure' },
+      }),
+    });
+
+    const error = await platformClient.login('x@y.com', 'wrong').catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(AuthClientError);
+    const authError = error as InstanceType<typeof AuthClientError>;
+    expect(authError.message).toBe('Structured failure');
+    expect(authError.status).toBe(400);
+    expect(authError.code).toBe('auth.structured');
+  });
+
+  it('requires both code and message to be strings, else falls back to statusText', async () => {
+    // Verifies the guard rejects a partial envelope (string code, non-string
+    // message): readErrorBody returns undefined, so the thrown error uses the
+    // statusText fallback and carries no code — the AND (not OR) is enforced.
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 400,
+      statusText: 'Bad Request',
+      json: vi.fn().mockResolvedValue({
+        error: { code: 'auth.partial', message: 42 },
+      }),
+    });
+
+    const error = await platformClient.login('x@y.com', 'wrong').catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(AuthClientError);
+    const authError = error as InstanceType<typeof AuthClientError>;
+    expect(authError.message).toBe('Bad Request');
+    expect(authError.code).toBeUndefined();
+  });
+
+  it('drops a non-string code even when the message is a valid string', async () => {
+    // The mirror of the partial case (non-string code, valid message): the code guard is not
+    // vacuously satisfied, so readErrorBody still returns undefined and the error uses the
+    // statusText fallback with no code.
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 400,
+      statusText: 'Bad Request',
+      json: vi.fn().mockResolvedValue({
+        error: { code: 99, message: 'a real message' },
+      }),
+    });
+
+    const error = await platformClient.login('x@y.com', 'wrong').catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(AuthClientError);
+    const authError = error as InstanceType<typeof AuthClientError>;
+    expect(authError.message).toBe('Bad Request');
+    expect(authError.code).toBeUndefined();
+  });
+});
+
+describe('platform-client module wiring', () => {
+  it('builds the single-flight fetch against the configured origin, cookies, and platform refresh route', () => {
+    // The module-level createAuthFetch call (evaluated once at import) must receive
+    // the full config object: the configured API origin as baseUrl, cookie
+    // credentials, and the same-origin platform refresh endpoint. Asserting all
+    // three fields together proves the config is neither a bare {} nor a blanked
+    // credentials/refreshEndpoint — every field is load-bearing.
+    expect(createAuthFetch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        baseUrl: 'http://api.example.com',
+        credentials: 'include',
+        refreshEndpoint: '/api/platform/client-refresh',
+      }),
+    );
   });
 });
 

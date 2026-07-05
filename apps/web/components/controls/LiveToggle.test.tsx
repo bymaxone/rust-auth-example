@@ -18,6 +18,8 @@ describe('LiveToggle', () => {
 
     const button = screen.getByRole('button', { name: /Live/ });
     expect(button).toHaveAttribute('aria-pressed', 'true');
+    // Live uses the "secondary" button variant, which paints a muted surface.
+    expect(button).toHaveClass('bg-secondary');
 
     fireEvent.click(button);
 
@@ -32,5 +34,7 @@ describe('LiveToggle', () => {
 
     const button = screen.getByRole('button', { name: /Paused/ });
     expect(button).toHaveAttribute('aria-pressed', 'false');
+    // Paused uses the "outline" button variant, which is transparent-bordered.
+    expect(button).toHaveClass('text-foreground');
   });
 });

@@ -8,7 +8,7 @@
  * @module hooks/use-audit-tail.test
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 
 /** A minimal EventSource double. */
@@ -50,24 +50,46 @@ function row(id: string): string {
   });
 }
 
+const ORIGINAL_API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 beforeEach(() => {
   vi.clearAllMocks();
   MockEventSource.instances = [];
   vi.stubGlobal('EventSource', MockEventSource);
 });
 
+afterEach(() => {
+  if (ORIGINAL_API_URL === undefined) {
+    delete process.env.NEXT_PUBLIC_API_URL;
+  } else {
+    process.env.NEXT_PUBLIC_API_URL = ORIGINAL_API_URL;
+  }
+});
+
 describe('useAuditTail', () => {
   it('opens the stream over the cookie session and appends rows', () => {
     // The tail opens with credentials — never a JWT in the URL — and collects rows.
+    process.env.NEXT_PUBLIC_API_URL = 'http://localhost:8080';
     const { result } = renderHook(() => useAuditTail(true));
     const source = MockEventSource.instances[0];
-    expect(source?.url).toContain('/audit/stream');
+    // The configured origin is prefixed verbatim and the exact stream path appended.
+    expect(source?.url).toBe('http://localhost:8080/audit/stream');
     expect(source?.init).toEqual({ withCredentials: true });
     expect(source?.url).not.toContain('token');
+    // Follow-mode is pinned to the latest rows on first render.
+    expect(result.current.following).toBe(true);
 
     act(() => source?.emit(row('1')));
     expect(result.current.rows).toHaveLength(1);
     expect(result.current.pendingCount).toBe(0);
+  });
+
+  it('builds a relative stream URL when the API origin is unset', () => {
+    // With no configured origin the default is the empty string — the path stays relative.
+    delete process.env.NEXT_PUBLIC_API_URL;
+    renderHook(() => useAuditTail(true));
+    const source = MockEventSource.instances[0];
+    expect(source?.url).toBe('/audit/stream');
   });
 
   it('buffers a pending count while paused and clears it on resume', () => {
@@ -77,6 +99,9 @@ describe('useAuditTail', () => {
     act(() => result.current.setFollowing(false));
     act(() => source?.emit(row('1')));
     act(() => source?.emit(row('2')));
+    expect(result.current.pendingCount).toBe(2);
+    // Staying paused (re-pausing while already paused) must not reset the buffered count.
+    act(() => result.current.setFollowing(false));
     expect(result.current.pendingCount).toBe(2);
     act(() => result.current.setFollowing(true));
     expect(result.current.pendingCount).toBe(0);
@@ -103,5 +128,16 @@ describe('useAuditTail', () => {
     const source = MockEventSource.instances[0];
     unmount();
     expect(source?.closed).toBe(true);
+  });
+
+  it('reopens the stream when re-enabled after being disabled', () => {
+    // The effect keys on `enabled`: toggling Live off then on must re-run it and open a fresh stream.
+    const { rerender } = renderHook(({ on }: { on: boolean }) => useAuditTail(on), {
+      initialProps: { on: false },
+    });
+    expect(MockEventSource.instances).toHaveLength(0);
+    rerender({ on: true });
+    expect(MockEventSource.instances).toHaveLength(1);
+    expect(MockEventSource.instances[0]?.url).toContain('/audit/stream');
   });
 });

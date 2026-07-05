@@ -525,6 +525,23 @@ mod tests {
     }
 
     #[test]
+    fn accepts_a_jwt_secret_exactly_at_the_floor() {
+        // The floor is inclusive: a secret of exactly JWT_SECRET_MIN_LEN bytes must load, so the
+        // guard is `len < MIN` — a `<=` mutant would wrongly reject the boundary-length secret.
+        figment::Jail::expect_with(|jail| {
+            seed(jail);
+            let at_floor = &TEST_JWT[..Settings::JWT_SECRET_MIN_LEN];
+            jail.set_env("JWT_SECRET", at_floor);
+            let settings = Settings::load().expect("a secret exactly at the floor must load");
+            assert_eq!(
+                settings.jwt_secret.expose_secret().len(),
+                Settings::JWT_SECRET_MIN_LEN
+            );
+            Ok(())
+        });
+    }
+
+    #[test]
     fn rejects_malformed_mfa_key() {
         figment::Jail::expect_with(|jail| {
             seed(jail);

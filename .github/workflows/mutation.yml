@@ -63,17 +63,69 @@ jobs:
     if: needs.detect.outputs.api == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: example_app_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      mailpit:
+        image: axllent/mailpit:v1.21.8
+        ports:
+          - 1025:1025
+          - 8025:8025
+        options: >-
+          --health-cmd "wget -q -O /dev/null http://localhost:8025/readyz"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      SQLX_OFFLINE: 'true'
+      REDIS_URL: redis://localhost:6379
+      DATABASE_URL_TEST: postgres://postgres@localhost:5432/example_app_test
+      MAILPIT_URL: http://localhost:8025
+      PGPASSWORD: postgres
     steps:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           persist-credentials: false
+          fetch-depth: 0
       - uses: ./.github/actions/link-library
       - uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable (toolchain set via input)
         with:
           toolchain: 1.96.0
       - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
-      - name: Mutation testing (api)
-        run: echo "mutation-api — cargo-mutants gate for apps/api."
+      - uses: taiki-e/install-action@16b05812d776ae1dfaabc8277e421fb6d2506419 # v2
+        with:
+          tool: cargo-mutants,cargo-nextest,sqlx-cli
+      - name: Migrate the test database
+        run: sqlx migrate run --source apps/api/migrations --database-url "$DATABASE_URL_TEST"
+      # The full mutation sweep (~250 mutants × the DB-integration suite) far exceeds the CI job
+      # cap, so the pull-request gate scopes cargo-mutants to the PR's changed API lines
+      # (`--in-diff`); the full surface runs on the nightly schedule instead.
+      - name: Compute the changed API surface for this PR
+        run: git diff "${{ github.event.pull_request.base.sha }}...HEAD" -- apps/api/src > api.diff
+      - name: Mutation testing (api, --in-diff, floor 0.95)
+        env:
+          MUTANTS_IN_DIFF: api.diff
+        run: bash scripts/mutants-gate.sh
 
   mutation-web:
     name: mutation-web
@@ -108,5 +160,7 @@ jobs:
           pnpm build:wasm
           pnpm build
       - run: pnpm install --frozen-lockfile
-      - name: Mutation testing (web)
-        run: echo "mutation-web — Stryker gate for apps/web."
+      # Stryker (Vitest runner) over lib/components/hooks with break >= 95. The verbatim shadcn
+      # `components/ui/*` wrappers are excluded in stryker.config.json as structural, not logic.
+      - name: Mutation testing (web, Stryker, break 95)
+        run: pnpm --dir apps/web mutation

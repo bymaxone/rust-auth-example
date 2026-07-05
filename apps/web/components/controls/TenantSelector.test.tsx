@@ -43,4 +43,33 @@ describe('TenantSelector', () => {
     const update = onUrlUpdate.mock.calls.at(-1)?.[0] as { queryString: string };
     expect(update.queryString).toContain('tenant=globex');
   });
+
+  it('marks only the active tenant with a visible check', async () => {
+    // Verifies the static check classes plus the selected/idle opacity split:
+    // the default tenant (acme) is opaque, the other (globex) is transparent.
+    usePathname.mockReturnValue('/dashboard');
+    render(<TenantSelector />, { wrapper: withNuqsTestingAdapter() });
+
+    const trigger = screen.getByRole('button', { name: /acme/ });
+    trigger.focus();
+    fireEvent.keyDown(trigger, { key: 'Enter' });
+
+    const acmeItem = await screen.findByRole('menuitem', { name: /acme/ });
+    const globexItem = screen.getByRole('menuitem', { name: /globex/ });
+
+    const acmeCheck = acmeItem.querySelector('svg');
+    const globexCheck = globexItem.querySelector('svg');
+    expect(acmeCheck).not.toBeNull();
+    expect(globexCheck).not.toBeNull();
+
+    // Both checks share the static sizing/spacing classes.
+    expect(acmeCheck).toHaveClass('mr-2', 'h-4', 'w-4');
+    expect(globexCheck).toHaveClass('mr-2', 'h-4', 'w-4');
+
+    // Only the active tenant's check is opaque; the idle one is hidden.
+    expect(acmeCheck).toHaveClass('opacity-100');
+    expect(acmeCheck).not.toHaveClass('opacity-0');
+    expect(globexCheck).toHaveClass('opacity-0');
+    expect(globexCheck).not.toHaveClass('opacity-100');
+  });
 });
