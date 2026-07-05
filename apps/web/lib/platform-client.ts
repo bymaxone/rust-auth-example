@@ -64,13 +64,18 @@ async function readErrorBody(res: Response): Promise<AuthErrorResponse | undefin
   // falls back to undefined. Inspecting the parsed envelope outside the try keeps every branch
   // observable (an absent `error` object or a non-string field yields undefined, never a caught
   // throw), so the guard is exact rather than swallowed.
-  let parsed: WireErrorEnvelope;
+  let parsed: unknown;
   try {
-    parsed = (await res.json()) as WireErrorEnvelope;
+    parsed = await res.json();
   } catch {
     return undefined;
   }
-  const err = parsed.error;
+  // A JSON `null` body would throw on the `.error` access below; other primitives read `.error`
+  // as `undefined` harmlessly, so guarding `null` is the exact and only condition needed here.
+  if (parsed === null) {
+    return undefined;
+  }
+  const err = (parsed as WireErrorEnvelope).error;
   if (err !== undefined && typeof err.code === 'string' && typeof err.message === 'string') {
     return { code: err.code, message: err.message } as AuthErrorResponse;
   }

@@ -80,6 +80,17 @@ describe('apiFetch', () => {
     expect((err as AuthClientError).message).toBe('Server Error');
   });
 
+  it('maps a literal null JSON body to the status alone, without dereferencing it', async () => {
+    // A JSON `null` error body must map from the status, not throw on the `.error` read.
+    mockAuthFetch.mockResolvedValueOnce(
+      res({ ok: false, status: 400, statusText: 'Bad Request', json: () => Promise.resolve(null) }),
+    );
+    const err = await apiFetch('/x').catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(AuthClientError);
+    expect((err as AuthClientError).code).toBeUndefined();
+    expect((err as AuthClientError).message).toBe('Bad Request');
+  });
+
   it('ignores a malformed envelope whose code/message are not strings', async () => {
     // Non-string code/message must not be treated as a valid envelope.
     mockAuthFetch.mockResolvedValueOnce(

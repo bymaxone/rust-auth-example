@@ -29,11 +29,25 @@ if [[ -n "${IN_DIFF}" ]]; then
 fi
 
 echo "==> cargo mutants -p api --in-place (${SCOPE}, floor ${MIN})"
-# Let cargo-mutants run to completion regardless of its own exit code; this
-# wrapper owns the pass/fail decision from the recomputed ratio.
-cargo mutants -p api --in-place "${DIFF_ARGS[@]}" || true
+# Start clean so a crashed run cannot leave stale outcomes behind.
+rm -rf "${OUT}" "${OUT}.old"
+# This wrapper owns the pass/fail decision from the recomputed ratio, so cargo-mutants' own
+# non-zero exit on a surviving mutant is expected. Capture the code rather than swallowing it with
+# `|| true`: cargo-mutants uses low exit codes for mutant outcomes (0 = all caught, up to ~4 for
+# missed/timeout/unviable/incomplete). A higher code — or a missing outcome directory — means it
+# could not run at all, so fail fast instead of letting a broken run green the gate.
+set +e
+cargo mutants -p api --in-place "${DIFF_ARGS[@]}"
+rc=$?
+set -e
+if (( rc > 4 )) || [[ ! -d "${OUT}" ]]; then
+  echo "error: cargo-mutants did not complete (exit ${rc}); refusing to green a broken run" >&2
+  exit 1
+fi
 
-count() { if [[ -f "${OUT}/$1" ]]; then grep -c . "${OUT}/$1"; else echo 0; fi; }
+# Count non-empty lines. The `|| true` stops an empty outcome file (e.g. zero missed) from
+# aborting the script under `set -e`: `grep -c .` exits 1 when it matches nothing.
+count() { if [[ -f "${OUT}/$1" ]]; then grep -c . "${OUT}/$1" || true; else echo 0; fi; }
 caught=$(( $(count caught.txt) + $(count timeout.txt) ))
 missed=$(count missed.txt)
 total=$(( caught + missed ))

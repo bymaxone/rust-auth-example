@@ -344,6 +344,12 @@ describe('platformApiFetch — readErrorBody edge cases', () => {
     expect(authError.message).toBe('Bad Request');
     expect(authError.code).toBeUndefined();
   });
+
+  it('maps a literal null JSON body to the status alone, without dereferencing it', async () => {
+    // A JSON `null` error body must map from the status, not throw on the `.error` read.
+    fetchMock.mockResolvedValue(mockResponse(400, null));
+    await expect(platformClient.login('x@y.com', 'wrong')).rejects.toMatchObject({ status: 400 });
+  });
 });
 
 describe('platform-client module wiring', () => {
