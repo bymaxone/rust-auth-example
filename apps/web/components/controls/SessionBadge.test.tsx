@@ -52,6 +52,11 @@ describe('SessionBadge', () => {
     useSession.mockReturnValue({ user: { email: 'ada@acme.test' } });
     render(<SessionBadge />);
 
+    // The avatar shows only the uppercased first letter of the email, not the
+    // full address and not its lowercase form.
+    expect(screen.getByText('A')).toBeInTheDocument();
+    expect(screen.queryByText('a')).toBeNull();
+
     const trigger = screen.getByRole('button', { name: /ada@acme\.test/ });
     trigger.focus();
     fireEvent.keyDown(trigger, { key: 'Enter' });

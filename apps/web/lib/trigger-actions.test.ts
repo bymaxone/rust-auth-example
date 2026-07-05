@@ -102,6 +102,7 @@ describe('runLogin', () => {
     // An MFA-required login must show mfaRequired without leaking the temp token.
     authClient.login.mockResolvedValueOnce({ mfaRequired: true, mfaTempToken: 'TT' });
     const result = await runLogin({ email: 'a@b.co', password: 'p', tenantId: 'acme' });
+    expect(result.request).toEqual({ email: 'a@b.co', tenantId: 'acme' });
     expect(result.response).toEqual({ mfaRequired: true, mfaTempToken: '<redacted>' });
   });
 
@@ -133,6 +134,7 @@ describe('rotateToken', () => {
       refreshToken: 'RT',
     });
     const result = await rotateToken();
+    expect(result.request).toEqual({ action: 'refresh' });
     expect(result.response).toMatchObject({
       accessToken: '<redacted>',
       refreshToken: '<redacted>',
@@ -152,10 +154,17 @@ describe('rotateToken', () => {
 describe('hammerLogin', () => {
   it('returns the 429 with the Retry-After header window', async () => {
     // Exceeding the login rate limit must surface 429 + the retry countdown.
+    const input = { email: 'a@b.co', password: 'p', tenantId: 'acme' };
     mockAuthFetch.mockResolvedValueOnce(
       res({ status: 429, retryAfter: '42', body: { error: { code: 'auth.too_many_requests' } } }),
     );
-    const result = await hammerLogin({ email: 'a@b.co', password: 'p', tenantId: 'acme' }, 3);
+    const result = await hammerLogin(input, 3);
+    // Each attempt POSTs the raw credentials to the login route.
+    expect(mockAuthFetch).toHaveBeenCalledWith(
+      '/auth/login',
+      expect.objectContaining({ method: 'POST', body: JSON.stringify(input) }),
+    );
+    expect(result.request).toEqual({ email: 'a@b.co', tenantId: 'acme', attempts: 3 });
     expect(result.status).toBe(429);
     expect(result.code).toBe('auth.too_many_requests');
     expect(result.retryAfterSeconds).toBe(42);
@@ -180,7 +189,44 @@ describe('hammerLogin', () => {
     );
     const result = await hammerLogin({ email: 'a@b.co', password: 'p', tenantId: 'acme' }, 3);
     expect(result.status).toBe(429);
-    expect(result.retryAfterSeconds).toBeUndefined();
+    expect(result).not.toHaveProperty('retryAfterSeconds');
+  });
+
+  it('omits retryAfterSeconds when the header is present but not a finite number', async () => {
+    // A non-numeric Retry-After ('soon' → NaN) must not surface as a NaN countdown:
+    // both the presence check and the finiteness check must hold before it is included.
+    mockAuthFetch.mockResolvedValueOnce(
+      res({
+        status: 429,
+        retryAfter: 'soon',
+        body: { error: { code: 'auth.too_many_requests' } },
+      }),
+    );
+    const result = await hammerLogin({ email: 'a@b.co', password: 'p', tenantId: 'acme' }, 3);
+    expect(result.status).toBe(429);
+    expect(result).not.toHaveProperty('retryAfterSeconds');
+  });
+
+  it('reads the body Retry-After only through the full optional chain', async () => {
+    // With no header and a 429 body that lacks `error`, the deep countdown lookup must
+    // tolerate the missing `error`/`details`/`code` links and fall back to the default code.
+    mockAuthFetch.mockResolvedValueOnce(res({ status: 429, body: {} }));
+    const result = await hammerLogin({ email: 'a@b.co', password: 'p', tenantId: 'acme' }, 3);
+    expect(result.status).toBe(429);
+    expect(result.code).toBe('auth.too_many_requests');
+    expect(result).not.toHaveProperty('retryAfterSeconds');
+    expect(result.response).toEqual({});
+  });
+
+  it('tolerates a 429 with no header and an unparseable body', async () => {
+    // A 429 whose body cannot be parsed (and with no header) yields the default code,
+    // no countdown, and the { status } placeholder response.
+    mockAuthFetch.mockResolvedValueOnce(res({ status: 429, rejectJson: true }));
+    const result = await hammerLogin({ email: 'a@b.co', password: 'p', tenantId: 'acme' }, 3);
+    expect(result.status).toBe(429);
+    expect(result.code).toBe('auth.too_many_requests');
+    expect(result).not.toHaveProperty('retryAfterSeconds');
+    expect(result.response).toEqual({ status: 429 });
   });
 
   it('handles a 429 whose body is not JSON, using the header and defaults', async () => {
@@ -196,6 +242,12 @@ describe('hammerLogin', () => {
     // If the limit is not reached the card says so rather than fabricating a 429.
     mockAuthFetch.mockResolvedValue(res({ status: 200 }));
     const result = await hammerLogin({ email: 'a@b.co', password: 'p', tenantId: 'acme' }, 2);
+    // Exactly `attempts` requests are fired — the loop stops at `i < attempts`, not one past.
+    expect(mockAuthFetch).toHaveBeenCalledTimes(2);
+    expect(mockAuthFetch).toHaveBeenCalledWith(
+      '/auth/login',
+      expect.objectContaining({ method: 'POST' }),
+    );
     expect(result.status).toBe(200);
     expect(result.response).toEqual({ note: 'no 429 within attempts' });
   });
@@ -247,6 +299,8 @@ describe('diagnostics dispatch actions', () => {
       response: { locked: true },
       request: { identifier: 'acme:a@b.co' },
     });
+    // A 2xx must take the success path — no error code is attached.
+    expect(result).not.toHaveProperty('code');
   });
 
   it('forceLockout tolerates a non-JSON response body', async () => {
@@ -275,10 +329,21 @@ describe('diagnostics dispatch actions', () => {
   });
 
   it('dispatchVerifyEmail reports the resend status', async () => {
-    // Dispatching a verification email reports the neutral status.
+    // Dispatching a verification email POSTs {email, tenantId} to the resend route and
+    // reports the neutral status without an error code.
     mockAuthFetch.mockResolvedValueOnce(res({ status: 202 }));
     const result = await dispatchVerifyEmail('a@b.co', 'acme');
+    expect(mockAuthFetch).toHaveBeenCalledWith(
+      '/auth/resend-verification',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ email: 'a@b.co', tenantId: 'acme' }),
+      }),
+    );
+    expect(result.request).toEqual({ email: 'a@b.co', tenantId: 'acme' });
     expect(result.status).toBe(202);
+    expect(result.response).toEqual({ status: 202 });
+    expect(result).not.toHaveProperty('code');
   });
 
   it('dispatchVerifyEmail signals failure on a non-2xx response', async () => {
@@ -313,6 +378,7 @@ describe('diagnostics dispatch actions', () => {
     authClient.forgotPassword.mockResolvedValueOnce(undefined);
     const result = await dispatchPasswordReset('a@b.co', 'acme');
     expect(authClient.forgotPassword).toHaveBeenCalledWith('a@b.co', 'acme');
+    expect(result.request).toEqual({ email: 'a@b.co', tenantId: 'acme' });
     expect(result.response).toEqual({ dispatched: true });
   });
 
@@ -333,6 +399,12 @@ describe('provokeInvalidCredentials', () => {
       new AuthClientError('bad', 401, { code: 'auth.invalid_credentials', message: 'bad' }),
     );
     const result = await provokeInvalidCredentials('a@b.co', 'acme');
+    // The wrong password is a fixed, deliberately-invalid sentinel passed straight through.
+    expect(authClient.login).toHaveBeenCalledWith({
+      email: 'a@b.co',
+      password: 'definitely-not-the-password',
+      tenantId: 'acme',
+    });
     expect(result.code).toBe('auth.invalid_credentials');
   });
 });
@@ -356,7 +428,8 @@ describe('error propagation', () => {
     // An error carrying no wire code still surfaces the HTTP status.
     mockAuthFetch.mockRejectedValueOnce(new AuthClientError('x', 500));
     const result = await dispatchVerifyEmail('a@b.co', 'acme');
-    expect(result.code).toBeUndefined();
+    // A code-less error must omit the `code` key entirely, not carry an undefined one.
+    expect(result).not.toHaveProperty('code');
     expect(result.status).toBe(500);
   });
 

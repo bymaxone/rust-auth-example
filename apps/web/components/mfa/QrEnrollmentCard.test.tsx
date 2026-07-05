@@ -44,6 +44,13 @@ describe('QrEnrollmentCard', () => {
     expect(screen.getByText('JBSWY3DPEHPK3PXP')).toBeInTheDocument();
     expect(screen.getByText('code-1')).toBeInTheDocument();
     expect(toDataURL).toHaveBeenCalledWith(SETUP.qrCodeUri);
+    // The idle copy affordance is labelled "Copy secret", reads "Copy", and uses the outline
+    // variant (never the destructive one) until an actual copy result arrives.
+    const idleButton = screen.getByRole('button', { name: 'Copy secret' });
+    expect(idleButton).toHaveAttribute('aria-label', 'Copy secret');
+    expect(idleButton).toHaveTextContent(/^Copy$/);
+    expect(idleButton.className).toContain('border-(--glass-border)');
+    expect(idleButton.className).not.toContain('bg-destructive');
   });
 
   it('copies the base32 secret to the clipboard', async () => {
@@ -59,6 +66,13 @@ describe('QrEnrollmentCard', () => {
       });
       expect(writeText).toHaveBeenCalledWith('JBSWY3DPEHPK3PXP');
       expect(screen.getByRole('button', { name: /Secret copied/i })).toBeInTheDocument();
+      // A successful copy reads "Copied", keeps the outline variant, and never flips to the
+      // destructive (failure) styling.
+      const copiedButton = screen.getByRole('button', { name: 'Secret copied' });
+      expect(copiedButton).toHaveAttribute('aria-label', 'Secret copied');
+      expect(copiedButton).toHaveTextContent(/^Copied$/);
+      expect(copiedButton.className).toContain('border-(--glass-border)');
+      expect(copiedButton.className).not.toContain('bg-destructive');
       act(() => {
         vi.advanceTimersByTime(2_000);
       });
@@ -125,6 +139,13 @@ describe('QrEnrollmentCard', () => {
         await Promise.resolve();
       });
       expect(screen.getByRole('button', { name: /Copy failed/i })).toBeInTheDocument();
+      // A denied write surfaces the exact "Copy failed" label + text and switches to the
+      // destructive variant, dropping the outline styling.
+      const failedButton = screen.getByRole('button', { name: 'Copy failed' });
+      expect(failedButton).toHaveAttribute('aria-label', 'Copy failed');
+      expect(failedButton).toHaveTextContent(/^Copy failed$/);
+      expect(failedButton.className).toContain('bg-destructive');
+      expect(failedButton.className).not.toContain('border-(--glass-border)');
       act(() => {
         vi.advanceTimersByTime(2_000);
       });
@@ -186,6 +207,164 @@ describe('QrEnrollmentCard', () => {
       expect(screen.getByRole('button', { name: /Secret copied/i })).toBeInTheDocument();
       unmount();
       expect(clearSpy).toHaveBeenCalled();
+    } finally {
+      clearSpy.mockRestore();
+      vi.useRealTimers();
+    }
+  });
+
+  it('re-renders the QR from scratch when the setup URI changes', async () => {
+    // Changing the enrollment URI must re-run the render effect and swap the image, proving the
+    // effect keys on `setup.qrCodeUri` rather than running once for the component's lifetime.
+    const setupA: MfaSetupResult = { ...SETUP, qrCodeUri: 'otpauth://totp/acme:demo?secret=AAA' };
+    const setupB: MfaSetupResult = { ...SETUP, qrCodeUri: 'otpauth://totp/acme:demo?secret=BBB' };
+    toDataURL.mockResolvedValueOnce('data:image/png;base64,AAAA');
+    const { rerender } = render(<QrEnrollmentCard setup={setupA} />);
+    await waitFor(() =>
+      expect(screen.getByAltText('TOTP enrollment QR code')).toHaveAttribute(
+        'src',
+        'data:image/png;base64,AAAA',
+      ),
+    );
+    toDataURL.mockResolvedValueOnce('data:image/png;base64,BBBB');
+    rerender(<QrEnrollmentCard setup={setupB} />);
+    await waitFor(() =>
+      expect(screen.getByAltText('TOTP enrollment QR code')).toHaveAttribute(
+        'src',
+        'data:image/png;base64,BBBB',
+      ),
+    );
+    expect(toDataURL).toHaveBeenNthCalledWith(1, setupA.qrCodeUri);
+    expect(toDataURL).toHaveBeenNthCalledWith(2, setupB.qrCodeUri);
+    expect(toDataURL).toHaveBeenCalledTimes(2);
+  });
+
+  it('ignores a stale QR resolve that lands after the setup URI changed', async () => {
+    // When the first URI's render resolves after the component has already moved to a newer URI,
+    // the stale image must be discarded so it never clobbers the current QR.
+    let resolveA!: (url: string) => void;
+    let resolveB!: (url: string) => void;
+    const pendingA = new Promise<string>((resolve) => {
+      resolveA = resolve;
+    });
+    const pendingB = new Promise<string>((resolve) => {
+      resolveB = resolve;
+    });
+    toDataURL.mockReturnValueOnce(pendingA).mockReturnValueOnce(pendingB);
+    const setupA: MfaSetupResult = { ...SETUP, qrCodeUri: 'otpauth://totp/acme:demo?secret=AAA' };
+    const setupB: MfaSetupResult = { ...SETUP, qrCodeUri: 'otpauth://totp/acme:demo?secret=BBB' };
+    const { rerender } = render(<QrEnrollmentCard setup={setupA} />);
+    rerender(<QrEnrollmentCard setup={setupB} />);
+    await act(async () => {
+      resolveB('data:image/png;base64,BBBB');
+      await Promise.resolve();
+    });
+    expect(screen.getByAltText('TOTP enrollment QR code')).toHaveAttribute(
+      'src',
+      'data:image/png;base64,BBBB',
+    );
+    await act(async () => {
+      resolveA('data:image/png;base64,AAAA');
+      await Promise.resolve();
+    });
+    // The superseded first URI must not overwrite the current image.
+    expect(screen.getByAltText('TOTP enrollment QR code')).toHaveAttribute(
+      'src',
+      'data:image/png;base64,BBBB',
+    );
+  });
+
+  it('ignores a stale QR reject that lands after the setup URI changed', async () => {
+    // A failure from the superseded first URI must not blank the current, freshly-rendered QR.
+    let rejectA!: (error: Error) => void;
+    let resolveB!: (url: string) => void;
+    const pendingA = new Promise<string>((_resolve, reject) => {
+      rejectA = reject;
+    });
+    const pendingB = new Promise<string>((resolve) => {
+      resolveB = resolve;
+    });
+    toDataURL.mockReturnValueOnce(pendingA).mockReturnValueOnce(pendingB);
+    const setupA: MfaSetupResult = { ...SETUP, qrCodeUri: 'otpauth://totp/acme:demo?secret=AAA' };
+    const setupB: MfaSetupResult = { ...SETUP, qrCodeUri: 'otpauth://totp/acme:demo?secret=BBB' };
+    const { rerender } = render(<QrEnrollmentCard setup={setupA} />);
+    rerender(<QrEnrollmentCard setup={setupB} />);
+    await act(async () => {
+      resolveB('data:image/png;base64,BBBB');
+      await Promise.resolve();
+    });
+    expect(screen.getByAltText('TOTP enrollment QR code')).toHaveAttribute(
+      'src',
+      'data:image/png;base64,BBBB',
+    );
+    await act(async () => {
+      rejectA(new Error('stale failure'));
+      await Promise.resolve();
+    });
+    // The superseded rejection must leave the current image intact, never falling to a skeleton.
+    expect(screen.getByAltText('TOTP enrollment QR code')).toHaveAttribute(
+      'src',
+      'data:image/png;base64,BBBB',
+    );
+    expect(screen.queryByRole('status', { name: /Rendering QR code/i })).toBeNull();
+  });
+
+  it('falls back to the skeleton when a re-render fails to produce a QR', async () => {
+    // A render that succeeds and is then replaced by a failing URI must clear the stale image and
+    // return to the loading skeleton rather than leaving the previous QR on screen.
+    const setupA: MfaSetupResult = { ...SETUP, qrCodeUri: 'otpauth://totp/acme:demo?secret=AAA' };
+    const setupB: MfaSetupResult = { ...SETUP, qrCodeUri: 'otpauth://totp/acme:demo?secret=BBB' };
+    toDataURL.mockResolvedValueOnce('data:image/png;base64,AAAA');
+    const { rerender } = render(<QrEnrollmentCard setup={setupA} />);
+    await waitFor(() =>
+      expect(screen.getByAltText('TOTP enrollment QR code')).toHaveAttribute(
+        'src',
+        'data:image/png;base64,AAAA',
+      ),
+    );
+    toDataURL.mockRejectedValueOnce(new Error('no canvas'));
+    rerender(<QrEnrollmentCard setup={setupB} />);
+    await waitFor(() =>
+      expect(screen.getByRole('status', { name: /Rendering QR code/i })).toBeInTheDocument(),
+    );
+    expect(screen.queryByAltText('TOTP enrollment QR code')).toBeNull();
+  });
+
+  it('does not clear a timer on unmount when no copy is pending', async () => {
+    // With no copy confirmation in flight, unmounting must skip clearTimeout entirely — it must
+    // never be invoked with the null timer handle.
+    vi.useFakeTimers();
+    const clearSpy = vi.spyOn(globalThis, 'clearTimeout');
+    try {
+      toDataURL.mockResolvedValueOnce('data:image/png;base64,AAAA');
+      const { unmount } = render(<QrEnrollmentCard setup={SETUP} />);
+      await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+      unmount();
+      expect(clearSpy).not.toHaveBeenCalledWith(null);
+    } finally {
+      clearSpy.mockRestore();
+      vi.useRealTimers();
+    }
+  });
+
+  it('does not clear a timer on the first copy when none is pending', async () => {
+    // The first copy has no prior revert timer, so scheduling its reset must not call clearTimeout
+    // with the null handle.
+    vi.useFakeTimers();
+    const clearSpy = vi.spyOn(globalThis, 'clearTimeout');
+    try {
+      toDataURL.mockResolvedValueOnce('data:image/png;base64,AAAA');
+      render(<QrEnrollmentCard setup={SETUP} />);
+      fireEvent.click(screen.getByRole('button', { name: /Copy secret/i }));
+      await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+      expect(screen.getByRole('button', { name: /Secret copied/i })).toBeInTheDocument();
+      expect(clearSpy).not.toHaveBeenCalledWith(null);
     } finally {
       clearSpy.mockRestore();
       vi.useRealTimers();

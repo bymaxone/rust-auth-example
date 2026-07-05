@@ -88,9 +88,9 @@ pub fn apply_global_layers(router: Router, settings: &Settings) -> Result<Router
 mod tests {
     use super::*;
     use crate::config::{EmailProviderKind, RuntimeEnvironment};
-    use axum::body::Body;
+    use axum::body::{Body, Bytes};
     use axum::http::{Request, StatusCode};
-    use axum::routing::get;
+    use axum::routing::{get, post};
     use secrecy::SecretString;
     use tower::ServiceExt as _;
 
@@ -215,5 +215,34 @@ mod tests {
         // surfaces as the opaque internal error rather than a panic.
         let result = cors_layer(&settings("http://localhost:3000\n"));
         assert!(matches!(result, Err(AppError::Internal(_))));
+    }
+
+    #[tokio::test]
+    async fn the_request_body_cap_is_one_mib_and_is_enforced() {
+        // Pin the cap directly: a `*`→`+` mutant (2048) or `*`→`/` mutant (1) changes the value.
+        assert_eq!(MAX_BODY_BYTES, 1_048_576);
+        // And confirm it is wired into the limit layer via a route that actually *reads* the body
+        // (the layer only enforces the cap when the body is consumed): a 4 KiB body is under 1 MiB
+        // and is accepted, whereas a shrunk cap would reject it 413.
+        let router = apply_global_layers(
+            Router::new().route(
+                "/echo",
+                post(|body: Bytes| async move { body.len().to_string() }),
+            ),
+            &settings(ORIGIN),
+        )
+        .unwrap();
+        let response = router
+            .oneshot(
+                Request::builder()
+                    .method(Method::POST)
+                    .uri("/echo")
+                    .header(header::ORIGIN, ORIGIN)
+                    .body(Body::from(vec![b'x'; 4096]))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
     }
 }

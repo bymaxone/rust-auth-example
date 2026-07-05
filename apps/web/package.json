@@ -18,7 +18,9 @@
     "test:cov": "NODE_OPTIONS=--max-old-space-size=4096 vitest run --coverage",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "test:e2e:live": "playwright test --config playwright.live.config.ts"
+    "test:e2e:live": "playwright test --config playwright.live.config.ts",
+    "mutation": "stryker run",
+    "mutation:lib": "stryker run stryker.lib.config.json"
   },
   "dependencies": {
     "@bymax-one/rust-auth": "file:../../../rust-auth/packages/rust-auth",

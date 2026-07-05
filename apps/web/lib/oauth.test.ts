@@ -59,6 +59,7 @@ describe('parseCallbackTrace', () => {
     // Absent facets mean there is nothing to render.
     expect(parseCallbackTrace(null, 'authenticated')).toBeNull();
     expect(parseCallbackTrace('created', null)).toBeNull();
+    expect(parseCallbackTrace(null, null)).toBeNull();
   });
 
   it('rejects unknown decision or branch values', () => {

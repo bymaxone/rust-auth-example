@@ -1,0 +1,24 @@
+# cargo-mutants configuration for the apps/api workspace.
+#
+# Runs the same test surface as coverage (nextest) so a mutant that survives here
+# is a genuine test-suite gap, not a runner mismatch. The mutated surface excludes
+# only non-executable bootstrap glue; every logic module is in scope.
+test_tool = "nextest"
+
+# Mutate the default-feature surface — exactly what the 100% `cargo llvm-cov nextest`
+# run covers. The only cargo feature is `argon2` (non-default: it swaps the scrypt KDF
+# for Argon2id); the default build compiles the `not(argon2)` branches, so those are the
+# lines coverage exercises and thus the lines mutation must be able to kill.
+
+# Give each mutated run headroom over the baseline test time without hanging CI:
+# a mutant that loops forever is caught as a timeout (which counts as killed).
+timeout_multiplier = 3.0
+minimum_test_timeout = 60
+
+# Non-executable glue only — never a live logic module. `main.rs` is the binary
+# entrypoint (arg parsing + bootstrap wiring), exercised end-to-end by the e2e
+# suite rather than unit-mutated; `bin/seed.rs` is a dev-only seeding script.
+exclude_globs = [
+    "apps/api/src/main.rs",
+    "apps/api/src/bin/seed.rs",
+]

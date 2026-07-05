@@ -20,7 +20,10 @@ describe('HealthCard', () => {
     );
     expect(screen.getByText('Login success')).toBeInTheDocument();
     expect(screen.getByText('98%')).toBeInTheDocument();
-    expect(container.querySelector('svg')).not.toBeNull();
+    const icon = container.querySelector('svg');
+    expect(icon).not.toBeNull();
+    // The icon carries fixed sizing so the metric row stays aligned.
+    expect(icon).toHaveClass('h-4', 'w-4');
   });
 
   it('applies the tone colour cue to the value for every tone', () => {
@@ -35,18 +38,23 @@ describe('HealthCard', () => {
       const { unmount } = render(
         <HealthCard label="M" value="1" icon={CheckCircle2} tone={tone} />,
       );
-      expect(screen.getByText('1')).toHaveClass(cls);
+      // The value keeps its monospace metric styling alongside the tone tint.
+      expect(screen.getByText('1')).toHaveClass('font-mono', 'text-2xl', 'font-bold', cls);
       unmount();
     }
   });
 
   it('renders the caption only when one is supplied', () => {
     // A caption is optional; without it no extra copy appears.
-    const { rerender } = render(
+    const { rerender, container } = render(
       <HealthCard label="M" value="1" icon={CheckCircle2} tone="neutral" caption="last 24h" />,
     );
     expect(screen.getByText('last 24h')).toBeInTheDocument();
+    // With a caption the card carries three spans: label, value, and caption.
+    expect(container.querySelectorAll('span')).toHaveLength(3);
     rerender(<HealthCard label="M" value="1" icon={CheckCircle2} tone="neutral" />);
     expect(screen.queryByText('last 24h')).not.toBeInTheDocument();
+    // Without a caption the third span is gated out entirely, not rendered empty.
+    expect(container.querySelectorAll('span')).toHaveLength(2);
   });
 });

@@ -29,11 +29,13 @@ mod tests {
     use super::*;
 
     #[test]
-    fn init_tracing_is_idempotent() {
-        // The example owns telemetry: installing the subscriber twice must be a
-        // no-op (via `try_init`), never a panic. With `RUST_LOG` unset in the test
-        // process, this also exercises the default-filter fallback arm.
+    fn init_tracing_installs_the_subscriber_and_is_idempotent() {
+        // The example owns telemetry: the first call installs the global subscriber and a
+        // second is a no-op (via `try_init`), never a panic. Asserting a dispatcher IS set
+        // afterwards proves the call does its work — a no-op body would leave none. With
+        // `RUST_LOG` unset this also exercises the default-filter fallback arm.
         init_tracing();
         init_tracing();
+        assert!(tracing::dispatcher::has_been_set());
     }
 }

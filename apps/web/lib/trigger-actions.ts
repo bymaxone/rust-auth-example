@@ -132,6 +132,10 @@ export async function hammerLogin(input: LoginInput, attempts = 7): Promise<Trig
         response: redactSecrets(body ?? { status: 429 }),
         code: body?.error?.code ?? 'auth.too_many_requests',
         status: 429,
+        // The `seconds !== undefined` operand narrows the optional to `number` for the
+        // exactOptionalPropertyTypes result, but is provably equivalent under mutation: since
+        // `Number.isFinite(undefined)` is already `false`, flipping it to `true` changes nothing.
+        // Stryker disable next-line ConditionalExpression
         ...(seconds !== undefined && Number.isFinite(seconds)
           ? { retryAfterSeconds: seconds }
           : {}),

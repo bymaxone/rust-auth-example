@@ -12,7 +12,7 @@ import { render, screen, fireEvent, act } from '@testing-library/react';
 import { RecoveryCodeGrid } from './RecoveryCodeGrid';
 
 const writeText = vi.hoisted(() => vi.fn(() => Promise.resolve()));
-const createObjectURL = vi.hoisted(() => vi.fn(() => 'blob:codes'));
+const createObjectURL = vi.hoisted(() => vi.fn((_obj: Blob | MediaSource): string => 'blob:codes'));
 const revokeObjectURL = vi.hoisted(() => vi.fn());
 
 beforeEach(() => {
@@ -43,6 +43,10 @@ describe('RecoveryCodeGrid', () => {
       });
       expect(screen.getByText('Copied')).toBeInTheDocument();
       expect(writeText).toHaveBeenCalledWith('aaa\nbbb');
+      // A successful copy keeps the outline variant (not the destructive/failed one).
+      const copyButton = screen.getByRole('button', { name: /Recovery codes copied/i });
+      expect(copyButton).toHaveClass('bg-(--glass-bg)');
+      expect(copyButton).not.toHaveClass('bg-destructive');
       act(() => {
         vi.advanceTimersByTime(2_000);
       });
@@ -52,12 +56,35 @@ describe('RecoveryCodeGrid', () => {
     }
   });
 
-  it('downloads the codes as a text file', () => {
-    // Download must build a local blob URL for the codes.
+  it('downloads the codes as a text/plain blob of the exact codes', async () => {
+    // Download must build a local blob URL whose payload is the newline-joined codes as a
+    // text file, then revoke that URL.
     render(<RecoveryCodeGrid codes={['aaa', 'bbb']} />);
     fireEvent.click(screen.getByRole('button', { name: /Download/i }));
-    expect(createObjectURL).toHaveBeenCalled();
+    expect(createObjectURL).toHaveBeenCalledTimes(1);
+    const blob = createObjectURL.mock.calls[0]?.[0] as Blob | undefined;
+    expect(blob).toBeInstanceOf(Blob);
+    expect(blob?.type).toBe('text/plain');
+    expect(await blob?.text()).toBe('aaa\nbbb');
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:codes');
+  });
+
+  it('names the downloaded file recovery-codes.txt', () => {
+    // The anchor used to save the codes must carry the fixed .txt filename and be clicked.
+    const clickSpy = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => undefined);
+    try {
+      render(<RecoveryCodeGrid codes={['aaa', 'bbb']} />);
+      fireEvent.click(screen.getByRole('button', { name: /Download/i }));
+      expect(clickSpy).toHaveBeenCalledTimes(1);
+      // The click's receiver is the anchor element (the spy is on its prototype), so assert the
+      // download filename it carries.
+      const anchor = clickSpy.mock.instances[0] as HTMLAnchorElement | undefined;
+      expect(anchor?.download).toBe('recovery-codes.txt');
+    } finally {
+      clickSpy.mockRestore();
+    }
   });
 
   it('shows a "Copy failed" state when the clipboard write is denied', async () => {
@@ -71,7 +98,13 @@ describe('RecoveryCodeGrid', () => {
         await Promise.resolve();
         await Promise.resolve();
       });
-      expect(screen.getByRole('button', { name: /Copy failed/i })).toBeInTheDocument();
+      const failedButton = screen.getByRole('button', { name: /Copy failed/i });
+      // The failed state carries the exact aria-label and the destructive variant.
+      expect(failedButton).toHaveAttribute('aria-label', 'Copy failed');
+      expect(failedButton).toHaveClass('bg-destructive');
+      expect(failedButton).not.toHaveClass('bg-(--glass-bg)');
+      // The visible label (independent of the aria-label) must read "Copy failed".
+      expect(screen.getByText('Copy failed')).toBeInTheDocument();
       act(() => {
         vi.advanceTimersByTime(2_000);
       });
@@ -131,6 +164,41 @@ describe('RecoveryCodeGrid', () => {
       expect(screen.getByText('Copied')).toBeInTheDocument();
       unmount();
       expect(clearSpy).toHaveBeenCalled();
+    } finally {
+      clearSpy.mockRestore();
+      vi.useRealTimers();
+    }
+  });
+
+  it('does not clear a timer on the first copy when none is pending', async () => {
+    // The first copy has no in-flight reset to cancel, so the guard must skip clearing the
+    // (still null) timer rather than call clearTimeout with a null handle.
+    vi.useFakeTimers();
+    const clearSpy = vi.spyOn(globalThis, 'clearTimeout');
+    try {
+      render(<RecoveryCodeGrid codes={['aaa', 'bbb']} />);
+      fireEvent.click(screen.getByRole('button', { name: /Copy recovery codes/i }));
+      await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+      expect(screen.getByText('Copied')).toBeInTheDocument();
+      expect(clearSpy).not.toHaveBeenCalledWith(null);
+    } finally {
+      clearSpy.mockRestore();
+      vi.useRealTimers();
+    }
+  });
+
+  it('does not clear a timer on unmount when no copy is pending', () => {
+    // Unmounting a grid whose reset timer was never scheduled must skip clearing the (still
+    // null) timer rather than call clearTimeout with a null handle.
+    vi.useFakeTimers();
+    const clearSpy = vi.spyOn(globalThis, 'clearTimeout');
+    try {
+      const { unmount } = render(<RecoveryCodeGrid codes={['aaa', 'bbb']} />);
+      unmount();
+      expect(clearSpy).not.toHaveBeenCalledWith(null);
     } finally {
       clearSpy.mockRestore();
       vi.useRealTimers();

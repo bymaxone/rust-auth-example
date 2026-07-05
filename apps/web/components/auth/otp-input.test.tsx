@@ -186,4 +186,157 @@ describe('OtpInput', () => {
     fireEvent.change(getCell(2), { target: { value: '2' } });
     expect(onComplete).not.toHaveBeenCalled();
   });
+
+  it('keeps only the last digit when several digits arrive in one change', () => {
+    /* A multi-character change (e.g. Android composing text) keeps just the final
+       digit, not the whole run. */
+    renderOtp();
+    fireEvent.change(getCell(1), { target: { value: '123' } });
+    expect(getCell(1).value).toBe('3');
+  });
+
+  it('strips a trailing non-digit from a change value', () => {
+    /* Non-digits are removed before the last-character is taken, so a value ending
+       in a letter yields the preceding digit — never the stripped-out text. */
+    renderOtp();
+    fireEvent.change(getCell(1), { target: { value: '7x' } });
+    expect(getCell(1).value).toBe('7');
+  });
+
+  it('does not keep a lone non-digit character', () => {
+    /* Typing only a non-digit leaves the cell empty rather than substituting text
+       for the stripped character. */
+    renderOtp();
+    fireEvent.change(getCell(1), { target: { value: 'a' } });
+    expect(getCell(1).value).toBe('');
+  });
+
+  it('advances focus to the next cell when a digit is entered mid-run', () => {
+    /* Entering a digit in a non-last cell moves focus forward exactly one cell. */
+    renderOtp();
+    fireEvent.change(getCell(2), { target: { value: '5' } });
+    expect(getCell(2).value).toBe('5');
+    expect(document.activeElement).toBe(getCell(3));
+  });
+
+  it('does not advance focus when a cell is cleared to empty', () => {
+    /* Clearing a cell (empty digit) must leave focus on that same cell. */
+    renderOtp();
+    fireEvent.change(getCell(1), { target: { value: '1' } });
+    getCell(1).focus();
+    fireEvent.change(getCell(1), { target: { value: '' } });
+    expect(getCell(1).value).toBe('');
+    expect(document.activeElement).toBe(getCell(1));
+  });
+
+  it('does not advance focus for a digit typed in the last cell', () => {
+    /* A digit in the final cell fills it but never moves focus past the boundary. */
+    renderOtp();
+    getCell(6).focus();
+    fireEvent.change(getCell(6), { target: { value: '9' } });
+    expect(getCell(6).value).toBe('9');
+    expect(document.activeElement).toBe(getCell(6));
+  });
+
+  it('clears the previous cell and preserves later cells on Backspace from empty', () => {
+    /* Backspace on an empty cell clears only the immediately-previous cell, moves
+       focus back to it, and leaves every other cell's digit intact. */
+    renderOtp();
+    fireEvent.change(getCell(1), { target: { value: '1' } });
+    fireEvent.change(getCell(2), { target: { value: '2' } });
+    fireEvent.change(getCell(3), { target: { value: '3' } });
+    /* Empty cell 2, then Backspace from it. */
+    fireEvent.change(getCell(2), { target: { value: '' } });
+    getCell(2).focus();
+    fireEvent.keyDown(getCell(2), { key: 'Backspace' });
+    /* Cell 1 (the previous cell) is cleared; cell 3 keeps its digit. */
+    expect(getCell(1).value).toBe('');
+    expect(getCell(3).value).toBe('3');
+    expect(document.activeElement).toBe(getCell(1));
+  });
+
+  it('clears a filled cell in place on Backspace and keeps the other cells', () => {
+    /* Backspace on a cell that holds a digit clears that cell only; neighbouring
+       digits are untouched and focus does not jump backwards. */
+    renderOtp();
+    fireEvent.change(getCell(1), { target: { value: '1' } });
+    fireEvent.change(getCell(2), { target: { value: '2' } });
+    fireEvent.keyDown(getCell(1), { key: 'Backspace' });
+    expect(getCell(1).value).toBe('');
+    expect(getCell(2).value).toBe('2');
+  });
+
+  it('clears the current filled cell, not the previous one, on Backspace', () => {
+    /* Backspace on a non-empty non-first cell clears that cell in place; the earlier
+       cell keeps its digit and focus does not move backwards. */
+    renderOtp();
+    fireEvent.change(getCell(1), { target: { value: '1' } });
+    fireEvent.change(getCell(2), { target: { value: '2' } });
+    fireEvent.keyDown(getCell(2), { key: 'Backspace' });
+    expect(getCell(1).value).toBe('1');
+    expect(getCell(2).value).toBe('');
+  });
+
+  it('reads the pasted clipboard text under the "text" mime type', () => {
+    /* Paste distribution reads the clipboard's plain-text payload; the digits land
+       across the cells and onComplete fires with them. */
+    const onComplete = renderOtp();
+    fireEvent.paste(getCell(1), {
+      clipboardData: { getData: (type: string) => (type === 'text' ? '135790' : '') },
+    });
+    expect(getCell(1).value).toBe('1');
+    expect(onComplete).toHaveBeenCalledWith('135790');
+  });
+
+  it('moves focus to the last cell after a complete paste', () => {
+    /* A full-length paste fills every cell and leaves focus on the final cell. */
+    renderOtp();
+    fireEvent.paste(getCell(1), {
+      clipboardData: { getData: () => '123456' },
+    });
+    expect(document.activeElement).toBe(getCell(6));
+  });
+
+  it('moves focus to the cell after the last pasted digit for a short paste', () => {
+    /* A partial paste of two digits leaves focus on the third cell, ready for the
+       next entry. */
+    renderOtp();
+    fireEvent.paste(getCell(1), {
+      clipboardData: { getData: () => '12' },
+    });
+    expect(getCell(1).value).toBe('1');
+    expect(getCell(2).value).toBe('2');
+    expect(document.activeElement).toBe(getCell(3));
+  });
+
+  it('ignores a paste on a cell other than the first', () => {
+    /* Only the first cell owns the paste handler; pasting elsewhere distributes
+       nothing and never fires onComplete. */
+    const onComplete = renderOtp();
+    fireEvent.paste(getCell(2), {
+      clipboardData: { getData: () => '123456' },
+    });
+    expect(getCell(1).value).toBe('');
+    expect(onComplete).not.toHaveBeenCalled();
+  });
+
+  it('applies the segmented cell styling classes', () => {
+    /* Each cell carries the full visual token set (size, shape, typography, glass
+       surface, transition, focus ring, and border colour). */
+    renderOtp();
+    const cell = getCell(1);
+    expect(cell).toHaveClass(
+      'h-12',
+      'w-10',
+      'rounded-xl',
+      'text-center',
+      'font-mono',
+      'text-lg',
+      'font-medium',
+    );
+    expect(cell).toHaveClass('bg-(--glass-bg)', 'text-foreground');
+    expect(cell).toHaveClass('transition-shadow', 'duration-200');
+    expect(cell).toHaveClass('focus:outline-none', 'focus:ring-2', 'focus:ring-ring/50');
+    expect(cell).toHaveClass('border-(--glass-border)');
+  });
 });

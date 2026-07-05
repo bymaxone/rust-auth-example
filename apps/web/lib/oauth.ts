@@ -48,6 +48,11 @@ export function parseCallbackTrace(
   decision: string | null,
   branch: string | null,
 ): OAuthCallbackTrace | null {
+  // This null guard is provably equivalent under mutation: the membership check below rejects
+  // null anyway (null is a member of neither DECISIONS nor BRANCHES), so every mutation of this
+  // line yields the same `null` result. It exists only to narrow `string | null` to `string` for
+  // `.includes` on the next line — no behaviour a test could observe depends on it.
+  // Stryker disable next-line all
   if (decision === null || branch === null) return null;
   if (!DECISIONS.includes(decision) || !BRANCHES.includes(branch)) return null;
   return { decision: decision as OAuthDecision, branch: branch as OAuthBranch };

@@ -8,7 +8,7 @@
 use std::sync::Arc;
 
 use axum::Router;
-use bymax_auth_axum::{AuthRouter, AxumAuthConfig, ClientIpSource, RateLimitConfig};
+use bymax_auth_axum::{AuthRouter, AxumAuthConfig};
 use bymax_auth_core::AuthEngine;
 use bymax_auth_redis::RedisStores;
 use sqlx::PgPool;
@@ -76,16 +76,14 @@ impl AppState {
 /// example's own routes are merged onto the same value before the global middleware
 /// stack wraps it.
 pub fn build_router(state: AppState) -> Router {
-    let auth = AuthRouter::from_engine(
-        Arc::clone(&state.engine),
-        AxumAuthConfig {
-            route_prefix: "auth".to_owned(),
-            rate_limits: RateLimitConfig::default(),
-            client_ip_source: ClientIpSource::PeerAddr,
-            ..Default::default()
-        },
-    )
-    .into_router();
+    // The mounted auth surface ships the library's own defaults. Those defaults are the knobs a
+    // real deployment tunes on this value: `route_prefix` (the URL prefix, `auth`), `rate_limits`
+    // (the per-route limiter budgets), and — security-relevant — `client_ip_source` (`PeerAddr`;
+    // switch to a trusted proxy header only behind a proxy that sets it, since a client-settable
+    // header would let a caller forge its rate-limit identity). Override any of them with
+    // `AxumAuthConfig { field: …, ..Default::default() }`.
+    let auth =
+        AuthRouter::from_engine(Arc::clone(&state.engine), AxumAuthConfig::default()).into_router();
 
     example_routes(state.app_env).with_state(state).merge(auth)
 }

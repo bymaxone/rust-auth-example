@@ -1,6 +1,6 @@
 # Phase 12 — Testing & 100% Coverage
 
-> **Status**: 🔄 In Progress · **Progress**: 3 / 6 tasks (12.2/12.3/12.4 done; 12.1/12.5/12.6 partial) · **Last updated**: 2026-07-03
+> **Status**: ✅ Done · **Progress**: 6 / 6 tasks · **Last updated**: 2026-07-04
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P12
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).

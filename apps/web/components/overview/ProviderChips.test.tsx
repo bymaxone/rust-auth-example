@@ -23,11 +23,17 @@ describe('ProviderChips', () => {
     render(<ProviderChips emailProvider="mailpit" oauthGoogleEnabled={true} />);
     expect(screen.getByText('Google OAuth')).toBeInTheDocument();
     expect(screen.getByText('on')).toBeInTheDocument();
+    // Enabled OAuth uses the solid brand badge and leaves the label untinted.
+    expect(screen.getByText('on')).toHaveClass('bg-brand-500');
+    expect(screen.getByText('Google OAuth')).not.toHaveClass('text-muted-foreground');
   });
 
   it('shows Google OAuth as off when disabled', () => {
     // The disabled state must render the explicit "off" label.
     render(<ProviderChips emailProvider="mailpit" oauthGoogleEnabled={false} />);
     expect(screen.getByText('off')).toBeInTheDocument();
+    // Disabled OAuth uses the outline badge and a muted label.
+    expect(screen.getByText('off')).toHaveClass('text-foreground');
+    expect(screen.getByText('Google OAuth')).toHaveClass('text-muted-foreground');
   });
 });

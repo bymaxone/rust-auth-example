@@ -80,6 +80,17 @@ describe('apiFetch', () => {
     expect((err as AuthClientError).message).toBe('Server Error');
   });
 
+  it('maps a literal null JSON body to the status alone, without dereferencing it', async () => {
+    // A JSON `null` error body must map from the status, not throw on the `.error` read.
+    mockAuthFetch.mockResolvedValueOnce(
+      res({ ok: false, status: 400, statusText: 'Bad Request', json: () => Promise.resolve(null) }),
+    );
+    const err = await apiFetch('/x').catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(AuthClientError);
+    expect((err as AuthClientError).code).toBeUndefined();
+    expect((err as AuthClientError).message).toBe('Bad Request');
+  });
+
   it('ignores a malformed envelope whose code/message are not strings', async () => {
     // Non-string code/message must not be treated as a valid envelope.
     mockAuthFetch.mockResolvedValueOnce(
@@ -92,6 +103,41 @@ describe('apiFetch', () => {
     );
     const err = (await apiFetch('/x').catch((e: unknown) => e)) as AuthClientError;
     expect(err.code).toBeUndefined();
+    expect(err.body).toBeUndefined();
+    expect(err.message).toBe('Bad Request');
+  });
+
+  it('rejects an envelope whose code is a string but message is not', async () => {
+    // Both fields must be strings together, so a string code with a non-string
+    // message is not a valid envelope: no wire code, message falls back to statusText.
+    mockAuthFetch.mockResolvedValueOnce(
+      res({
+        ok: false,
+        status: 400,
+        statusText: 'Bad Request',
+        json: () => Promise.resolve({ error: { code: 'auth.locked', message: 42 } }),
+      }),
+    );
+    const err = (await apiFetch('/x').catch((e: unknown) => e)) as AuthClientError;
+    expect(err.code).toBeUndefined();
+    expect(err.body).toBeUndefined();
+    expect(err.message).toBe('Bad Request');
+  });
+
+  it('rejects an envelope whose message is a string but code is not', async () => {
+    // The symmetric case: a valid message paired with a non-string code is still
+    // not a recognizable envelope, so the wire code stays absent.
+    mockAuthFetch.mockResolvedValueOnce(
+      res({
+        ok: false,
+        status: 400,
+        statusText: 'Bad Request',
+        json: () => Promise.resolve({ error: { code: 99, message: 'nope' } }),
+      }),
+    );
+    const err = (await apiFetch('/x').catch((e: unknown) => e)) as AuthClientError;
+    expect(err.code).toBeUndefined();
+    expect(err.body).toBeUndefined();
     expect(err.message).toBe('Bad Request');
   });
 

@@ -184,6 +184,30 @@ mod tests {
         addrs.any(|addr| TcpStream::connect_timeout(&addr, Duration::from_millis(500)).is_ok())
     }
 
+    /// The Mailpit REST base URL (its HTTP UI/API port), overridable for CI service containers.
+    fn mailpit_rest_base(smtp_host: &str) -> String {
+        std::env::var("MAILPIT_URL").unwrap_or_else(|_| format!("http://{smtp_host}:8025"))
+    }
+
+    /// Count the messages currently addressed to `to`, via Mailpit's search API. Runs only when
+    /// Mailpit is reachable (the caller guards on that), so a request/parse failure is a broken
+    /// relay and panics the test rather than silently under-counting.
+    async fn mailpit_count_to(client: &reqwest::Client, rest: &str, to: &str) -> usize {
+        let url = format!("{rest}/api/v1/search?query=to:{to}");
+        let resp = client
+            .get(&url)
+            .send()
+            .await
+            .expect("mailpit search request succeeds");
+        let body = resp
+            .json::<serde_json::Value>()
+            .await
+            .expect("mailpit search returns json");
+        body.get("messages")
+            .and_then(serde_json::Value::as_array)
+            .map_or(0, Vec::len)
+    }
+
     #[test]
     fn rejects_a_malformed_from_address() {
         // A malformed `from` mailbox fails construction as a typed error, never a panic.
@@ -256,7 +280,9 @@ mod tests {
         }
         let provider = LettreEmailProvider::new(&host, port, "no-reply@auth.local".to_owned())
             .expect("a valid from address builds the provider");
-        let to = "recipient@example.test";
+        // A recipient unique to this test process so a shared Mailpit relay stays race-free
+        // when several mutation jobs run concurrently.
+        let to = format!("recipient-{}@example.test", std::process::id());
         let session = SessionInfo {
             device: "Chrome on macOS".to_owned(),
             ip: "203.0.113.4".to_owned(),
@@ -269,32 +295,48 @@ mod tests {
             expires_at: OffsetDateTime::UNIX_EPOCH,
         };
         provider
-            .send_email_verification_otp(to, "123456", Some("en"))
+            .send_email_verification_otp(&to, "123456", Some("en"))
             .await
             .expect("verification otp delivers");
         provider
-            .send_password_reset_otp(to, "654321", None)
+            .send_password_reset_otp(&to, "654321", None)
             .await
             .expect("reset otp delivers");
         provider
-            .send_password_reset_token(to, "reset-token", None)
+            .send_password_reset_token(&to, "reset-token", None)
             .await
             .expect("reset token delivers");
         provider
-            .send_mfa_enabled(to, None)
+            .send_mfa_enabled(&to, None)
             .await
             .expect("mfa enabled delivers");
         provider
-            .send_mfa_disabled(to, None)
+            .send_mfa_disabled(&to, None)
             .await
             .expect("mfa disabled delivers");
         provider
-            .send_new_session_alert(to, &session, None)
+            .send_new_session_alert(&to, &session, None)
             .await
             .expect("session alert delivers");
         provider
-            .send_invitation(to, &invite, Some("es"))
+            .send_invitation(&to, &invite, Some("es"))
             .await
             .expect("invitation delivers");
+
+        // Returning `Ok` is not enough: assert every message actually reached Mailpit. A send
+        // mutated to a no-op `Ok(())` would leave this recipient's inbox short of seven.
+        let rest = mailpit_rest_base(&host);
+        // The api's reqwest TLS backend ships without a bundled crypto provider, so install the
+        // process-default aws-lc-rs provider (idempotent) before building an HTTP client.
+        let _ = rustls::crypto::aws_lc_rs::default_provider().install_default();
+        let client = reqwest::Client::new();
+        // Each SMTP send above completes only once Mailpit has accepted the message, so all seven
+        // are already stored; a short settle covers the relay's search-index update.
+        tokio::time::sleep(Duration::from_millis(500)).await;
+        let delivered = mailpit_count_to(&client, &rest, &to).await;
+        assert_eq!(
+            delivered, 7,
+            "all seven messages must arrive at Mailpit for {to}"
+        );
     }
 }

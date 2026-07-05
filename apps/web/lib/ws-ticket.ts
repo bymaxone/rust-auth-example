@@ -26,6 +26,10 @@ export async function mintWsTicket(): Promise<string> {
  * @returns The `ws(s)://…/ws/example?ticket=…` URL.
  */
 export function buildWsUrl(ticket: string): string {
+  // The `?? ''` default is equivalent under mutation: any non-absolute default (the mutant's
+  // included) makes `new URL(...)` throw and routes to the identical catch fallback below, so no
+  // test can distinguish one empty/invalid default from another.
+  // Stryker disable next-line StringLiteral
   const rawBase = process.env.NEXT_PUBLIC_API_URL ?? '';
   try {
     const u = new URL(rawBase);
