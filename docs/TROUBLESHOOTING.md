@@ -237,4 +237,3 @@ each and are safe to run normally.
 Open an issue with the exact error, your OS, the Rust / Node / pnpm versions, and whether the
 infra containers are healthy (`docker ps`). For a suspected vulnerability, follow
 [`SECURITY.md`](../SECURITY.md) instead of filing a public issue.
-</content>

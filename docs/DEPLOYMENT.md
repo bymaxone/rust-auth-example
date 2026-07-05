@@ -236,5 +236,3 @@ Reproduce a build with the same pins the images use:
 - [Troubleshooting](./TROUBLESHOOTING.md) — boot-time validation and runtime failures.
 - [Releases](./RELEASES.md) — how a tag becomes GHCR images and a release row.
 - [`SECURITY.md`](../SECURITY.md) — how to report a vulnerability.
-</content>
-</invoke>

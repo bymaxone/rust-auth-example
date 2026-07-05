@@ -126,7 +126,7 @@ serve the console over HTTPS — see [`.env.prod.example`](../.env.prod.example)
 ## Generating secrets
 
 ```bash
-# JWT signing secret — 64 hex chars. Use the SAME value for the API
+# JWT signing secret — 64 bytes (128 hex chars), above the 64-byte floor. Use the SAME value for the API
 # JWT_SECRET and the web AUTH_JWT_SECRET_FOR_PROXY.
 openssl rand -hex 64
 

@@ -28,7 +28,8 @@ A release is cut by pushing a `v*` git tag. The
    **without** the leading `v` plus a rolling `{major}.{minor}` tag. Each image is checked
    with `docker manifest inspect` first, so a retried run never overwrites an image that
    already published.
-2. Appends a row to the [Tagged releases](#tagged-releases) table below via a bot commit. The
+2. Prepends a row (newest-first) at the `<!-- releases:insert -->` marker in the
+   [Tagged releases](#tagged-releases) table below via a bot commit. The
    tracked library version is read from
    [`apps/api/Cargo.toml`](../apps/api/Cargo.toml) (the `bymax-auth-core` dependency version).
 
@@ -36,8 +37,9 @@ The workflow is idempotent per tag: if a row for the tag already exists, it is s
 
 ## Tagged releases
 
-Rows below are appended automatically by the release workflow when a `v*` tag is
-pushed; the tracked library version is read from `apps/api/Cargo.toml`. The
+Rows below are prepended automatically (newest-first) at the `<!-- releases:insert -->`
+marker by the release workflow when a `v*` tag is pushed; the tracked library version is
+read from `apps/api/Cargo.toml`. The
 `_pre-release_` seed row is the pre-publish baseline and stays at the bottom as new
 tags are prepended above it.
 
@@ -51,4 +53,3 @@ tags are prepended above it.
 - [`CHANGELOG.md`](../CHANGELOG.md) — the human-written change history.
 - [Deployment](./DEPLOYMENT.md) — what to verify on each release, and how the images run.
 - [OVERVIEW §18 — Deployment Notes](./OVERVIEW.md#18-deployment-notes).
-</content>

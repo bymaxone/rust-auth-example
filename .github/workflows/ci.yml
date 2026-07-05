@@ -581,6 +581,10 @@ jobs:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           persist-credentials: false
+      # setup-node honours the root `packageManager: pnpm`, so pnpm must be on PATH first.
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        with:
+          version: 10.8.1
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 24
@@ -588,7 +592,8 @@ jobs:
       # config skips external http(s) so the gate is deterministic and never third-party-flaky.
       - name: Check documentation links
         run: |
-          for f in README.md docs/*.md; do
+          shopt -s globstar
+          for f in README.md docs/**/*.md; do
             npx --yes markdown-link-check@3.13.7 --quiet --config .markdown-link-check.json "$f"
           done
 

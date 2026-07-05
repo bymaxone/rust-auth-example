@@ -51,10 +51,16 @@ jobs:
 
       - name: Verify tag matches the workspace version
         run: |
-          TAG_CORE="$(printf '%s' "${TAG_NAME#v}" | grep -oE '^[0-9]+\.[0-9]+\.[0-9]+' || true)"
+          VERSION="${TAG_NAME#v}"
+          # Require an exact vX.Y.Z release tag — reject any pre-release/build suffix so a
+          # malformed tag fails here, not deeper in semver parsing or image tagging.
+          if ! printf '%s' "${VERSION}" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Tag ${TAG_NAME} is not an exact vX.Y.Z release tag."
+            exit 1
+          fi
           APP_VERSION="$(grep -m1 -E '^version = "' apps/api/Cargo.toml | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)"
-          if [ -z "${TAG_CORE}" ] || [ "${TAG_CORE}" != "${APP_VERSION}" ]; then
-            echo "::error::Tag ${TAG_NAME} (version ${TAG_CORE:-none}) does not match apps/api/Cargo.toml version ${APP_VERSION}."
+          if [ "${VERSION}" != "${APP_VERSION}" ]; then
+            echo "::error::Tag ${TAG_NAME} (version ${VERSION}) does not match apps/api/Cargo.toml version ${APP_VERSION}."
             exit 1
           fi
           echo "Tag ${TAG_NAME} matches the workspace version ${APP_VERSION}."
