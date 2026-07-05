@@ -1,6 +1,6 @@
 # Phase 14 — Docs, Public-Readiness & Release
 
-> **Status**: 🔄 In Progress · **Progress**: 6 / 7 tasks · **Last updated**: 2026-07-05
+> **Status**: 🟡 Partial · **Progress**: 6 / 7 tasks · **Last updated**: 2026-07-05
 > (14.7's release.yml is finalized; the first `v*` tag + the go-public visibility flip are deferred to a human trigger.)
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P14
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
@@ -94,7 +94,7 @@ phase/task references).**
 | 14.4 | README badge header + diagram + Documentation table | ✅ | P1 | S | 2026-07-05 |
 | 14.5 | Enforce export/public-api audits + link-check | ✅ | P0 | M | 2026-07-05 |
 | 14.6 | Security hardening + go-public checklist | ✅ | P0 | M | 2026-07-05 |
-| 14.7 | release.yml + first tag | 🔄 | P1 | M | 14.6 |
+| 14.7 | release.yml + first tag | 🟡 | P1 | M | 14.6 |
 
 ---
 
