@@ -81,17 +81,29 @@ blueprint and the feature-coverage matrix.
 
 ## Documentation
 
-| Document                                                 | What it covers                                             |
-| -------------------------------------------------------- | ---------------------------------------------------------- |
-| [`docs/OVERVIEW.md`](./docs/OVERVIEW.md)                 | Master technical blueprint and the feature-coverage matrix |
-| [`docs/DEVELOPMENT_PLAN.md`](./docs/DEVELOPMENT_PLAN.md) | The phased build plan and quality gates                    |
-| [`docs/DASHBOARD.md`](./docs/DASHBOARD.md)               | The `apps/web` console build spec and design system        |
-| [`docs/design_system.html`](./docs/design_system.html)   | The shared, project-agnostic UI design system              |
+New here? Start with [Getting Started](./docs/GETTING_STARTED.md). The
+[Feature Coverage Matrix](./docs/OVERVIEW.md#6-feature-coverage-matrix) maps every shipped library
+export to a demonstrated journey.
 
-Additional guides — getting started, features, architecture deep dive,
-environment reference, database schema, email, OAuth, Redis, MFA, deployment,
-troubleshooting, and release tracking — are planned and land alongside the
-features they describe.
+| Document                                       | What it covers                                                                     |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------- |
+| [Getting Started](./docs/GETTING_STARTED.md)   | Clone → local stack → first register / verify / login / MFA walkthrough            |
+| [Features](./docs/FEATURES.md)                 | Every journey with its route, an example request/response, and the rule it teaches |
+| [Architecture](./docs/ARCHITECTURE.md)         | The middleware pipeline, the `AppState` DI graph, and the error envelope           |
+| [Environment](./docs/ENVIRONMENT.md)           | Every variable: type, default, and boot-time validation                            |
+| [Database](./docs/DATABASE.md)                 | The schema (tables, indexes) and the sqlx repositories                             |
+| [Email](./docs/EMAIL.md)                       | The `EmailProvider` trait, the lettre / Resend transports, and the templates       |
+| [Redis](./docs/REDIS.md)                       | The `RedisStores` handle, the key namespaces, and the store traits                 |
+| [MFA](./docs/MFA.md)                           | TOTP enrollment, AEAD secret storage, and the challenge flow                       |
+| [Google OAuth](./docs/OAUTH_GOOGLE.md)         | Config, the TLS HTTP client, PKCE / state, and the login policy                    |
+| [Deployment](./docs/DEPLOYMENT.md)             | The two GHCR images, production config, and the release process                    |
+| [Troubleshooting](./docs/TROUBLESHOOTING.md)   | Common failures with their cause and fix                                           |
+| [Releases](./docs/RELEASES.md)                 | The release log and how a tag is recorded                                          |
+| [Going Public](./docs/GO_PUBLIC.md)            | The branch-protection and visibility checklist                                     |
+| [Overview](./docs/OVERVIEW.md)                 | Master technical blueprint and the feature-coverage matrix                         |
+| [Development Plan](./docs/DEVELOPMENT_PLAN.md) | The phased build plan and quality gates                                            |
+| [Console Spec](./docs/DASHBOARD.md)            | The `apps/web` console build spec and design system                                |
+| [Design System](./docs/design_system.html)     | The shared, project-agnostic UI design system                                      |
 
 ## Contributing
 
