@@ -51,8 +51,8 @@ template, reconciled with the current vault standard and adapted to the Rust/axu
 
 ## Progress
 
-- **Overall progress:** 13 / 15 phases · 74 / 86 tasks done (86%)
-- **Active phase:** P13 (Mutation Hardening)
+- **Overall progress:** 14 / 15 phases · 79 / 86 tasks done (92%)
+- **Active phase:** P14 (Docs, Public-Readiness & Release)
 - **Blocked:** none
 
 > All 15 Layer-3 task files are scaffolded under [`docs/tasks/`](./tasks/) (86 tasks total). Execute one phase at a time
@@ -77,8 +77,8 @@ template, reconciled with the current vault standard and adapted to the Rust/axu
 | P10 | Dashboard Console | `phase-10-dashboard-console.md` | ✅ | 7 / 7 | L | 2026-07-03 |
 | P11 | Platform Console | `phase-11-platform-console.md` | ✅ | 4 / 4 | M | 2026-07-03 |
 | P12 | Testing & 100% Coverage | `phase-12-testing.md` | ✅ | 6 / 6 | L | 2026-07-04 |
-| P13 | Mutation Hardening | `phase-13-mutation.md` | 🔄 | 0 / 5 | L | 2026-07-04 |
-| P14 | Docs, Public-Readiness & Release | `phase-14-docs-release.md` | 📋 | 0 / 7 | L | — |
+| P13 | Mutation Hardening | `phase-13-mutation.md` | ✅ | 5 / 5 | L | 2026-07-05 |
+| P14 | Docs, Public-Readiness & Release | `phase-14-docs-release.md` | 🔄 | 6 / 7 | L | 2026-07-05 |
 
 ---
 

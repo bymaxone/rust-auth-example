@@ -1,10 +1,18 @@
-# Release workflow — on a v* tag, builds and pushes the API and web images to
-# GHCR and records the release in docs/RELEASES.md via a bot commit. Both images
-# are checked independently so a partial failure can be retried without
-# overwriting the image that already published. This is the only workflow with
-# cancel-in-progress: false — a release run must never be cancelled mid-flight.
+# Release workflow — on a v* tag it builds and pushes the API and web images to
+# GHCR, then records the release in docs/RELEASES.md via a bot commit on main.
 #
-# Actions are pinned to a commit SHA with the version in a trailing comment.
+# The two images are built as an independent matrix and each is guarded by a
+# `docker manifest inspect` check, so the run is idempotent: re-pushing the same
+# tag is a no-op, and a partial failure (API published, web failed) can be
+# retried without overwriting the image that already published.
+#
+# This is the only workflow with cancel-in-progress: false — a release run must
+# never be cancelled mid-flight. Every third-party action is pinned to a commit
+# SHA with the human-readable version in a trailing comment.
+#
+# Published images (the [api, web] matrix expands to these concrete names):
+#   ghcr.io/bymaxone/rust-auth-example-api   — apps/api/Dockerfile (distroless)
+#   ghcr.io/bymaxone/rust-auth-example-web   — apps/web/Dockerfile (Next standalone)
 
 name: release
 
@@ -13,6 +21,7 @@ on:
     tags:
       - 'v*'
 
+# Least-privilege default: jobs widen only the scopes they need.
 permissions:
   contents: read
 
@@ -21,111 +30,122 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # ── check-tag ───────────────────────────────────────────────────────────────
+  # Fail fast before any image is built: the pushed tag must match the version
+  # declared in apps/api/Cargo.toml, so a release can only ship the version the
+  # workspace actually carries.
+  check-tag:
+    name: check-tag
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    env:
+      # The tag ref is attacker-influenceable, so it is read through env and
+      # never interpolated straight into a shell script body.
+      TAG_NAME: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          persist-credentials: false
+
+      - name: Verify tag matches the workspace version
+        run: |
+          TAG_CORE="$(printf '%s' "${TAG_NAME#v}" | grep -oE '^[0-9]+\.[0-9]+\.[0-9]+' || true)"
+          APP_VERSION="$(grep -m1 -E '^version = "' apps/api/Cargo.toml | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)"
+          if [ -z "${TAG_CORE}" ] || [ "${TAG_CORE}" != "${APP_VERSION}" ]; then
+            echo "::error::Tag ${TAG_NAME} (version ${TAG_CORE:-none}) does not match apps/api/Cargo.toml version ${APP_VERSION}."
+            exit 1
+          fi
+          echo "Tag ${TAG_NAME} matches the workspace version ${APP_VERSION}."
+
+  # ── build-and-push ──────────────────────────────────────────────────────────
   build-and-push:
-    name: build-and-push
+    name: build-and-push (${{ matrix.image }})
+    needs: check-tag
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
       contents: read
       packages: write
-      # Reserved for OIDC-based build provenance/attestation on publish; scoped to
-      # this job only so no other job can mint an OIDC token.
+      # Scoped to this job so only the publish job can mint an OIDC token; it
+      # backs OIDC-based build provenance/attestation on the pushed image.
       id-token: write
+    strategy:
+      # Build the two images independently: a web failure must not cancel an
+      # already-successful API build, so the failed image can be retried alone.
+      fail-fast: false
+      matrix:
+        image:
+          - api
+          - web
+        include:
+          # The web image bakes the public client config at build time; the API
+          # image takes no build args. Repository variables override the safe
+          # defaults (Settings → Variables → Actions).
+          - image: web
+            build-args: |
+              NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL || 'https://example.com/api' }}
+              NEXT_PUBLIC_OAUTH_GOOGLE_ENABLED=${{ vars.NEXT_PUBLIC_OAUTH_GOOGLE_ENABLED || 'false' }}
     env:
+      # Untrusted tag ref via env — never inlined into a run: script body.
       TAG_NAME: ${{ github.ref_name }}
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
         with:
           persist-credentials: false
 
-      # The web image is only built once the apps/web workspace exists; until then
-      # the release skeleton publishes the API image alone and stays runnable.
-      - name: Detect web workspace
-        id: detect-web
-        run: |
-          if [ -f apps/web/package.json ]; then
-            echo "present=true" >> "${GITHUB_OUTPUT}"
-          else
-            echo "present=false" >> "${GITHUB_OUTPUT}"
-          fi
-
-      # Log in first so the existence checks below can query the private registry.
+      # Log in first so the idempotency check can query the private registry.
       - name: Log in to GHCR
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4.4.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # The published image tag is the semver without the leading `v`: the git tag
-      # is `v1.2.3`, but docker/metadata-action publishes `1.2.3`. Query the same
-      # tag that gets pushed so the idempotency check actually matches.
-      - name: Check if API image already exists
-        id: api-exists
+      # docker/metadata-action publishes the semver without the leading `v`
+      # (tag `v1.2.3` → image `1.2.3`), so query that same tag here.
+      - name: Check whether this image tag already exists
+        id: check
         run: |
           VERSION="${TAG_NAME#v}"
-          if docker manifest inspect "ghcr.io/bymaxone/rust-auth-example-api:${VERSION}" > /dev/null 2>&1; then
-            echo "exists=true" >> "${GITHUB_OUTPUT}"
+          IMAGE="ghcr.io/bymaxone/rust-auth-example-${{ matrix.image }}:${VERSION}"
+          if docker manifest inspect "${IMAGE}" > /dev/null 2>&1; then
+            echo "Image ${IMAGE} already exists — skipping publish."
+            echo "publish=false" >> "${GITHUB_OUTPUT}"
           else
-            echo "exists=false" >> "${GITHUB_OUTPUT}"
+            echo "publish=true" >> "${GITHUB_OUTPUT}"
           fi
 
-      - name: Check if web image already exists
-        id: web-exists
-        if: steps.detect-web.outputs.present == 'true'
-        run: |
-          VERSION="${TAG_NAME#v}"
-          if docker manifest inspect "ghcr.io/bymaxone/rust-auth-example-web:${VERSION}" > /dev/null 2>&1; then
-            echo "exists=true" >> "${GITHUB_OUTPUT}"
-          else
-            echo "exists=false" >> "${GITHUB_OUTPUT}"
-          fi
+      - name: Set up Buildx
+        if: steps.check.outputs.publish == 'true'
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
 
-      - name: Generate API image metadata
-        id: api-meta
-        if: steps.api-exists.outputs.exists != 'true'
-        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
+      - name: Generate image metadata
+        id: meta
+        if: steps.check.outputs.publish == 'true'
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
-          images: ghcr.io/bymaxone/rust-auth-example-api
+          images: ghcr.io/bymaxone/rust-auth-example-${{ matrix.image }}
           flavor: latest=auto
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
 
-      - name: Build and push API image
-        if: steps.api-exists.outputs.exists != 'true'
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+      - name: Build and push image
+        if: steps.check.outputs.publish == 'true'
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
           context: .
-          file: apps/api/Dockerfile
+          file: apps/${{ matrix.image }}/Dockerfile
           push: true
-          tags: ${{ steps.api-meta.outputs.tags }}
-          labels: ${{ steps.api-meta.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: ${{ matrix.build-args }}
 
-      - name: Generate web image metadata
-        id: web-meta
-        if: steps.detect-web.outputs.present == 'true' && steps.web-exists.outputs.exists != 'true'
-        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
-        with:
-          images: ghcr.io/bymaxone/rust-auth-example-web
-          flavor: latest=auto
-          tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-
-      - name: Build and push web image
-        if: steps.detect-web.outputs.present == 'true' && steps.web-exists.outputs.exists != 'true'
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
-        with:
-          context: .
-          file: apps/web/Dockerfile
-          push: true
-          tags: ${{ steps.web-meta.outputs.tags }}
-          labels: ${{ steps.web-meta.outputs.labels }}
-          build-args: |
-            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL || 'https://example.com/api' }}
-            NEXT_PUBLIC_OAUTH_GOOGLE_ENABLED=${{ vars.NEXT_PUBLIC_OAUTH_GOOGLE_ENABLED || 'false' }}
-
+  # ── update-releases-doc ─────────────────────────────────────────────────────
+  # Prepend a row to docs/RELEASES.md on main so the release table stays
+  # authoritative without a manual edit after each tag.
   update-releases-doc:
     name: update-releases-doc
     needs: build-and-push
@@ -136,34 +156,29 @@ jobs:
     env:
       TAG_NAME: ${{ github.ref_name }}
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
         with:
           ref: main
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Append row to RELEASES.md
+      - name: Prepend row to RELEASES.md
         run: |
           if grep -qF "| \`${TAG_NAME}\`" docs/RELEASES.md; then
             echo "Tag ${TAG_NAME} already recorded — skipping."
             exit 0
           fi
           VERSION="${TAG_NAME#v}"
-          LIB_VERSION="$(grep -oE 'bymax-auth-core.*version *= *"=?[0-9.]+"' apps/api/Cargo.toml | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)"
+          # The tracked library version is the bymax-auth-core dependency pin.
+          LIB_VERSION="$(grep -m1 -oE 'bymax-auth-core[^\n]*version *= *"=?[0-9.]+"' apps/api/Cargo.toml | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)"
           LIB_VERSION="${LIB_VERSION:-0.0.0 (path)}"
           DATE="$(date -u +%Y-%m-%d)"
-          # Only claim a web image tag when the web workspace exists on the release
-          # tree; otherwise the release publishes the API image alone.
-          if [ -f apps/web/package.json ]; then
-            IMAGES="ghcr.io/bymaxone/rust-auth-example-{api,web}:${VERSION}"
-          else
-            IMAGES="ghcr.io/bymaxone/rust-auth-example-api:${VERSION}"
-          fi
+          IMAGES="ghcr.io/bymaxone/rust-auth-example-{api,web}:${VERSION}"
           ROW="| \`${TAG_NAME}\` | ${LIB_VERSION} | ${DATE} | ${IMAGES} |"
           awk -v row="${ROW}" '{ print } /<!-- releases:insert -->/ { print row }' docs/RELEASES.md > docs/RELEASES.md.tmp
           mv docs/RELEASES.md.tmp docs/RELEASES.md
 
       - name: Push bot commit
-        uses: stefanzweifel/git-auto-commit-action@b863ae1933cb653a53c021fe36dbb774e1fb9403 # v5
+        uses: stefanzweifel/git-auto-commit-action@b863ae1933cb653a53c021fe36dbb774e1fb9403 # v5.2.0
         with:
           commit_message: 'chore(release): record ${{ github.ref_name }} in RELEASES.md [skip ci]'
           commit_user_name: github-actions[bot]

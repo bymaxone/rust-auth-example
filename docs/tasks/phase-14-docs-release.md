@@ -1,6 +1,7 @@
 # Phase 14 — Docs, Public-Readiness & Release
 
-> **Status**: 📋 ToDo · **Progress**: 0 / 7 tasks · **Last updated**: 2026-06-23
+> **Status**: 🔄 In Progress · **Progress**: 6 / 7 tasks · **Last updated**: 2026-07-05
+> (14.7's release.yml is finalized; the first `v*` tag + the go-public visibility flip are deferred to a human trigger.)
 > **Source roadmap**: [`docs/DEVELOPMENT_PLAN.md`](../DEVELOPMENT_PLAN.md) § P14
 > **Source spec**: [`docs/OVERVIEW.md`](../OVERVIEW.md)
 > **Executing a task?** Read **only** that task's `### Task N.n` block + its bounded *REQUIRED READING* — never the whole file. See [token economy](README.md#token-economy--executing-a-single-task).
@@ -87,13 +88,13 @@ phase/task references).**
 
 | ID | Task | Status | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- | --- |
-| 14.1 | GETTING_STARTED + FEATURES + ARCHITECTURE | 📋 ToDo | P0 | M | — |
-| 14.2 | Domain docs (ENVIRONMENT, DATABASE, EMAIL, REDIS, MFA, OAUTH_GOOGLE) | 📋 ToDo | P0 | M | — |
-| 14.3 | Ops docs (DEPLOYMENT, TROUBLESHOOTING, RELEASES) | 📋 ToDo | P1 | M | — |
-| 14.4 | README badge header + diagram + Documentation table | 📋 ToDo | P1 | S | — |
-| 14.5 | Enforce export/public-api audits + link-check | 📋 ToDo | P0 | M | — |
-| 14.6 | Security hardening + go-public checklist | 📋 ToDo | P0 | M | — |
-| 14.7 | release.yml + first tag | 📋 ToDo | P1 | M | 14.6 |
+| 14.1 | GETTING_STARTED + FEATURES + ARCHITECTURE | ✅ | P0 | M | 2026-07-05 |
+| 14.2 | Domain docs (ENVIRONMENT, DATABASE, EMAIL, REDIS, MFA, OAUTH_GOOGLE) | ✅ | P0 | M | 2026-07-05 |
+| 14.3 | Ops docs (DEPLOYMENT, TROUBLESHOOTING, RELEASES) | ✅ | P1 | M | 2026-07-05 |
+| 14.4 | README badge header + diagram + Documentation table | ✅ | P1 | S | 2026-07-05 |
+| 14.5 | Enforce export/public-api audits + link-check | ✅ | P0 | M | 2026-07-05 |
+| 14.6 | Security hardening + go-public checklist | ✅ | P0 | M | 2026-07-05 |
+| 14.7 | release.yml + first tag | 🔄 | P1 | M | 14.6 |
 
 ---
 
@@ -850,4 +851,10 @@ If any DoD bullet is unmet or CI is red, set P14 to `🟡 Partial`, not `✅`.
 
 > Append-only. One line per completed task: `- <id> ✅ YYYY-MM-DD — <summary>`.
 
-_(empty — no tasks completed yet)_
+- 14.1 ✅ 2026-07-05 — getting-started + features + architecture docs
+- 14.2 ✅ 2026-07-05 — environment/database/email/redis/mfa/oauth docs
+- 14.3 ✅ 2026-07-05 — deployment/troubleshooting/releases docs
+- 14.4 ✅ 2026-07-05 — README badge header + diagram + docs table
+- 14.5 ✅ 2026-07-05 — export + public-api audits enforced (already required), docs-link-check job added, link-check clean
+- 14.6 ✅ 2026-07-05 — security/CORS pass verified + go-public checklist complete (branch-protection prep in GO_PUBLIC.md)
+- 14.7 🔄 2026-07-05 — release.yml finalized (OIDC/GHCR matrix, tag↔version guard, idempotent); first v\* tag + go-public flip deferred to a human trigger
