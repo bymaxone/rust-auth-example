@@ -37,6 +37,9 @@ jobs:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           persist-credentials: false
+          # Full history so paths-filter can diff the push against its `before`
+          # commit locally (a shallow checkout has no base to compare against).
+          fetch-depth: 0
       - uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3
         id: filter
         with:
