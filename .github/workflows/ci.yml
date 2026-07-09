@@ -10,7 +10,7 @@
 #                            ├── e2e-web-live (pg + redis + mailpit; real API + console)
 #                            ├── export-usage-check
 #                            ├── supply-chain
-#                            └── dependency-review (PR only)
+#                            └── security (dependency review via bymaxone/.github; PR + public only)
 # coverage-report (needs unit + e2e-api + e2e-web, always runs)
 #
 # Database credentials are never embedded in a connection string: the URL carries the
