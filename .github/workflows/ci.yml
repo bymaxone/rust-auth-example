@@ -15,8 +15,10 @@
 #
 # Database credentials are never embedded in a connection string: the URL carries the
 # user + host + db, and the password is supplied out-of-band via `PGPASSWORD`, which the
-# libpq-compatible sqlx layer reads. Actions are pinned to a commit SHA with the version in
-# a trailing comment; Dependabot (github-actions ecosystem) keeps the SHAs current.
+# libpq-compatible sqlx layer reads. Third-party actions are pinned to a commit SHA with the
+# version in a trailing comment; Dependabot (github-actions ecosystem) keeps the SHAs current.
+# The one exception is the org-owned reusable `bymaxone/.github` workflow, pinned to the moving
+# major `@v1` by deliberate convention (org-internal, so a vetted CI fix propagates everywhere).
 
 name: ci
 
