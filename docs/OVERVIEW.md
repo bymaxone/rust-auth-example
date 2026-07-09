@@ -850,8 +850,9 @@ rotation-reuse defense"*).
 
 CI gates (`.github/workflows/ci.yml`): `lint` (`cargo clippy -- -D warnings` + ESLint) · `format` (`cargo fmt --check`
 + Prettier) · `typecheck` (`cargo check` + `tsc`) · `unit` (coverage, both workspaces) · `e2e-api` · `e2e-web` ·
-`export-usage-check` (the npm-export audit + the `cargo public-api` snapshot). Mutation runs incrementally per-PR
-(`mutation.yml`) and fully on a weekly schedule (`mutation-nightly.yml`). The npm package is built first so the `file:`
+`export-usage-check` (the npm-export audit + the `cargo public-api` snapshot). Mutation (`mutation.yml`) runs post-merge
+on `main` (`--in-diff`, scoped to the merge's changed API lines) and on manual dispatch (full API surface) — never on PRs
+or a schedule, per the org cost policy. The npm package is built first so the `file:`
 link resolves; a placeholder `DATABASE_URL` lets the build run without a database.
 
 ---

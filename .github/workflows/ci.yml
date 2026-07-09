@@ -10,13 +10,15 @@
 #                            ├── e2e-web-live (pg + redis + mailpit; real API + console)
 #                            ├── export-usage-check
 #                            ├── supply-chain
-#                            └── dependency-review (PR only)
+#                            └── security (dependency review via bymaxone/.github; PR + public only)
 # coverage-report (needs unit + e2e-api + e2e-web, always runs)
 #
 # Database credentials are never embedded in a connection string: the URL carries the
 # user + host + db, and the password is supplied out-of-band via `PGPASSWORD`, which the
-# libpq-compatible sqlx layer reads. Actions are pinned to a commit SHA with the version in
-# a trailing comment; Dependabot (github-actions ecosystem) keeps the SHAs current.
+# libpq-compatible sqlx layer reads. Third-party actions are pinned to a commit SHA with the
+# version in a trailing comment; Dependabot (github-actions ecosystem) keeps the SHAs current.
+# The one exception is the org-owned reusable `bymaxone/.github` workflow, pinned to the moving
+# major `@v1` by deliberate convention (org-internal, so a vetted CI fix propagates everywhere).
 
 name: ci
 
@@ -617,22 +619,15 @@ jobs:
       - run: cargo deny check
       - run: cargo audit
 
-  dependency-review:
-    name: dependency-review
-    needs: install
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
-        with:
-          persist-credentials: false
-      # Dependency review needs a public repository (or GitHub Advanced Security).
-      # While the repository is private the step is skipped so the check stays
-      # green; once public it runs and gates the PR on vulnerable dependencies.
-      - name: Dependency review
-        if: github.event.repository.visibility == 'public'
-        uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48 # v4
+  # Dependency review via the org-wide reusable (bymaxone/.github → security.yml).
+  # Gated on visibility so it stays green while this repo is private and activates
+  # automatically once it is public.
+  security:
+    name: security
+    if: github.event_name == 'pull_request' && github.event.repository.visibility == 'public'
+    uses: bymaxone/.github/.github/workflows/security.yml@v1
+    with:
+      fail-on-severity: high
 
   coverage-report:
     name: coverage-report
