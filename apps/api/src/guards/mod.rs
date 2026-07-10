@@ -4,14 +4,15 @@
 //! they resolve against the library's private `AuthState`, which a downstream consumer
 //! cannot construct — so the example cannot host an extractor-typed route directly. These
 //! guards close that gap without reimplementing any security logic: each one sources the
-//! bearer credential from the `Authorization` header (exactly as the library accepts it
-//! under bearer/both delivery) and delegates every decision to the engine — HS256-pinned,
+//! access credential from the `Authorization` header, falling back to the configured
+//! access-token cookie (exactly as the library accepts it under `both` delivery — the mode
+//! this example configures), and delegates every decision to the engine — HS256-pinned,
 //! type-checked, revocation-checked token verification (`verify_access_token` /
 //! `verify_platform_token`) and the configured role hierarchy (`role_satisfies`). No token
 //! parsing, signature check, or role logic is duplicated here.
 
 use axum::extract::{FromRef, FromRequestParts};
-use axum::http::header::AUTHORIZATION;
+use axum::http::header::{AUTHORIZATION, COOKIE};
 use axum::http::request::Parts;
 use bymax_auth_types::{AuthError, DashboardClaims, PlatformClaims};
 
@@ -44,6 +45,31 @@ fn bearer_token(parts: &Parts) -> Option<String> {
     }
 }
 
+/// Read a named cookie value from the `Cookie` header, if present and non-empty. The header
+/// is a `;`-separated list of `name=value` pairs; the first exact name match wins. A blank
+/// or whitespace-only value is treated as absent so it never reaches token verification.
+fn cookie_token(parts: &Parts, name: &str) -> Option<String> {
+    let header = parts.headers.get(COOKIE)?.to_str().ok()?;
+    let value = header.split(';').find_map(|pair| {
+        let (key, value) = pair.trim().split_once('=')?;
+        (key == name).then_some(value.trim())
+    })?;
+    if value.is_empty() {
+        None
+    } else {
+        Some(value.to_owned())
+    }
+}
+
+/// Resolve the access token from the `Authorization: Bearer` header, falling back to the
+/// configured access-token cookie. This mirrors the library's `both` delivery (the mode this
+/// example configures), so a browser that holds the token as an HttpOnly cookie authenticates
+/// against the example's own routes exactly as it does against the library's — never a query
+/// string. `cookie_name` is the configured access-token cookie name (default `access_token`).
+fn access_token(parts: &Parts, cookie_name: &str) -> Option<String> {
+    bearer_token(parts).or_else(|| cookie_token(parts, cookie_name))
+}
+
 /// Requires an authenticated dashboard user of any role (the `AuthUser` equivalent).
 /// Carries the verified claims for the handler.
 #[derive(Debug, Clone)]
@@ -58,7 +84,8 @@ where
 
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         let app = AppState::from_ref(state);
-        let token = bearer_token(parts).ok_or(AuthError::TokenMissing)?;
+        let cookie_name = &app.engine.config().config().cookies.access_token_name;
+        let token = access_token(parts, cookie_name).ok_or(AuthError::TokenMissing)?;
         let claims = app.engine.verify_access_token(&token).await?;
         Ok(Self(claims))
     }
@@ -79,7 +106,8 @@ where
 
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         let app = AppState::from_ref(state);
-        let token = bearer_token(parts).ok_or(AuthError::TokenMissing)?;
+        let cookie_name = &app.engine.config().config().cookies.access_token_name;
+        let token = access_token(parts, cookie_name).ok_or(AuthError::TokenMissing)?;
         let claims = app.engine.verify_access_token(&token).await?;
         if app.engine.role_satisfies(&claims.role, AUDIT_ADMIN_ROLE) {
             Ok(Self(claims))
@@ -106,7 +134,8 @@ where
 
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         let app = AppState::from_ref(state);
-        let token = bearer_token(parts).ok_or(AuthError::PlatformAuthRequired)?;
+        let cookie_name = &app.engine.config().config().cookies.access_token_name;
+        let token = access_token(parts, cookie_name).ok_or(AuthError::PlatformAuthRequired)?;
         // A token-authentication failure (a dashboard/invalid/expired/revoked token) is
         // "platform auth required" (401); an infrastructure failure propagates unchanged so
         // it never masquerades as an auth failure.
@@ -161,6 +190,16 @@ mod tests {
             .0
     }
 
+    /// Build request parts carrying a single `Cookie` header value.
+    fn parts_with_cookie(value: &str) -> Parts {
+        Request::builder()
+            .header(COOKIE, value)
+            .body(())
+            .expect("a well-formed request builds")
+            .into_parts()
+            .0
+    }
+
     #[test]
     fn bearer_token_reads_a_bearer_credential_case_insensitively() {
         // The happy path: a `Bearer <token>` header (any scheme casing) yields the token.
@@ -200,6 +239,74 @@ mod tests {
             .into_parts()
             .0;
         assert!(bearer_token(&parts).is_none());
+    }
+
+    #[test]
+    fn cookie_token_reads_the_named_cookie_from_a_multi_pair_header() {
+        // The `Cookie` header is a `;`-separated list; the named pair is matched exactly and
+        // its value returned, so a browser's HttpOnly access-token cookie is a valid source.
+        let parts = parts_with_cookie("has_session=1; access_token=the-cookie-token; other=x");
+        assert_eq!(
+            cookie_token(&parts, "access_token").as_deref(),
+            Some("the-cookie-token")
+        );
+    }
+
+    #[test]
+    fn cookie_token_is_absent_for_a_missing_name_or_empty_value() {
+        // A cookie header without the named pair sources no token, and a present-but-empty
+        // value is treated as absent rather than as an empty-string token.
+        let missing = parts_with_cookie("has_session=1; other=x");
+        assert!(cookie_token(&missing, "access_token").is_none());
+        let empty = parts_with_cookie("access_token=");
+        assert!(cookie_token(&empty, "access_token").is_none());
+    }
+
+    #[test]
+    fn cookie_token_is_absent_when_no_cookie_header_is_present() {
+        // No `Cookie` header at all is simply an absent credential.
+        let parts = Request::builder()
+            .body(())
+            .expect("a well-formed request builds")
+            .into_parts()
+            .0;
+        assert!(cookie_token(&parts, "access_token").is_none());
+    }
+
+    #[test]
+    fn access_token_prefers_the_bearer_header_over_the_cookie() {
+        // When both are present the `Authorization` header wins, matching the library's
+        // precedence under `both` delivery.
+        let mut parts = parts_with_authorization("Bearer header-token");
+        parts
+            .headers
+            .insert(COOKIE, "access_token=cookie-token".parse().unwrap());
+        assert_eq!(
+            access_token(&parts, "access_token").as_deref(),
+            Some("header-token")
+        );
+    }
+
+    #[test]
+    fn access_token_falls_back_to_the_cookie_when_no_bearer_header_is_present() {
+        // Cookie delivery: with no `Authorization` header the configured access-token cookie
+        // is the source, so the example's own routes authenticate a cookie-delivery browser.
+        let parts = parts_with_cookie("access_token=cookie-token");
+        assert_eq!(
+            access_token(&parts, "access_token").as_deref(),
+            Some("cookie-token")
+        );
+    }
+
+    #[test]
+    fn access_token_is_absent_when_neither_source_carries_a_credential() {
+        // No header and no cookie is an absent credential — the guard rejects as unauthenticated.
+        let parts = Request::builder()
+            .body(())
+            .expect("a well-formed request builds")
+            .into_parts()
+            .0;
+        assert!(access_token(&parts, "access_token").is_none());
     }
 
     #[test]

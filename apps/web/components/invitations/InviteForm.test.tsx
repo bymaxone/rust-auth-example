@@ -23,12 +23,12 @@ beforeEach(() => {
 
 describe('InviteForm', () => {
   it('renders an idle form with an empty email, the default role, and no messages', () => {
-    // Before any interaction the form is pristine: an empty email, the 'member'
+    // Before any interaction the form is pristine: an empty email, the 'user'
     // default role, a field flagged valid, and neither an error nor a success
     // banner, with the button enabled and showing its idle label.
     render(<InviteForm />);
     expect(screen.getByLabelText('Email')).toHaveValue('');
-    expect(screen.getByLabelText('Role')).toHaveValue('member');
+    expect(screen.getByLabelText('Role')).toHaveValue('user');
     expect(screen.getByLabelText('Email')).toHaveAttribute('aria-invalid', 'false');
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
@@ -107,14 +107,14 @@ describe('InviteForm', () => {
     );
   });
 
-  it('submits the default member role when the role is left untouched', async () => {
-    // Leaving the role select alone must post role 'member', not an empty value.
+  it('submits the default user role when the role is left untouched', async () => {
+    // Leaving the role select alone must post role 'user', not an empty value.
     createInvitation.mockResolvedValueOnce(undefined);
     render(<InviteForm />);
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'c@d.co' } });
     fireEvent.click(screen.getByRole('button', { name: /Send invitation/i }));
     await waitFor(() => expect(screen.getByText('Invitation sent to c@d.co.')).toBeInTheDocument());
-    expect(createInvitation).toHaveBeenCalledWith({ email: 'c@d.co', role: 'member' });
+    expect(createInvitation).toHaveBeenCalledWith({ email: 'c@d.co', role: 'user' });
   });
 
   it('shows a pending label and disables the button while the request is in flight', async () => {

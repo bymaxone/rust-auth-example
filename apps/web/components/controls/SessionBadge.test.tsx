@@ -46,32 +46,81 @@ describe('SessionBadge', () => {
     expect(link).toHaveAttribute('href', '/auth/login');
   });
 
-  it('shows the email and signs out when authenticated', async () => {
-    // Verifies the authenticated branch renders the email and wires logout.
+  it('shows the name, role, initials, and signs out when authenticated', async () => {
+    // The authenticated branch renders the name + role, an initials avatar, and
+    // wires logout; the dropdown label carries the full email.
     useAuthStatus.mockReturnValue({ isAuthenticated: true, isLoading: false });
-    useSession.mockReturnValue({ user: { email: 'ada@acme.test' } });
+    useSession.mockReturnValue({
+      user: { email: 'ada@acme.test', name: 'Ada Byron', role: 'admin' },
+    });
     render(<SessionBadge />);
 
-    // The avatar shows only the uppercased first letter of the email, not the
-    // full address and not its lowercase form.
-    expect(screen.getByText('A')).toBeInTheDocument();
-    expect(screen.queryByText('a')).toBeNull();
+    // Two uppercase initials from the name.
+    expect(screen.getByText('AB')).toBeInTheDocument();
+    expect(screen.getByText('Ada Byron')).toBeInTheDocument();
+    expect(screen.getByText('admin')).toBeInTheDocument();
 
-    const trigger = screen.getByRole('button', { name: /ada@acme\.test/ });
+    const trigger = screen.getByRole('button', { name: /Ada Byron/ });
     trigger.focus();
     fireEvent.keyDown(trigger, { key: 'Enter' });
 
+    // The dropdown label still surfaces the email address.
+    const label = await screen.findByText('ada@acme.test');
+    expect(label).toBeInTheDocument();
     const signOut = await screen.findByText('Sign out');
     fireEvent.click(signOut);
     expect(logout).toHaveBeenCalledTimes(1);
   });
 
+  it('caps the initials at two segments', () => {
+    // A 3-word name yields only the first two initials, never three.
+    useAuthStatus.mockReturnValue({ isAuthenticated: true, isLoading: false });
+    useSession.mockReturnValue({
+      user: { email: 'a@acme.test', name: 'Anne Marie Smith', role: 'user' },
+    });
+    render(<SessionBadge />);
+
+    expect(screen.getByText('AM')).toBeInTheDocument();
+  });
+
+  it('derives the initials from the displayed name (the email) when the name is missing', () => {
+    // With no name, the email is shown as the display name AND drives the avatar initials,
+    // so the avatar and the name stay consistent (no `?` beside an email).
+    useAuthStatus.mockReturnValue({ isAuthenticated: true, isLoading: false });
+    useSession.mockReturnValue({ user: { email: 'grace@acme.test', role: 'user' } });
+    render(<SessionBadge />);
+
+    expect(screen.getByText('G')).toBeInTheDocument();
+    expect(screen.getByText('grace@acme.test')).toBeInTheDocument();
+    expect(screen.getByText('user')).toBeInTheDocument();
+  });
+
+  it('renders a `?` avatar when the display name is blank', () => {
+    // A present-but-empty name (not undefined) has no initials, so the avatar is `?`.
+    useAuthStatus.mockReturnValue({ isAuthenticated: true, isLoading: false });
+    useSession.mockReturnValue({ user: { email: 'x@acme.test', name: '', role: 'user' } });
+    render(<SessionBadge />);
+
+    expect(screen.getByText('?')).toBeInTheDocument();
+  });
+
+  it('hides the role line when the role is empty', () => {
+    // An empty role must not render an empty role line.
+    useAuthStatus.mockReturnValue({ isAuthenticated: true, isLoading: false });
+    useSession.mockReturnValue({ user: { email: 'x@acme.test', name: 'Xavier', role: '' } });
+    render(<SessionBadge />);
+
+    expect(screen.getByText('X')).toBeInTheDocument();
+    expect(screen.getByText('Xavier')).toBeInTheDocument();
+  });
+
   it('falls back to a generic label when the user is not yet loaded', () => {
-    // Verifies the authenticated branch tolerates a null user projection.
+    // A null user projection shows the `Account` fallback name and its `A` initial.
     useAuthStatus.mockReturnValue({ isAuthenticated: true, isLoading: false });
     useSession.mockReturnValue({ user: null });
     render(<SessionBadge />);
 
     expect(screen.getByRole('button', { name: /Account/ })).toBeInTheDocument();
+    expect(screen.getByText('A')).toBeInTheDocument();
   });
 });

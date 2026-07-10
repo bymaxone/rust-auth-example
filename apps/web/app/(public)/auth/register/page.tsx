@@ -55,13 +55,15 @@ export default function RegisterPage(): React.ReactElement {
 
   return (
     <div className="flex flex-col gap-6">
-      <p className="text-center text-sm text-muted-foreground">Create your account</p>
+      <p className="text-center text-sm text-[rgba(255,255,255,0.5)]">Create your account</p>
 
       <AuthError code={errorCode} />
 
       <form onSubmit={(e) => void onSubmit(e)} noValidate className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="register-name">Full name</Label>
+          <Label htmlFor="register-name" className="text-[rgba(255,255,255,0.7)]">
+            Full name
+          </Label>
           <Input
             id="register-name"
             type="text"
@@ -69,12 +71,15 @@ export default function RegisterPage(): React.ReactElement {
             placeholder="Jane Doe"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            className="border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.05)] text-white placeholder:text-[rgba(255,255,255,0.3)] focus-visible:ring-[#ff6224]/50"
             required
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="register-email">Email</Label>
+          <Label htmlFor="register-email" className="text-[rgba(255,255,255,0.7)]">
+            Email
+          </Label>
           <Input
             id="register-email"
             type="email"
@@ -82,12 +87,15 @@ export default function RegisterPage(): React.ReactElement {
             placeholder="you@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            className="border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.05)] text-white placeholder:text-[rgba(255,255,255,0.3)] focus-visible:ring-[#ff6224]/50"
             required
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="register-password">Password</Label>
+          <Label htmlFor="register-password" className="text-[rgba(255,255,255,0.7)]">
+            Password
+          </Label>
           <Input
             id="register-password"
             type="password"
@@ -95,6 +103,7 @@ export default function RegisterPage(): React.ReactElement {
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            className="border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.05)] text-white placeholder:text-[rgba(255,255,255,0.3)] focus-visible:ring-[#ff6224]/50"
             required
           />
         </div>
@@ -104,9 +113,12 @@ export default function RegisterPage(): React.ReactElement {
         </Button>
       </form>
 
-      <p className="text-center text-sm text-muted-foreground">
+      <p className="text-center text-sm text-[rgba(255,255,255,0.4)]">
         Already have an account?{' '}
-        <Link href="/auth/login" className="text-primary transition-opacity hover:opacity-80">
+        <Link
+          href="/auth/login"
+          className="text-[rgba(255,98,36,0.8)] transition-colors hover:text-[#ff6224]"
+        >
           Sign in
         </Link>
       </p>

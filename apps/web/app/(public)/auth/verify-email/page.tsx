@@ -60,10 +60,13 @@ export default function VerifyEmailPage(): React.ReactElement {
   if (status === 'unauthenticated') {
     return (
       <div className="flex flex-col items-center gap-6 text-center">
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-[rgba(255,255,255,0.5)]">
           Please sign in to verify your email address.
         </p>
-        <Link href="/auth/login" className="text-primary transition-opacity hover:opacity-80">
+        <Link
+          href="/auth/login"
+          className="text-sm text-[rgba(255,98,36,0.8)] transition-colors hover:text-[#ff6224]"
+        >
           Go to sign in
         </Link>
       </div>
@@ -72,7 +75,7 @@ export default function VerifyEmailPage(): React.ReactElement {
 
   /* While the session is loading, user is null — do not render the form yet. */
   if (status === 'loading') {
-    return <p className="text-center text-sm text-muted-foreground">Loading…</p>;
+    return <p className="text-center text-sm text-[rgba(255,255,255,0.5)]">Loading…</p>;
   }
 
   async function verify(otp: string): Promise<void> {
@@ -133,16 +136,19 @@ export default function VerifyEmailPage(): React.ReactElement {
   return (
     <div className="flex flex-col gap-6">
       <div className="text-center">
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-[rgba(255,255,255,0.5)]">
           Enter the 6-digit code sent to{' '}
-          <span className="font-mono text-foreground">{user?.email ?? 'your email'}</span>.
+          <span className="font-mono text-[rgba(255,255,255,0.8)]">
+            {user?.email ?? 'your email'}
+          </span>
+          .
         </p>
       </div>
 
       <AuthError code={errorCode} />
 
       {resendMessage !== null && (
-        <p className="text-center text-sm text-muted-foreground" role="status">
+        <p className="text-center text-sm text-[rgba(255,255,255,0.5)]" role="status">
           {resendMessage}
         </p>
       )}

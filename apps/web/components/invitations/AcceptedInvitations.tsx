@@ -46,7 +46,7 @@ export function AcceptedInvitations({ refreshKey }: AcceptedInvitationsProps) {
   if (state.kind === 'loading') {
     return (
       <div
-        className="h-24 w-full animate-pulse rounded-2xl bg-muted"
+        className="h-24 w-full animate-pulse rounded-xl bg-[rgba(255,255,255,0.03)]"
         role="status"
         aria-label="Loading"
       />
@@ -55,13 +55,15 @@ export function AcceptedInvitations({ refreshKey }: AcceptedInvitationsProps) {
 
   if (state.kind === 'error') {
     return (
-      <p className="text-sm text-muted-foreground">Accepted invitations could not be loaded.</p>
+      <p className="text-sm text-[rgba(255,255,255,0.5)]">
+        Accepted invitations could not be loaded.
+      </p>
     );
   }
 
   if (state.rows.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">
+      <p className="text-sm text-[rgba(255,255,255,0.5)]">
         No accepted invitations yet — invite a teammate above, then accept it to see it here.
       </p>
     );
@@ -72,10 +74,10 @@ export function AcceptedInvitations({ refreshKey }: AcceptedInvitationsProps) {
       {state.rows.map((invite) => (
         <li
           key={`${invite.email}-${invite.acceptedAt}`}
-          className="border-(--glass-border) flex items-center justify-between gap-3 rounded-lg border px-4 py-2"
+          className="flex items-center justify-between gap-3 rounded-lg border border-[rgba(255,255,255,0.08)] px-4 py-2"
         >
           <div className="flex flex-col">
-            <span className="font-mono text-sm text-foreground">{invite.email}</span>
+            <span className="font-mono text-sm text-white">{invite.email}</span>
           </div>
           <Button asChild variant="ghost" size="sm">
             <a href={MAILPIT_URL} target="_blank" rel="noreferrer">

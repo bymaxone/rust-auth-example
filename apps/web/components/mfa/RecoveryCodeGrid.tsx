@@ -84,7 +84,7 @@ export function RecoveryCodeGrid({ codes }: RecoveryCodeGridProps) {
         {codes.map((code) => (
           <li
             key={code}
-            className="bg-(--glass-bg) rounded-md px-3 py-2 text-center font-mono text-sm tracking-widest text-foreground"
+            className="bg-(--glass-bg) rounded-md px-3 py-2 text-center font-mono text-sm tracking-widest text-[rgba(255,255,255,0.85)]"
           >
             {code}
           </li>

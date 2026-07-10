@@ -12,7 +12,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { ScrollText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AuditTable } from '@/components/audit/AuditTable';
@@ -47,14 +47,15 @@ export default function AuditPage(): React.ReactElement {
 
   if (!DEV_TOOLING) {
     return (
-      <section className="flex flex-col gap-6">
-        <h1 className="font-mono text-2xl font-bold">Audit Explorer</h1>
-        <Card>
-          <CardContent className="p-6 text-sm text-muted-foreground">
-            The audit read API is development-only, matching the backend. Run the stack in the
-            development environment to explore the hook-event stream here.
-          </CardContent>
-        </Card>
+      <section className="flex flex-col gap-8">
+        <div className="flex items-center gap-2">
+          <ScrollText className="h-5 w-5 text-[#ff6224]" aria-hidden="true" />
+          <h1 className="font-mono text-2xl font-bold text-white">Audit Explorer</h1>
+        </div>
+        <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] p-6 text-sm text-[rgba(255,255,255,0.5)]">
+          The audit read API is development-only, matching the backend. Run the stack in the
+          development environment to explore the hook-event stream here.
+        </div>
       </section>
     );
   }
@@ -63,12 +64,16 @@ export default function AuditPage(): React.ReactElement {
   const hasFacet = actor !== null || event !== null;
 
   return (
-    <section className="flex flex-col gap-6">
+    <section className="flex flex-col gap-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <h1 className="font-mono text-2xl font-bold">Audit Explorer</h1>
-          <p className="text-sm text-muted-foreground">
-            Every auth lifecycle event — masked, keyset-paged, and tailed live.
+        <div>
+          <div className="flex items-center gap-2">
+            <ScrollText className="h-5 w-5 text-[#ff6224]" aria-hidden="true" />
+            <h1 className="font-mono text-2xl font-bold text-white">Audit Explorer</h1>
+          </div>
+          <p className="mt-1 text-sm text-[rgba(255,255,255,0.5)]">
+            Every auth lifecycle event — masked, keyset-paged, and tailed live via{' '}
+            <code className="rounded bg-[rgba(255,255,255,0.05)] px-1 text-xs">/audit/stream</code>.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -88,7 +93,7 @@ export default function AuditPage(): React.ReactElement {
       </div>
 
       {hasFacet && (
-        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-2 text-sm text-[rgba(255,255,255,0.5)]">
           Filtering
           {actor !== null && (
             <Badge variant="outline" className="font-mono">
@@ -104,26 +109,22 @@ export default function AuditPage(): React.ReactElement {
       )}
 
       {loadError && (
-        <Card>
-          <CardContent className="flex flex-col items-start gap-3 p-6">
-            <p className="text-sm text-muted-foreground">The audit log could not be loaded.</p>
-            <Button variant="outline" onClick={() => void load()}>
-              Retry
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="flex flex-col items-start gap-3 rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] p-6">
+          <p className="text-sm text-[rgba(255,255,255,0.5)]">The audit log could not be loaded.</p>
+          <Button variant="outline" onClick={() => void load()}>
+            Retry
+          </Button>
+        </div>
       )}
 
-      <Card>
-        <CardContent className="p-0">
-          <AuditTable
-            rows={rows}
-            following={tail.following}
-            pendingCount={tail.pendingCount}
-            onFollowChange={tail.setFollowing}
-          />
-        </CardContent>
-      </Card>
+      <div className="overflow-hidden rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)]">
+        <AuditTable
+          rows={rows}
+          following={tail.following}
+          pendingCount={tail.pendingCount}
+          onFollowChange={tail.setFollowing}
+        />
+      </div>
     </section>
   );
 }

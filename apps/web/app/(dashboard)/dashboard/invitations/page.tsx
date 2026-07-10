@@ -10,7 +10,6 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { InviteForm } from '@/components/invitations/InviteForm';
 import { AcceptedInvitations } from '@/components/invitations/AcceptedInvitations';
 
@@ -19,36 +18,32 @@ export default function InvitationsPage(): React.ReactElement {
   const [refreshKey, setRefreshKey] = useState(0);
 
   return (
-    <section className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="font-mono text-2xl font-bold">Invitations</h1>
-        <p className="text-sm text-muted-foreground">Invite a teammate to this tenant.</p>
+    <section className="flex flex-col gap-8">
+      <div>
+        <h1 className="font-mono text-2xl font-bold text-white">Invitations</h1>
+        <p className="mt-1 text-sm text-[rgba(255,255,255,0.5)]">
+          Invite a teammate to this tenant.
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Invite a teammate</CardTitle>
-            <CardDescription>
-              The tenant is taken from your session — no tenant id is sent.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <InviteForm onInvited={() => setRefreshKey((k) => k + 1)} />
-          </CardContent>
-        </Card>
+      <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] p-6">
+        <h2 className="mb-1 font-mono text-sm font-semibold uppercase tracking-widest text-[rgba(255,255,255,0.4)]">
+          Send invitation
+        </h2>
+        <p className="mb-4 text-xs text-[rgba(255,255,255,0.35)]">
+          The tenant is taken from your session — no tenant id is sent.
+        </p>
+        <InviteForm onInvited={() => setRefreshKey((k) => k + 1)} />
+      </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Accepted invitations</CardTitle>
-            <CardDescription>
-              Creation is not audited; each accepted invite links the Mailpit inbox.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <AcceptedInvitations refreshKey={refreshKey} />
-          </CardContent>
-        </Card>
+      <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] p-6">
+        <h2 className="mb-1 font-mono text-sm font-semibold uppercase tracking-widest text-[rgba(255,255,255,0.4)]">
+          Accepted invitations
+        </h2>
+        <p className="mb-4 text-xs text-[rgba(255,255,255,0.35)]">
+          Creation is not audited; each accepted invite links the Mailpit inbox.
+        </p>
+        <AcceptedInvitations refreshKey={refreshKey} />
       </div>
     </section>
   );

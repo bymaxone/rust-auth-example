@@ -86,10 +86,12 @@ export default function PlatformSecurityPage(): React.ReactElement {
   if (mode === null) {
     return (
       <div
-        className="h-40 w-full animate-pulse rounded-2xl bg-muted"
+        className="rounded-xl border border-[rgba(239,68,68,0.15)] bg-[rgba(20,0,0,0.4)] p-6"
         role="status"
         aria-label="Loading"
-      />
+      >
+        <p className="text-sm text-[rgba(255,200,200,0.5)]">Loading…</p>
+      </div>
     );
   }
 
@@ -141,130 +143,138 @@ export default function PlatformSecurityPage(): React.ReactElement {
 
   return (
     <section className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="font-mono text-2xl font-bold">Security</h1>
-        <p className="text-sm text-muted-foreground">
-          Platform admin two-factor authentication (TOTP).
-        </p>
+      {/* ── Red platform header ── */}
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[rgba(239,68,68,0.3)] bg-[rgba(239,68,68,0.1)]">
+          <ShieldCheck className="h-5 w-5 text-red-400" aria-hidden="true" />
+        </div>
+        <div>
+          <h1 className="font-mono text-xl font-semibold text-red-100">Security</h1>
+          <p className="text-sm text-red-400/60">
+            Platform admin two-factor authentication (TOTP).
+          </p>
+        </div>
       </div>
 
       <AuthError code={errorCode} />
 
-      {mode === 'off' && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <ShieldOff className="h-4 w-4 text-amber-400" aria-hidden="true" />
-              2FA not enabled
-            </CardTitle>
-            <CardDescription>
-              Add an authenticator app for a second factor at platform sign-in.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button disabled={busy} onClick={() => void beginEnroll()}>
-              {busy ? 'Preparing…' : 'Enable 2FA'}
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {mode === 'enrolling' && setup !== null && (
-        <div className="flex flex-col gap-4">
-          {/*
-           * `PlatformMfaSetup` is structurally identical to `MfaSetupResult`
-           * (same fields, same types) so TypeScript accepts it without casting.
-           */}
-          <QrEnrollmentCard setup={setup} />
+      <div className="flex max-w-xl flex-col gap-6">
+        {mode === 'off' && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Confirm the code</CardTitle>
-              <CardDescription>Enter the current 6-digit code to activate 2FA.</CardDescription>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <ShieldOff className="h-4 w-4 text-amber-400" aria-hidden="true" />
+                2FA not enabled
+              </CardTitle>
+              <CardDescription>
+                Add an authenticator app for a second factor at platform sign-in.
+              </CardDescription>
             </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              <OtpInput onComplete={(code) => void verifyEnable(code)} />
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  // Cancelling enrollment discards the one-time secret + recovery codes
-                  // from memory so they are never retained after the flow is abandoned.
-                  setSetup(null);
-                  setErrorCode(null);
-                  setMode('off');
-                }}
-              >
-                Cancel
+            <CardContent>
+              <Button disabled={busy} onClick={() => void beginEnroll()}>
+                {busy ? 'Preparing…' : 'Enable 2FA'}
               </Button>
             </CardContent>
           </Card>
-        </div>
-      )}
+        )}
 
-      {mode === 'on' && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <ShieldCheck className="h-4 w-4 text-emerald-400" aria-hidden="true" />
-              2FA enabled
-              <Badge variant="outline" className="font-mono">
-                active
-              </Badge>
-            </CardTitle>
-            <CardDescription>Manage your recovery codes or turn off two-factor.</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setNewCodes(null);
-                  setRegenerating((v) => !v);
-                }}
-              >
-                Regenerate recovery codes
-              </Button>
+        {mode === 'enrolling' && setup !== null && (
+          <div className="flex flex-col gap-4">
+            {/*
+             * `PlatformMfaSetup` is structurally identical to `MfaSetupResult`
+             * (same fields, same types) so TypeScript accepts it without casting.
+             */}
+            <QrEnrollmentCard setup={setup} />
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Confirm the code</CardTitle>
+                <CardDescription>Enter the current 6-digit code to activate 2FA.</CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-4">
+                <OtpInput onComplete={(code) => void verifyEnable(code)} />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    // Cancelling enrollment discards the one-time secret + recovery codes
+                    // from memory so they are never retained after the flow is abandoned.
+                    setSetup(null);
+                    setErrorCode(null);
+                    setMode('off');
+                  }}
+                >
+                  Cancel
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
-              <AlertDialog open={disableOpen} onOpenChange={setDisableOpen}>
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive" size="sm">
-                    Disable 2FA
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Disable two-factor authentication?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Enter a current authenticator code to confirm. This weakens your platform
-                      admin account security.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <OtpInput onComplete={(code) => void disable(code)} />
-                  <AlertDialogFooter>
-                    <AlertDialogCancel onClick={() => setDisableOpen(false)}>
-                      Cancel
-                    </AlertDialogCancel>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
+        {mode === 'on' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <ShieldCheck className="h-4 w-4 text-emerald-400" aria-hidden="true" />
+                2FA enabled
+                <Badge variant="outline" className="font-mono">
+                  active
+                </Badge>
+              </CardTitle>
+              <CardDescription>Manage your recovery codes or turn off two-factor.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setNewCodes(null);
+                    setRegenerating((v) => !v);
+                  }}
+                >
+                  Regenerate recovery codes
+                </Button>
 
-            {regenerating && (
-              <div className="flex flex-col gap-3 rounded-lg border border-(--glass-border) p-4">
-                <p className="text-sm text-muted-foreground">
-                  Enter a current code to generate a fresh set of recovery codes.
-                </p>
-                <OtpInput onComplete={(code) => void regenerate(code)} />
+                <AlertDialog open={disableOpen} onOpenChange={setDisableOpen}>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="sm">
+                      Disable 2FA
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Disable two-factor authentication?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Enter a current authenticator code to confirm. This weakens your platform
+                        admin account security.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <OtpInput onComplete={(code) => void disable(code)} />
+                    <AlertDialogFooter>
+                      <AlertDialogCancel onClick={() => setDisableOpen(false)}>
+                        Cancel
+                      </AlertDialogCancel>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
-            )}
 
-            {newCodes !== null && <RecoveryCodeGrid codes={newCodes} />}
-          </CardContent>
-        </Card>
-      )}
+              {regenerating && (
+                <div className="flex flex-col gap-3 rounded-lg border border-(--glass-border) p-4">
+                  <p className="text-sm text-muted-foreground">
+                    Enter a current code to generate a fresh set of recovery codes.
+                  </p>
+                  <OtpInput onComplete={(code) => void regenerate(code)} />
+                </div>
+              )}
 
-      <AeadExplainer />
+              {newCodes !== null && <RecoveryCodeGrid codes={newCodes} />}
+            </CardContent>
+          </Card>
+        )}
+
+        <AeadExplainer />
+      </div>
     </section>
   );
 }

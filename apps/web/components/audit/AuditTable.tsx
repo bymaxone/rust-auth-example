@@ -32,6 +32,36 @@ const ROW_H = 44;
 const VIEWPORT = 440;
 const OVERSCAN = 4;
 
+/**
+ * Colour ramp by event-slug prefix. Keeps the visual taxonomy lightweight — an
+ * operator glances at the live tail and immediately sees clusters of logins,
+ * registrations, MFA changes, password resets, and session events.
+ */
+const PREFIX_STYLES: ReadonlyArray<{ readonly prefix: string; readonly className: string }> = [
+  { prefix: 'after_login_failed', className: 'border-red-500/30 bg-red-500/10 text-red-300' },
+  { prefix: 'after_login', className: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' },
+  { prefix: 'after_logout', className: 'border-sky-500/30 bg-sky-500/10 text-sky-300' },
+  { prefix: 'after_register', className: 'border-violet-500/30 bg-violet-500/10 text-violet-300' },
+  { prefix: 'mfa', className: 'border-orange-500/30 bg-orange-500/10 text-orange-300' },
+  { prefix: 'password', className: 'border-amber-500/30 bg-amber-500/10 text-amber-300' },
+  { prefix: 'session', className: 'border-blue-500/30 bg-blue-500/10 text-blue-300' },
+  { prefix: 'invitation', className: 'border-fuchsia-500/30 bg-fuchsia-500/10 text-fuchsia-300' },
+  { prefix: 'email', className: 'border-cyan-500/30 bg-cyan-500/10 text-cyan-300' },
+];
+
+const DEFAULT_PILL_STYLE =
+  'border-[rgba(255,255,255,0.15)] bg-[rgba(255,255,255,0.05)] text-[rgba(255,255,255,0.6)]';
+
+/**
+ * Returns the Tailwind class string for an event-slug pill. Falls back to a
+ * neutral grey when no prefix matches, so a future event slug still renders
+ * cleanly without code changes.
+ */
+function pillStyleForEvent(event: string): string {
+  const match = PREFIX_STYLES.find((entry) => event.startsWith(entry.prefix));
+  return match?.className ?? DEFAULT_PILL_STYLE;
+}
+
 /** Keys that would indicate a leaked secret in an audit row. */
 const SECRET_KEY_RE = /token|secret|password|otp|recovery|ticket|\bcode\b/i;
 
@@ -118,7 +148,7 @@ function RowDetail({ row }: { readonly row: AuditLogRow }) {
             No token, code, or secret in this row
           </Badge>
         )}
-        <pre className="bg-(--glass-bg) max-h-64 overflow-auto rounded-md p-3 font-mono text-xs text-foreground">
+        <pre className="max-h-64 overflow-auto rounded-md bg-[rgba(0,0,0,0.4)] p-3 font-mono text-xs text-foreground">
           {JSON.stringify(leaked ? redactDetails(row.details) : row.details, null, 2)}
         </pre>
       </div>
@@ -152,7 +182,7 @@ export function AuditTable({ rows, following, pendingCount, onFollowChange }: Au
 
   if (filtered.length === 0) {
     return (
-      <p className="p-6 text-sm text-muted-foreground">
+      <p className="p-6 text-sm text-[rgba(255,255,255,0.5)]">
         No events yet — fire something in the Trigger Center.
       </p>
     );
@@ -182,7 +212,7 @@ export function AuditTable({ rows, following, pendingCount, onFollowChange }: Au
         </Button>
       )}
 
-      <div className="grid grid-cols-[88px_1fr_1fr_120px] gap-2 border-b border-(--glass-border) px-4 py-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+      <div className="grid grid-cols-[88px_1fr_1fr_120px] gap-2 border-b border-(--glass-border) px-4 py-2 text-xs font-medium uppercase tracking-wide text-[rgba(255,255,255,0.4)]">
         <span>Time</span>
         <span>Event</span>
         <span>Actor</span>
@@ -206,12 +236,20 @@ export function AuditTable({ rows, following, pendingCount, onFollowChange }: Au
                 style={{ height: ROW_H }}
                 className="grid w-full grid-cols-[88px_1fr_1fr_120px] items-center gap-2 border-b border-(--glass-border) px-4 text-left text-sm transition-colors hover:bg-(--glass-bg)"
               >
-                <span className="font-mono text-xs text-muted-foreground">
+                <span className="font-mono text-xs text-[rgba(255,255,255,0.5)]">
                   {formatTime(row.createdAt)}
                 </span>
-                <span className="truncate font-mono">{row.event}</span>
-                <span className="truncate text-muted-foreground">{row.actor}</span>
-                <span className="truncate font-mono text-xs text-muted-foreground">{row.ip}</span>
+                <span className="flex min-w-0 items-center">
+                  <span
+                    className={`truncate rounded-full border px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wide ${pillStyleForEvent(row.event)}`}
+                  >
+                    {row.event}
+                  </span>
+                </span>
+                <span className="truncate text-[rgba(255,255,255,0.6)]">{row.actor}</span>
+                <span className="truncate font-mono text-xs text-[rgba(255,255,255,0.5)]">
+                  {row.ip}
+                </span>
               </button>
             ))}
           </div>

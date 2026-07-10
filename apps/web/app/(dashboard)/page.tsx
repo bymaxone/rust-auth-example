@@ -28,6 +28,12 @@ type LoadState =
   | { readonly kind: 'error' }
   | { readonly kind: 'ready'; readonly data: AuditAggregate };
 
+/** Per-tile accent colours for the KPI grid, one per column. */
+const ACCENT_ORANGE = '#ff6224';
+const ACCENT_BLUE = '#06b6d4';
+const ACCENT_GREEN = '#10b981';
+const ACCENT_PURPLE = '#8b5cf6';
+
 /** Format a `0..1` rate as a whole-number percentage. */
 function pct(rate: number): string {
   return `${Math.round(rate * 100)}%`;
@@ -42,7 +48,11 @@ function SkeletonGrid(): React.ReactElement {
       aria-label="Loading"
     >
       {Array.from({ length: 4 }, (_, i) => (
-        <div key={i} className="h-28 animate-pulse rounded-2xl bg-muted" aria-hidden="true" />
+        <div
+          key={i}
+          className="h-28 animate-pulse rounded-xl bg-[rgba(255,255,255,0.05)]"
+          aria-hidden="true"
+        />
       ))}
     </div>
   );
@@ -85,76 +95,89 @@ export default function OverviewPage(): React.ReactElement {
 
   if (status === 'loading' || state.kind === 'loading') {
     return (
-      <section className="flex flex-col gap-6">
-        <h1 className="font-mono text-2xl font-bold">Overview</h1>
+      <div className="flex flex-col gap-8">
+        <div>
+          <h1 className="font-mono text-2xl font-bold text-white">Overview</h1>
+          <p className="mt-1 text-sm text-[rgba(255,255,255,0.5)]">
+            Auth health at a glance — success rates, sessions, and configured providers.
+          </p>
+        </div>
         <SkeletonGrid />
-      </section>
+      </div>
     );
   }
 
   if (state.kind === 'error') {
     return (
-      <section className="flex flex-col gap-6">
-        <h1 className="font-mono text-2xl font-bold">Overview</h1>
-        <Card>
-          <CardContent className="flex flex-col items-start gap-3 p-6">
-            <p className="text-sm text-muted-foreground">
-              The auth-health aggregate could not be loaded.
-            </p>
-            <Button variant="outline" onClick={() => void load()}>
-              Retry
-            </Button>
-          </CardContent>
-        </Card>
-      </section>
+      <div className="flex flex-col gap-8">
+        <div>
+          <h1 className="font-mono text-2xl font-bold text-white">Overview</h1>
+          <p className="mt-1 text-sm text-[rgba(255,255,255,0.5)]">
+            Auth health at a glance — success rates, sessions, and configured providers.
+          </p>
+        </div>
+        <div className="flex flex-col items-start gap-3 rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] p-6">
+          <p className="text-sm text-[rgba(255,255,255,0.5)]">
+            The auth-health aggregate could not be loaded.
+          </p>
+          <Button variant="outline" onClick={() => void load()}>
+            Retry
+          </Button>
+        </div>
+      </div>
     );
   }
 
   const a = state.data;
   return (
-    <section className="flex flex-col gap-6">
-      <h1 className="font-mono text-2xl font-bold">Overview</h1>
+    <div className="flex flex-col gap-8">
+      <div>
+        <h1 className="font-mono text-2xl font-bold text-white">Overview</h1>
+        <p className="mt-1 text-sm text-[rgba(255,255,255,0.5)]">
+          Auth health at a glance — success rates, sessions, and configured providers.
+        </p>
+      </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <HealthCard
           label="Login success"
           value={pct(a.loginSuccessRate)}
           icon={CheckCircle2}
-          tone={a.loginSuccessRate >= 0.9 ? 'positive' : 'warning'}
+          accent={ACCENT_ORANGE}
         />
         <HealthCard
           label="Verify success"
           value={pct(a.verifySuccessRate)}
           icon={ShieldCheck}
-          tone={a.verifySuccessRate >= 0.9 ? 'positive' : 'warning'}
+          accent={ACCENT_BLUE}
         />
         <HealthCard
           label="Active sessions"
           value={String(a.activeSessions)}
           icon={MonitorSmartphone}
-          tone="info"
+          accent={ACCENT_GREEN}
         />
         <HealthCard
           label="MFA enrolled"
           value={pct(a.mfaEnrolledShare)}
           icon={KeyRound}
-          tone={a.mfaEnrolledShare >= 0.5 ? 'positive' : 'neutral'}
+          accent={ACCENT_PURPLE}
         />
       </div>
 
       <ProviderChips emailProvider={a.emailProvider} oauthGoogleEnabled={a.oauthGoogleEnabled} />
 
-      <Card>
-        <CardContent className="flex items-center justify-between gap-4 p-5">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] p-6">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2 text-sm text-[rgba(255,255,255,0.5)]">
             <ScrollText className="h-4 w-4" aria-hidden="true" />
             Recent auth events stream live in the Audit Explorer.
           </div>
           <Button asChild variant="outline" size="sm">
             <Link href="/dashboard/audit">Open the audit tail</Link>
           </Button>
-        </CardContent>
-      </Card>
-    </section>
+        </div>
+      </div>
+    </div>
   );
 }
