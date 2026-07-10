@@ -139,7 +139,7 @@ Console → **http://localhost:3000** · API health → **http://localhost:4000/
    ┌───────────────┐    ┌───────────────┐      ┌────────────────────┐
    │  PostgreSQL   │    │     Redis     │      │      Mailpit       │
    │  sqlx repos   │    │ RedisStores · │      │  lettre SMTP →     │
-   │  users/audit  │    │  8 store traits│     │  browsable :8025   │
+   │  users/audit  │    │ 8 store traits│      │  browsable :8025   │
    └───────────────┘    └───────────────┘      └────────────────────┘
 ```
 
