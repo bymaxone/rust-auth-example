@@ -5,7 +5,9 @@
  * shared design-system treatment). Admin-only items (Invitations, Audit) are
  * hidden for non-admin roles. A user footer shows the tenant, name, and an
  * orange role pill. Collapses below `lg` into a fixed overlay toggled from the
- * topbar. Composes only design-system tokens; never re-styles a primitive.
+ * topbar. Styling uses the shared design-system palette expressed as explicit
+ * brand values (the `#ff6224` orange and the rgba glass surfaces); it never
+ * re-styles a shared `ui/*` primitive.
  *
  * @module components/shell/Sidebar
  */

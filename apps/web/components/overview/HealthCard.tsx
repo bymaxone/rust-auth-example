@@ -33,10 +33,7 @@ export interface HealthCardProps {
  */
 export function HealthCard({ label, value, icon: Icon, accent, caption }: HealthCardProps) {
   return (
-    <div
-      className="group relative overflow-hidden rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] p-5 transition-all duration-200 hover:-translate-y-px"
-      style={{ '--accent': accent } as React.CSSProperties}
-    >
+    <div className="group relative overflow-hidden rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] p-5 transition-all duration-200 hover:-translate-y-px">
       {/* Top accent line */}
       <div
         aria-hidden="true"
