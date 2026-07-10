@@ -45,7 +45,9 @@ security analysis wired in from the start.
 ### 🚀 Quick start
 
 ```bash
+# Clone this repo and the pre-publish library as siblings (consumed by path / file:)
 git clone https://github.com/bymaxone/rust-auth-example.git
+git clone https://github.com/bymaxone/rust-auth.git    # must sit next to this repo, as ../rust-auth
 cd rust-auth-example
 
 pnpm install --frozen-lockfile     # the JS workspace (apps/web + tooling)
@@ -169,6 +171,7 @@ browser package and edge-verifies the session JWT in middleware via WebAssembly.
 | [DEPLOYMENT](docs/DEPLOYMENT.md)             | The two GHCR images, production config, and the release process          |
 | [TROUBLESHOOTING](docs/TROUBLESHOOTING.md)   | Common failures with their cause and fix                                 |
 | [DASHBOARD](docs/DASHBOARD.md)               | The `apps/web` console build spec and the shared design system           |
+| [Design System](docs/design_system.html)     | The shared, project-agnostic UI design system (rendered reference)       |
 | [DEVELOPMENT_PLAN](docs/DEVELOPMENT_PLAN.md) | The phased build plan and quality gates                                  |
 | [GO_PUBLIC](docs/GO_PUBLIC.md)               | The branch-protection and visibility checklist                           |
 | [RELEASES](docs/RELEASES.md)                 | The release log and how a tag is recorded                                |
