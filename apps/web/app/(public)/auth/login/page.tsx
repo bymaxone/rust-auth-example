@@ -36,9 +36,6 @@ import { AuthError } from '@/components/auth/auth-error';
 import { setPendingMfaChallenge } from '@/lib/mfa-challenge-store';
 import { isGoogleOAuthEnabled, googleInitiateUrl } from '@/lib/oauth';
 
-/** Regex guarding tenant slugs coming in via crafted `?tenant=` URLs. */
-const TENANT_ID_RE = /^[a-z0-9][a-z0-9-]{0,62}$/;
-
 /**
  * Seeded workspaces (mirrors `apps/api/src/bin/seed.rs → DEMO_TENANTS`). The
  * picker lets a developer exercise multi-tenant flows without editing the URL;
@@ -49,6 +46,12 @@ const TENANT_OPTIONS: readonly { value: string; label: string }[] = [
   { value: 'globex', label: 'Globex Corp.' },
 ];
 
+/** The default workspace when the URL carries no (or an unknown) tenant. */
+const DEFAULT_TENANT = 'acme';
+
+/** The set of selectable tenant slugs, used to clamp a crafted `?tenant=` value. */
+const KNOWN_TENANTS = new Set(TENANT_OPTIONS.map((option) => option.value));
+
 /**
  * Login page. Submits email + password, branches on the MFA result, and routes
  * the visitor to the appropriate next step.
@@ -56,8 +59,11 @@ const TENANT_OPTIONS: readonly { value: string; label: string }[] = [
 export default function LoginPage(): React.ReactElement {
   const { login } = useAuth();
   const router = useRouter();
-  const [rawTenantId, setTenantId] = useQueryState('tenant', { defaultValue: 'acme' });
-  const tenantId = TENANT_ID_RE.test(rawTenantId) ? rawTenantId : 'acme';
+  const [rawTenantId, setTenantId] = useQueryState('tenant', { defaultValue: DEFAULT_TENANT });
+  // Clamp to a known workspace: a crafted `?tenant=` slug that is not one the picker can
+  // represent falls back to the default, so the select value always matches an option and
+  // the login is never scoped to a workspace the UI cannot show.
+  const tenantId = KNOWN_TENANTS.has(rawTenantId) ? rawTenantId : DEFAULT_TENANT;
   const [reason] = useQueryState('reason', { defaultValue: '' });
   const [verified] = useQueryState('verified', { defaultValue: '' });
   const [reset] = useQueryState('reset', { defaultValue: '' });

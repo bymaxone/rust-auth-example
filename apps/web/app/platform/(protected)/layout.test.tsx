@@ -97,8 +97,7 @@ describe('PlatformProtectedLayout auth guard', () => {
   it('redirects with reason=session-expired when the token is invalid', async () => {
     // A cookie is present but the token is malformed / expired / undecodable.
     mockCookies.mockResolvedValueOnce(makeCookieJar('bad.token.here'));
-    // `decodeJwtToken` is synchronous — it returns the decoded value directly.
-    mockDecodeJwtToken.mockReturnValueOnce({ isValid: false });
+    mockDecodeJwtToken.mockResolvedValueOnce({ isValid: false });
 
     const url = await captureRedirect(<span />);
 
@@ -110,10 +109,7 @@ describe('PlatformProtectedLayout auth guard', () => {
     // invalid token (e.g. not a parseable JWT string). The layout must catch the
     // rejection and treat it identically to an invalid session.
     mockCookies.mockResolvedValueOnce(makeCookieJar('not-a-jwt-at-all'));
-    // `decodeJwtToken` is synchronous, so it throws synchronously.
-    mockDecodeJwtToken.mockImplementationOnce(() => {
-      throw new Error('invalid token structure');
-    });
+    mockDecodeJwtToken.mockRejectedValueOnce(new Error('invalid token structure'));
 
     const url = await captureRedirect(<span />);
 
@@ -123,7 +119,7 @@ describe('PlatformProtectedLayout auth guard', () => {
   it('redirects with reason=wrong-domain when a valid dashboard token is presented', async () => {
     // A structurally valid token exists but its type is "dashboard", not "platform".
     mockCookies.mockResolvedValueOnce(makeCookieJar('valid.dashboard.token'));
-    mockDecodeJwtToken.mockReturnValueOnce({
+    mockDecodeJwtToken.mockResolvedValueOnce({
       isValid: true,
       payload: { type: 'dashboard', sub: 'u1' },
     });
@@ -136,7 +132,7 @@ describe('PlatformProtectedLayout auth guard', () => {
   it('renders the shell when a valid platform token is present', async () => {
     // A valid platform token — the layout must render PlatformShell without redirecting.
     mockCookies.mockResolvedValueOnce(makeCookieJar('valid.platform.token'));
-    mockDecodeJwtToken.mockReturnValueOnce({
+    mockDecodeJwtToken.mockResolvedValueOnce({
       isValid: true,
       payload: { type: 'platform', sub: 'admin1' },
     });

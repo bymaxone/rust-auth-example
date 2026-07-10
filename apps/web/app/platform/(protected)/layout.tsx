@@ -60,9 +60,7 @@ export default async function PlatformProtectedLayout({
   // isValid:false result — the admin's session is gone, redirect to sign-in.
   let decoded: Awaited<ReturnType<typeof decodeJwtToken>>;
   try {
-    // Wrap in Promise.resolve so this works whether the library types decodeJwtToken
-    // as synchronous or Promise-returning; awaiting a resolved value is a no-op.
-    decoded = await Promise.resolve(decodeJwtToken(token));
+    decoded = await decodeJwtToken(token);
   } catch {
     redirect('/platform/login?reason=session-expired');
   }

@@ -163,11 +163,16 @@ describe('LoginPage', () => {
     expect(mockSetTenant).toHaveBeenCalledWith('globex');
   });
 
-  it('falls back to acme when the ?tenant= slug is malformed', async () => {
-    /* A crafted slug that fails the guard regex must not reach the login call. */
-    queryState.tenant = 'Not A Slug!';
+  it('clamps a valid-but-unknown ?tenant= slug to the default workspace', async () => {
+    /* A slug the picker cannot represent (not one of the seeded options) must fall back to
+       acme, so the select value always matches an option and the login is never scoped to a
+       workspace the UI cannot show. */
+    queryState.tenant = 'unknown-corp';
     mockLogin.mockResolvedValueOnce({ user: { id: '1' }, accessToken: 'a', refreshToken: 'r' });
     render(<LoginPage />);
+    // The picker reflects the clamped value, not the crafted slug.
+    const picker = screen.getByLabelText('Workspace');
+    expect((picker as HTMLSelectElement).value).toBe('acme');
     fillAndSubmit();
     await waitFor(() =>
       expect(mockLogin).toHaveBeenCalledWith('user@example.com', 'secret', { tenantId: 'acme' }),
