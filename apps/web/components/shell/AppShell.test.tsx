@@ -24,9 +24,9 @@ vi.mock('./Sidebar', () => ({
 
 import { AppShell } from './AppShell';
 
-/** The mobile backdrop carries `aria-hidden`; find it by its dimming class. */
-function backdrop(container: HTMLElement): Element | null {
-  return container.querySelector('.bg-black\\/50');
+/** The mobile backdrop is a semantic close button; find it by its accessible name. */
+function backdrop(): HTMLElement | null {
+  return screen.queryByRole('button', { name: 'Close navigation menu' });
 }
 
 describe('AppShell', () => {
@@ -45,49 +45,48 @@ describe('AppShell', () => {
 
   it('opens the sidebar overlay from the topbar and shows the backdrop', () => {
     // The hamburger sets the open state, which reveals the sidebar overlay + backdrop.
-    const { container } = render(
+    render(
       <AppShell>
         <p>page body</p>
       </AppShell>,
     );
 
-    expect(backdrop(container)).toBeNull();
+    expect(backdrop()).toBeNull();
 
     fireEvent.click(screen.getByText('open-menu'));
     expect(screen.getByText('sidebar-open')).toBeInTheDocument();
-    expect(backdrop(container)).not.toBeNull();
+    expect(backdrop()).not.toBeNull();
   });
 
   it('closes the overlay when the backdrop is clicked', () => {
     // Clicking the dimmed backdrop dismisses the sidebar overlay.
-    const { container } = render(
+    render(
       <AppShell>
         <p>page body</p>
       </AppShell>,
     );
 
     fireEvent.click(screen.getByText('open-menu'));
-    const dim = backdrop(container);
-    expect(dim).not.toBeNull();
-    fireEvent.click(dim as Element);
+    expect(backdrop()).not.toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Close navigation menu' }));
 
     expect(screen.getByText('sidebar-closed')).toBeInTheDocument();
-    expect(backdrop(container)).toBeNull();
+    expect(backdrop()).toBeNull();
   });
 
   it('closes the overlay when a sidebar nav link is clicked', () => {
     // A nav click (via onNavClick) dismisses the overlay so the destination page shows.
-    const { container } = render(
+    render(
       <AppShell>
         <p>page body</p>
       </AppShell>,
     );
 
     fireEvent.click(screen.getByText('open-menu'));
-    expect(backdrop(container)).not.toBeNull();
+    expect(backdrop()).not.toBeNull();
 
     fireEvent.click(screen.getByText('sidebar-open'));
     expect(screen.getByText('sidebar-closed')).toBeInTheDocument();
-    expect(backdrop(container)).toBeNull();
+    expect(backdrop()).toBeNull();
   });
 });

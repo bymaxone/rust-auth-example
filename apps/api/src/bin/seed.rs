@@ -49,8 +49,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     }
 
     // Hash on a blocking thread: the KDF is synchronous, memory-hard CPU work that must
-    // never stall an async runtime worker.
-    let admin_hash = tokio::task::spawn_blocking(|| {
+    // never stall an async runtime worker. Each admin gets its own hash — even for the
+    // shared demo password — so no two rows carry an identical `password_hash` (a fresh
+    // per-account salt is how password hashing is meant to be used).
+    let platform_admin_hash = tokio::task::spawn_blocking(|| {
+        password::hash(DEMO_ADMIN_PASSWORD, &PasswordParams::default())
+    })
+    .await??;
+    let tenant_admin_hash = tokio::task::spawn_blocking(|| {
         password::hash(DEMO_ADMIN_PASSWORD, &PasswordParams::default())
     })
     .await??;
@@ -60,21 +66,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
            VALUES ($1, 'Demo Admin', $2, 'admin', 'active')
            ON CONFLICT (email) DO NOTHING"#,
         DEMO_ADMIN_EMAIL,
-        admin_hash.as_str(),
+        platform_admin_hash.as_str(),
     )
     .execute(&pool)
     .await?;
 
-    // The tenant admin shares the demo password, so the same hash is reused rather than
-    // paying the memory-hard KDF a second time. `email_verified = true` lets it sign in
-    // without the verify step, and `ON CONFLICT (tenant_id, email) DO NOTHING` keeps the
-    // seed idempotent.
+    // `email_verified = true` lets the tenant admin sign in without the verify step, and
+    // `ON CONFLICT (tenant_id, email) DO NOTHING` keeps the seed idempotent.
     sqlx::query!(
         r#"INSERT INTO users (email, name, password_hash, role, status, tenant_id, email_verified)
            VALUES ($1, 'Acme Admin', $2, 'admin', 'active', $3, true)
            ON CONFLICT (tenant_id, email) DO NOTHING"#,
         DEMO_TENANT_ADMIN_EMAIL,
-        admin_hash.as_str(),
+        tenant_admin_hash.as_str(),
         DEMO_TENANT_ADMIN_TENANT,
     )
     .execute(&pool)
