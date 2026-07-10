@@ -37,8 +37,9 @@ export async function POST(request: Request): Promise<Response> {
   }
   let decoded: unknown;
   try {
-    // `decodeJwtToken` is synchronous (header/payload parse only) — no await.
-    decoded = decodeJwtToken(token);
+    // Wrap in Promise.resolve so this works whether the library types decodeJwtToken
+    // as synchronous or Promise-returning; awaiting a resolved value is a no-op.
+    decoded = await Promise.resolve(decodeJwtToken(token));
   } catch {
     // A structurally invalid token decodes to nothing and verifies as rejected.
     return Response.json({ decoded: null, verified: false });
