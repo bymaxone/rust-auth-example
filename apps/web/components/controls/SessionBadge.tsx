@@ -38,9 +38,9 @@ function SignInButton() {
   );
 }
 
-/** Up-to-two uppercase initials from a display name, or `?` when it is empty. */
-function initialsOf(name: string | undefined): string {
-  const parts = (name ?? '').split(' ').filter((segment) => segment.length > 0);
+/** Up-to-two uppercase initials from a display name, or `?` when it is blank. */
+function initialsOf(name: string): string {
+  const parts = name.split(' ').filter((segment) => segment.length > 0);
   if (parts.length === 0) {
     return '?';
   }
@@ -64,7 +64,7 @@ function AuthenticatedBadge() {
         <Button variant="ghost" size="sm" className="h-auto gap-2 py-1">
           <Avatar className="h-7 w-7">
             <AvatarFallback className="bg-[rgba(255,98,36,0.15)] text-[10px] font-semibold text-[#ff6224]">
-              {initialsOf(user?.name)}
+              {initialsOf(name)}
             </AvatarFallback>
           </Avatar>
           <span className="hidden flex-col items-start leading-tight lg:flex">

@@ -27,10 +27,12 @@ export function AppShell({ children }: { readonly children: ReactNode }) {
       <div className="flex pt-16">
         <Sidebar isOpen={sidebarOpen} onNavClick={() => setSidebarOpen(false)} />
 
-        {/* Mobile sidebar backdrop */}
+        {/* Mobile sidebar backdrop — a semantic button so keyboard and screen-reader
+            users have an accessible way to dismiss the overlay. */}
         {sidebarOpen && (
-          <div
-            aria-hidden="true"
+          <button
+            type="button"
+            aria-label="Close navigation menu"
             className="z-30 fixed inset-0 bg-black/50 backdrop-blur-sm lg:hidden"
             onClick={() => setSidebarOpen(false)}
           />

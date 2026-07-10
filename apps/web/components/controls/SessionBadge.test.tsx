@@ -72,16 +72,36 @@ describe('SessionBadge', () => {
     expect(logout).toHaveBeenCalledTimes(1);
   });
 
-  it('caps initials at two segments and falls back to the email as the name', () => {
-    // A 3-word name yields only the first two initials; a missing name shows the
-    // email as the display name (its initials computed from the undefined name → `?`).
+  it('caps the initials at two segments', () => {
+    // A 3-word name yields only the first two initials, never three.
+    useAuthStatus.mockReturnValue({ isAuthenticated: true, isLoading: false });
+    useSession.mockReturnValue({
+      user: { email: 'a@acme.test', name: 'Anne Marie Smith', role: 'user' },
+    });
+    render(<SessionBadge />);
+
+    expect(screen.getByText('AM')).toBeInTheDocument();
+  });
+
+  it('derives the initials from the displayed name (the email) when the name is missing', () => {
+    // With no name, the email is shown as the display name AND drives the avatar initials,
+    // so the avatar and the name stay consistent (no `?` beside an email).
     useAuthStatus.mockReturnValue({ isAuthenticated: true, isLoading: false });
     useSession.mockReturnValue({ user: { email: 'grace@acme.test', role: 'user' } });
     render(<SessionBadge />);
 
-    expect(screen.getByText('?')).toBeInTheDocument();
+    expect(screen.getByText('G')).toBeInTheDocument();
     expect(screen.getByText('grace@acme.test')).toBeInTheDocument();
     expect(screen.getByText('user')).toBeInTheDocument();
+  });
+
+  it('renders a `?` avatar when the display name is blank', () => {
+    // A present-but-empty name (not undefined) has no initials, so the avatar is `?`.
+    useAuthStatus.mockReturnValue({ isAuthenticated: true, isLoading: false });
+    useSession.mockReturnValue({ user: { email: 'x@acme.test', name: '', role: 'user' } });
+    render(<SessionBadge />);
+
+    expect(screen.getByText('?')).toBeInTheDocument();
   });
 
   it('hides the role line when the role is empty', () => {
@@ -95,12 +115,12 @@ describe('SessionBadge', () => {
   });
 
   it('falls back to a generic label when the user is not yet loaded', () => {
-    // A null user projection shows the `Account` fallback name and a `?` avatar.
+    // A null user projection shows the `Account` fallback name and its `A` initial.
     useAuthStatus.mockReturnValue({ isAuthenticated: true, isLoading: false });
     useSession.mockReturnValue({ user: null });
     render(<SessionBadge />);
 
     expect(screen.getByRole('button', { name: /Account/ })).toBeInTheDocument();
-    expect(screen.getByText('?')).toBeInTheDocument();
+    expect(screen.getByText('A')).toBeInTheDocument();
   });
 });
