@@ -42,10 +42,10 @@ test.beforeEach(async ({ page }) => {
   );
 });
 
-test('platform login page renders the Platform Console heading', async ({ page }) => {
+test('platform login page renders the platform-admin heading', async ({ page }) => {
   // The /platform/login page is public — no session gate, no redirect.
   await page.goto('/platform/login');
-  await expect(page.getByText('Platform Console')).toBeVisible();
+  await expect(page.getByText('PLATFORM ADMIN', { exact: true })).toBeVisible();
 });
 
 test('platform login page shows the sign-in form', async ({ page }) => {

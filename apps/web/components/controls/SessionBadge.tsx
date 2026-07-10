@@ -61,7 +61,12 @@ function AuthenticatedBadge() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-auto gap-2 py-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-auto gap-2 py-1"
+          data-testid="user-menu-trigger"
+        >
           <Avatar className="h-7 w-7">
             <AvatarFallback className="bg-[rgba(255,98,36,0.15)] text-[10px] font-semibold text-[#ff6224]">
               {initialsOf(name)}

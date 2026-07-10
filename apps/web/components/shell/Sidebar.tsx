@@ -148,7 +148,9 @@ export interface SidebarProps {
 export function Sidebar({ isOpen, onNavClick }: SidebarProps) {
   const pathname = usePathname();
   const { user } = useSession();
-  const isAdmin = user !== null && ADMIN_ROLES.has(user.role);
+  // `!= null` guards both null and a transient `undefined` from the provider before the
+  // first session validation resolves, so reading `user.role` can never throw.
+  const isAdmin = user != null && ADMIN_ROLES.has(user.role);
   const dashboardItems = DASHBOARD_NAV.filter((item) => item.adminOnly !== true || isAdmin);
   const childExtras = onNavClick !== undefined ? { onNavClick } : {};
 
