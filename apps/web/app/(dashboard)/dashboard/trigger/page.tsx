@@ -17,7 +17,6 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { TriggerCard } from '@/components/trigger/TriggerCard';
@@ -60,21 +59,23 @@ export default function TriggerCenterPage(): React.ReactElement {
   const name = email.split('@')[0] ?? 'demo';
 
   return (
-    <section className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="font-mono text-2xl font-bold">Trigger Center</h1>
-        <p className="text-sm text-muted-foreground">
+    <section className="flex flex-col gap-8">
+      <div>
+        <h1 className="font-mono text-2xl font-bold text-white">Trigger Center</h1>
+        <p className="mt-1 text-sm text-[rgba(255,255,255,0.5)]">
           Fire every feature and watch it land — each card shows the raw request and response and
           pivots the Audit Explorer to the resulting row.
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Playground credentials</CardTitle>
-          <CardDescription>Sent to the API only; the password is never displayed.</CardDescription>
-        </CardHeader>
-        <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] p-6">
+        <h2 className="mb-1 font-mono text-sm font-semibold uppercase tracking-widest text-[rgba(255,255,255,0.4)]">
+          Playground credentials
+        </h2>
+        <p className="mb-4 text-xs text-[rgba(255,255,255,0.35)]">
+          Sent to the API only; the password is never displayed.
+        </p>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="trigger-email">Email</Label>
             <Input
@@ -101,8 +102,8 @@ export default function TriggerCenterPage(): React.ReactElement {
               onChange={(e) => setTenantId(e.target.value)}
             />
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
         <TriggerCard

@@ -58,9 +58,10 @@ export default async function PlatformProtectedLayout({
   // decodeJwtToken may reject (throw) when the token is structurally invalid
   // (e.g. not a valid JWT string). Treat a thrown rejection the same as an
   // isValid:false result — the admin's session is gone, redirect to sign-in.
-  let decoded: Awaited<ReturnType<typeof decodeJwtToken>>;
+  let decoded: ReturnType<typeof decodeJwtToken>;
   try {
-    decoded = await decodeJwtToken(token);
+    // `decodeJwtToken` is synchronous (header/payload parse only) — no await.
+    decoded = decodeJwtToken(token);
   } catch {
     redirect('/platform/login?reason=session-expired');
   }

@@ -3,15 +3,13 @@
  *
  * Renders whether the callback created a new user or linked an existing one, and
  * which branch fired afterwards (authenticated session / redirect / MFA
- * challenge). Composes the design-system `Card`/`Badge`; status is conveyed by
+ * challenge). Renders inside an orange-tinted glass panel; status is conveyed by
  * label + icon, never colour alone.
  *
  * @module components/oauth/DecisionTrace
  */
 
 import { GitMerge, UserPlus, type LucideIcon } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import type { OAuthBranch, OAuthCallbackTrace, OAuthDecision } from '@/lib/oauth';
 
 /** Copy + icon for each decision. */
@@ -32,23 +30,27 @@ export function DecisionTrace({ trace }: { readonly trace: OAuthCallbackTrace })
   const meta = DECISION_META[trace.decision];
   const Icon = meta.icon;
   return (
-    <Card>
-      <CardHeader accent>
-        <CardTitle className="text-base">on_oauth_login decision</CardTitle>
-        <CardDescription>What the policy decided for this Google sign-in.</CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3">
-        <div className="flex items-center gap-2 text-sm text-foreground">
-          <Icon className="h-4 w-4 text-primary" aria-hidden="true" />
+    <section className="rounded-xl border border-[rgba(255,98,36,0.15)] bg-[rgba(255,98,36,0.04)] p-6">
+      <h2 className="mb-1 font-mono text-sm font-semibold uppercase tracking-widest text-[rgba(255,255,255,0.4)]">
+        on_oauth_login decision
+      </h2>
+      <p className="mb-4 text-xs text-[rgba(255,255,255,0.35)]">
+        What the policy decided for this Google sign-in.
+      </p>
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center gap-2 text-sm text-white">
+          <Icon className="h-4 w-4 text-[#ff6224]" aria-hidden="true" />
           {meta.label}
         </div>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2 text-sm text-[rgba(255,255,255,0.5)]">
           Branch
-          <Badge variant="outline" className="font-mono">
-            {BRANCH_LABEL[trace.branch]}
-          </Badge>
+          <span className="inline-flex items-center rounded-full border border-[rgba(255,98,36,0.25)] bg-[rgba(255,98,36,0.12)] px-2 py-0.5">
+            <span className="font-mono text-[10px] font-semibold uppercase tracking-wide text-[#ff6224]">
+              {BRANCH_LABEL[trace.branch]}
+            </span>
+          </span>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }

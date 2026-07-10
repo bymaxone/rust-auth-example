@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO users (email, name, password_hash, role, status, tenant_id, email_verified)\n           VALUES ($1, 'Acme Admin', $2, 'admin', 'active', $3, true)\n           ON CONFLICT (tenant_id, email) DO NOTHING",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": ["Text", "Text", "Text"]
+    },
+    "nullable": []
+  },
+  "hash": "9e80e377b31e4d329ae81febe86a44619917a9742357f955299ba2e8dea1be6f"
+}

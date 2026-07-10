@@ -15,6 +15,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { MonitorSmartphone } from 'lucide-react';
 import { AuthClientError } from '@bymax-one/rust-auth/shared';
 import type { AuthPlatformUserClient } from '@bymax-one/rust-auth/shared';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -79,32 +80,38 @@ export default function PlatformSessionsPage(): React.ReactElement {
 
   return (
     <section className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="font-mono text-2xl font-bold">Sessions</h1>
-        <p className="text-sm text-muted-foreground">
-          Platform admin sessions. Only bulk revoke is available — the platform domain does not
-          expose a per-session list or per-row revoke endpoint.
-        </p>
+      {/* ── Red platform header ── */}
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[rgba(239,68,68,0.3)] bg-[rgba(239,68,68,0.1)]">
+          <MonitorSmartphone className="h-5 w-5 text-red-400" aria-hidden="true" />
+        </div>
+        <div>
+          <h1 className="font-mono text-xl font-semibold text-red-100">Sessions</h1>
+          <p className="text-sm text-red-400/60">
+            Platform admin sessions. Only bulk revoke is available — the platform domain does not
+            expose a per-session list or per-row revoke endpoint.
+          </p>
+        </div>
       </div>
 
       <AuthError code={errorCode} />
 
       {state.kind === 'loading' && (
         <div
-          className="h-40 w-full animate-pulse rounded-2xl bg-muted"
+          className="rounded-xl border border-[rgba(239,68,68,0.15)] bg-[rgba(20,0,0,0.4)] p-6"
           role="status"
           aria-label="Loading"
-        />
+        >
+          <p className="text-sm text-[rgba(255,200,200,0.5)]">Loading…</p>
+        </div>
       )}
 
       {state.kind === 'error' && (
-        <Card>
-          <CardContent className="p-6">
-            <p className="text-sm text-muted-foreground">
-              Session information could not be loaded.
-            </p>
-          </CardContent>
-        </Card>
+        <div className="rounded-xl border border-[rgba(239,68,68,0.15)] bg-[rgba(20,0,0,0.4)] p-6">
+          <p className="text-sm text-[rgba(255,200,200,0.5)]">
+            Session information could not be loaded.
+          </p>
+        </div>
       )}
 
       {state.kind === 'ready' && (

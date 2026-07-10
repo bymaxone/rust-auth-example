@@ -41,7 +41,8 @@ describe('POST /api/diagnostics/inspect-token', () => {
 
   it('decodes and verifies a valid token', async () => {
     // A properly signed token decodes and verifies true.
-    decodeJwtToken.mockResolvedValueOnce({ isValid: true, header: { alg: 'HS256' } });
+    // `decodeJwtToken` is synchronous — it returns the decoded value directly.
+    decodeJwtToken.mockReturnValueOnce({ isValid: true, header: { alg: 'HS256' } });
     verifyJwtToken.mockResolvedValueOnce({ isValid: true });
     const res = await POST(post({ token: 'a.b.c' }));
     expect(res.status).toBe(200);
@@ -65,7 +66,10 @@ describe('POST /api/diagnostics/inspect-token', () => {
 
   it('handles a token that cannot be decoded', async () => {
     // A structurally invalid token decodes to null and verifies as rejected.
-    decodeJwtToken.mockRejectedValueOnce(new Error('bad token'));
+    // `decodeJwtToken` is synchronous, so it throws synchronously.
+    decodeJwtToken.mockImplementationOnce(() => {
+      throw new Error('bad token');
+    });
     const res = await POST(post({ token: 'not.a.jwt' }));
     await expect(res.json()).resolves.toEqual({ decoded: null, verified: false });
     expect(verifyJwtToken).not.toHaveBeenCalled();
@@ -80,7 +84,7 @@ describe('POST /api/diagnostics/inspect-token', () => {
 
   it('reports verified:false when verification throws (forged alg:none)', async () => {
     // A forged token must verify as rejected, never crash the route.
-    decodeJwtToken.mockResolvedValueOnce({ isValid: false, header: { alg: 'none' } });
+    decodeJwtToken.mockReturnValueOnce({ isValid: false, header: { alg: 'none' } });
     verifyJwtToken.mockRejectedValueOnce(new Error('bad signature'));
     const res = await POST(post({ token: 'forged' }));
     await expect(res.json()).resolves.toMatchObject({ verified: false });

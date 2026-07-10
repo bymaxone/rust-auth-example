@@ -114,6 +114,29 @@ That is a verified login plus an enrolled second factor — the full front-door 
 
 ---
 
+## The tenant admin (for the admin-gated journeys)
+
+Registration always mints a plain `user`, and the admin-gated dashboard surfaces — the
+Overview auth-health cards, the **Audit Explorer**, and **inviting a teammate** — require a
+tenant **admin**. The seed provisions one under the `acme` tenant so these journeys work out
+of the box.
+
+> **DEV ONLY.** A documented local-only fixture (see [`.env.example`](../.env.example)),
+> never a real secret.
+
+| Field    | Value                                |
+| -------- | ------------------------------------ |
+| Login    | http://localhost:3000/auth/login     |
+| Email    | `admin@acme.test`                    |
+| Password | `ChangeMe!Demo123`                   |
+| Tenant   | `acme` (role `admin`, email-verified) |
+
+Sign in as this admin to see the Overview health cards populate, browse the Audit Explorer,
+and send an invitation. A registered `user` sees the same console with the admin-only nav
+items hidden.
+
+---
+
 ## The platform admin (optional)
 
 The seed also provisions a tenant-less **platform** admin — a distinct identity domain with

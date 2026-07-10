@@ -98,11 +98,11 @@ describe('PlatformShell', () => {
     expect(usersLink).not.toHaveAttribute('aria-current', 'page');
   });
 
-  it('applies active-glow tokens to the current nav link and muted tokens to the rest', () => {
+  it('applies red active tokens to the current nav link and muted red tokens to the rest', () => {
     // Pins the exact class strings on both branches: the active platform link
-    // carries the primary glow, inactive links stay muted, and every link keeps
-    // the shared layout tokens. Dropping any of the three class literals diverges
-    // the rendered className.
+    // carries the red left-border indicator and red fill, inactive links stay
+    // muted red, and every link keeps the shared layout tokens. Dropping any of
+    // the class literals diverges the rendered className.
     mockPathname.mockReturnValue('/platform/security');
     render(
       <PlatformShell>
@@ -114,19 +114,21 @@ describe('PlatformShell', () => {
     const inactive = screen.getByRole('link', { name: /users/i });
 
     // Shared base tokens (present regardless of active state).
-    expect(active).toHaveClass('rounded-md');
-    expect(active).toHaveClass('transition-colors');
-    expect(inactive).toHaveClass('rounded-md');
-    expect(inactive).toHaveClass('transition-colors');
+    expect(active).toHaveClass('rounded-lg');
+    expect(active).toHaveClass('transition-all');
+    expect(inactive).toHaveClass('rounded-lg');
+    expect(inactive).toHaveClass('transition-all');
 
-    // Active branch tokens.
-    expect(active).toHaveClass('bg-primary/10');
-    expect(active).toHaveClass('text-primary');
-    expect(active).not.toHaveClass('text-muted-foreground');
+    // Active branch tokens — red left-border indicator + red fill.
+    expect(active).toHaveClass('border-l-red-500');
+    expect(active).toHaveClass('bg-[rgba(239,68,68,0.15)]');
+    expect(active).toHaveClass('text-red-300');
+    expect(active).not.toHaveClass('border-l-transparent');
 
-    // Inactive branch tokens.
-    expect(inactive).toHaveClass('text-muted-foreground');
-    expect(inactive).not.toHaveClass('bg-primary/10');
+    // Inactive branch tokens — muted red, transparent left border.
+    expect(inactive).toHaveClass('border-l-transparent');
+    expect(inactive).toHaveClass('text-[rgba(255,200,200,0.55)]');
+    expect(inactive).not.toHaveClass('bg-[rgba(239,68,68,0.15)]');
   });
 
   it('calls platformClient.logout and routes to /platform/login when Sign out is clicked', async () => {

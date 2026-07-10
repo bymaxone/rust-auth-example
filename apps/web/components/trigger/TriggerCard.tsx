@@ -3,8 +3,9 @@
  *
  * Renders the action button and, once fired, the raw request + response JSON in
  * mono, a status/code badge row, and — when the action tripped a rate limit — a
- * live `Retry-After` countdown. Composes the design-system `Card`/`Button`/`Badge`
- * verbatim. The result shape is already secret-redacted by `lib/trigger-actions`.
+ * live `Retry-After` countdown. Renders inside a glass panel and composes the
+ * design-system `Button`/`Badge`. The result shape is already secret-redacted by
+ * `lib/trigger-actions`.
  *
  * @module components/trigger/TriggerCard
  */
@@ -12,7 +13,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { TriggerResult } from '@/lib/trigger-actions';
@@ -52,8 +52,10 @@ function RetryCountdown({ seconds }: { readonly seconds: number }): React.ReactE
 function JsonBlock({ label, value }: { readonly label: string; readonly value: unknown }) {
   return (
     <div className="flex flex-col gap-1">
-      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-      <pre className="bg-(--glass-bg) overflow-auto rounded-md p-3 font-mono text-xs text-foreground">
+      <p className="text-xs font-medium uppercase tracking-wide text-[rgba(255,255,255,0.4)]">
+        {label}
+      </p>
+      <pre className="overflow-auto rounded-md bg-[rgba(0,0,0,0.4)] p-3 font-mono text-xs text-foreground">
         {JSON.stringify(value, null, 2)}
       </pre>
     </div>
@@ -105,12 +107,12 @@ export function TriggerCard({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3">
+    <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] p-6">
+      <h2 className="mb-1 font-mono text-sm font-semibold uppercase tracking-widest text-[rgba(255,255,255,0.4)]">
+        {title}
+      </h2>
+      <p className="mb-3 text-xs text-[rgba(255,255,255,0.5)]">{description}</p>
+      <div className="flex flex-col gap-3">
         <Button size="sm" disabled={pending} onClick={() => void fire()}>
           {pending ? 'Firing…' : actionLabel}
         </Button>
@@ -121,7 +123,7 @@ export function TriggerCard({
             <JsonBlock label="Response" value={result.response} />
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

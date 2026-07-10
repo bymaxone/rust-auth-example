@@ -37,7 +37,8 @@ export async function POST(request: Request): Promise<Response> {
   }
   let decoded: unknown;
   try {
-    decoded = await decodeJwtToken(token);
+    // `decodeJwtToken` is synchronous (header/payload parse only) — no await.
+    decoded = decodeJwtToken(token);
   } catch {
     // A structurally invalid token decodes to nothing and verifies as rejected.
     return Response.json({ decoded: null, verified: false });

@@ -1,10 +1,15 @@
-//! Idempotent development seed: the `acme`/`globex` demo tenants and a demo platform
-//! admin. Run with `cargo run -p api --bin seed` against a migrated database.
+//! Idempotent development seed: the `acme`/`globex` demo tenants, a demo tenant admin, and a
+//! demo platform admin. Run with `cargo run -p api --bin seed` against a migrated database.
 //!
 //! Every statement is `ON CONFLICT DO NOTHING`, so re-running the seed is a no-op and
-//! never changes the row counts. The admin password is hashed with the library's real
-//! scrypt KDF — never a hand-written literal — and the demo credential is a documented
-//! local-only fixture (see `.env.example`), never a real secret.
+//! never changes the row counts. Passwords are hashed with the library's real scrypt KDF —
+//! never a hand-written literal — and the demo credentials are documented local-only fixtures
+//! (see `.env.example`), never real secrets.
+//!
+//! The tenant admin exists because register always mints a `user`, the seed provisions no
+//! other tenant member, and creating an invitation itself requires an admin — without a
+//! seeded tenant admin the admin-gated journeys (the Overview auth-health cards, the Audit
+//! Explorer, and inviting a teammate) are unreachable out of the box.
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
@@ -17,8 +22,15 @@ const DEMO_TENANTS: [(&str, &str); 2] = [("acme", "Acme Inc."), ("globex", "Glob
 /// Demo platform-admin email — a documented local-only fixture, not a real account.
 const DEMO_ADMIN_EMAIL: &str = "admin@platform.local";
 
-/// Demo platform-admin password — a documented local-only fixture, hashed before it is
-/// stored and never a real secret.
+/// Demo tenant-admin email under the `acme` tenant — a documented local-only fixture that
+/// bootstraps the admin-gated dashboard journeys. Not a real account.
+const DEMO_TENANT_ADMIN_EMAIL: &str = "admin@acme.test";
+
+/// The tenant the demo tenant admin belongs to (one of [`DEMO_TENANTS`]).
+const DEMO_TENANT_ADMIN_TENANT: &str = "acme";
+
+/// Demo password shared by both seeded admins — a documented local-only fixture, hashed
+/// before it is stored and never a real secret.
 const DEMO_ADMIN_PASSWORD: &[u8] = b"ChangeMe!Demo123";
 
 #[tokio::main]
@@ -48,11 +60,29 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
            VALUES ($1, 'Demo Admin', $2, 'admin', 'active')
            ON CONFLICT (email) DO NOTHING"#,
         DEMO_ADMIN_EMAIL,
-        admin_hash,
+        admin_hash.as_str(),
     )
     .execute(&pool)
     .await?;
 
-    println!("seed complete: tenants=acme,globex platform-admin={DEMO_ADMIN_EMAIL}");
+    // The tenant admin shares the demo password, so the same hash is reused rather than
+    // paying the memory-hard KDF a second time. `email_verified = true` lets it sign in
+    // without the verify step, and `ON CONFLICT (tenant_id, email) DO NOTHING` keeps the
+    // seed idempotent.
+    sqlx::query!(
+        r#"INSERT INTO users (email, name, password_hash, role, status, tenant_id, email_verified)
+           VALUES ($1, 'Acme Admin', $2, 'admin', 'active', $3, true)
+           ON CONFLICT (tenant_id, email) DO NOTHING"#,
+        DEMO_TENANT_ADMIN_EMAIL,
+        admin_hash.as_str(),
+        DEMO_TENANT_ADMIN_TENANT,
+    )
+    .execute(&pool)
+    .await?;
+
+    println!(
+        "seed complete: tenants=acme,globex platform-admin={DEMO_ADMIN_EMAIL} \
+         tenant-admin={DEMO_TENANT_ADMIN_EMAIL}"
+    );
     Ok(())
 }
