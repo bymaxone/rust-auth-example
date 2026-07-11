@@ -13,6 +13,7 @@
 'use client';
 
 import { useState } from 'react';
+import { UserPlus } from 'lucide-react';
 import { AuthClientError } from '@bymax-one/rust-auth/shared';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,8 +24,12 @@ import { createInvitation } from '@/lib/invitations-api';
 /** A permissive email shape check for client-side validation. */
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-/** The selectable roles. */
-const ROLES: readonly string[] = ['member', 'admin'];
+/**
+ * The selectable roles. These MUST be keys of the API's configured dashboard role hierarchy
+ * (`user`, `admin`) — the `invite` service rejects any role that is not a declared hierarchy
+ * key with `insufficient_role`, so an option outside the hierarchy could never be invited.
+ */
+const ROLES: readonly string[] = ['user', 'admin'];
 
 /** Props for {@link InviteForm}. */
 export interface InviteFormProps {
@@ -35,7 +40,7 @@ export interface InviteFormProps {
 /** The admin invite form. */
 export function InviteForm({ onInvited }: InviteFormProps) {
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState('member');
+  const [role, setRole] = useState('user');
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -107,6 +112,7 @@ export function InviteForm({ onInvited }: InviteFormProps) {
       )}
 
       <Button type="submit" disabled={busy}>
+        <UserPlus className="h-3.5 w-3.5" />
         {busy ? 'Sending…' : 'Send invitation'}
       </Button>
     </form>

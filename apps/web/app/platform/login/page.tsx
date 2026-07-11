@@ -14,14 +14,12 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { AuthClientError } from '@bymax-one/rust-auth/shared';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertTitle } from '@/components/ui/alert';
 import { AuthError } from '@/components/auth/auth-error';
 import { OtpInput } from '@/components/auth/otp-input';
@@ -198,34 +196,73 @@ function PlatformLoginForm(): React.ReactElement {
   );
 }
 
-/** Platform admin login page — centered card, no tenant selector. */
+/**
+ * Platform admin login page — deep-red glass card, no tenant selector.
+ *
+ * The red-tinted card and `PLATFORM ADMIN` label make this page visually distinct
+ * from the tenant dashboard login so an operator instantly recognises the platform
+ * admin context.
+ */
 export default function PlatformLoginPage(): React.ReactElement {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
-      <div className="w-full max-w-md">
-        <div className="mb-8 text-center">
-          <Link
-            href="/"
-            className="font-mono text-xl font-bold text-[#ff6224] transition-opacity hover:opacity-80"
-          >
-            rust-auth
-          </Link>
-        </div>
+    <div className="relative min-h-screen overflow-hidden bg-[#0d0505]">
+      {/* ── Ambient glow — deep red tint ── */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -left-32 -top-32 h-[500px] w-[500px] rounded-full bg-red-900 opacity-20 blur-[120px]"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-20 -top-20 h-[400px] w-[400px] rounded-full bg-red-800 opacity-10 blur-[100px]"
+      />
 
-        <Card>
-          <CardHeader accent>
-            <CardTitle className="text-center text-2xl">Platform Console</CardTitle>
-            <CardDescription className="text-center">
-              Platform administrator access only
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {/* Suspense required: useSearchParams is used inside PlatformLoginForm. */}
-            <Suspense fallback={null}>
-              <PlatformLoginForm />
-            </Suspense>
-          </CardContent>
-        </Card>
+      {/* ── Centered card ── */}
+      <div className="relative z-10 flex min-h-screen items-center justify-center px-4 py-8">
+        <div className="w-full max-w-[420px]">
+          {/* Red-tinted glass card */}
+          <div className="relative overflow-hidden rounded-[24px] border border-[rgba(239,68,68,0.2)] bg-[rgba(30,0,0,0.6)] backdrop-blur-lg">
+            {/* Top accent gradient line — red */}
+            <div
+              aria-hidden="true"
+              className="bg-linear-to-r absolute left-0 right-0 top-0 h-px from-transparent via-[rgba(239,68,68,0.6)] to-transparent"
+            />
+
+            {/* ── Brand header — platform admin identity ── */}
+            <div className="flex flex-col items-center gap-1 px-8 pb-4 pt-8">
+              {/* Red icon badge */}
+              <div
+                aria-hidden="true"
+                className="mb-2 flex h-12 w-12 items-center justify-center rounded-xl border border-[rgba(239,68,68,0.4)] bg-[rgba(239,68,68,0.15)]"
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M12 2L2 7l10 5 10-5-10-5ZM2 17l10 5 10-5M2 12l10 5 10-5"
+                    stroke="#ef4444"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
+
+              {/* PLATFORM ADMIN label */}
+              <p className="font-mono text-xs font-bold uppercase tracking-widest text-red-400">
+                PLATFORM ADMIN
+              </p>
+              <p className="bg-linear-to-r from-red-300 to-red-100 bg-clip-text font-mono text-xl font-bold text-transparent">
+                rust-auth-example
+              </p>
+            </div>
+
+            {/* ── Page content ── */}
+            <div className="px-8 pb-8">
+              {/* Suspense required: useSearchParams is used inside PlatformLoginForm. */}
+              <Suspense fallback={null}>
+                <PlatformLoginForm />
+              </Suspense>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

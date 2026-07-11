@@ -16,11 +16,14 @@
 
 import { useState } from 'react';
 import { ShieldAlert, ShieldCheck } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DeliveryModeChip } from '@/components/controls/DeliveryModeChip';
 import { apiJson } from '@/lib/api';
+
+/** Shared glass-panel chrome for a diagnostics tile. */
+const PANEL_CLASS =
+  'rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] p-6';
 
 /** The lifecycle for a one-shot diagnostic action. */
 type ActionState<T> =
@@ -47,19 +50,17 @@ function DiagnosticAction<T>(props: {
     }
   }
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">{props.title}</CardTitle>
-        <CardDescription>{props.description}</CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3">
+    <div className={PANEL_CLASS}>
+      <h3 className="font-mono text-sm font-semibold text-white">{props.title}</h3>
+      <p className="mt-1 text-xs text-[rgba(255,255,255,0.4)]">{props.description}</p>
+      <div className="mt-4 flex flex-col gap-3">
         <Button size="sm" disabled={state.k === 'busy'} onClick={() => void fire()}>
           {state.k === 'busy' ? 'Running…' : props.actionLabel}
         </Button>
         {state.k === 'error' && <p className="text-sm text-destructive">Request failed.</p>}
         {state.k === 'ok' && props.renderResult(state.data)}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
@@ -139,20 +140,18 @@ function TokenInspectorCard() {
   }
 
   return (
-    <Card className="lg:col-span-2">
-      <CardHeader>
-        <CardTitle className="text-base">Token inspector</CardTitle>
-        <CardDescription>
-          Decoded server-side; a forged `alg:none` token verifies as rejected.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3">
+    <div className={`${PANEL_CLASS} lg:col-span-2`}>
+      <h3 className="font-mono text-sm font-semibold text-white">Token inspector</h3>
+      <p className="mt-1 text-xs text-[rgba(255,255,255,0.4)]">
+        Decoded server-side; a forged `alg:none` token verifies as rejected.
+      </p>
+      <div className="mt-4 flex flex-col gap-3">
         <textarea
           aria-label="JWT to inspect"
           value={token}
           onChange={(e) => setToken(e.target.value)}
           rows={3}
-          className="border-(--glass-border) bg-(--glass-bg) ring-offset-background w-full rounded-xl border p-3 font-mono text-xs text-foreground transition-shadow duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          className="border-(--glass-border) bg-(--glass-bg) ring-offset-background w-full rounded-xl border p-3 font-mono text-xs text-white transition-shadow duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
         />
         <Button size="sm" disabled={busy} onClick={() => void inspect()}>
           {busy ? 'Inspecting…' : 'Inspect'}
@@ -171,13 +170,13 @@ function TokenInspectorCard() {
                 Rejected (e.g. forged alg:none)
               </Badge>
             )}
-            <p className="font-mono text-xs text-muted-foreground">
+            <p className="font-mono text-xs text-[rgba(255,255,255,0.4)]">
               alg: {result.decoded?.header?.alg ?? 'unknown'}
             </p>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
@@ -197,7 +196,7 @@ export function DiagnosticsMatrix() {
         }
         renderResult={(data) => (
           <div className="flex items-center gap-2 text-sm">
-            <span className="font-mono text-muted-foreground">legacy sample</span>
+            <span className="font-mono text-[rgba(255,255,255,0.4)]">legacy sample</span>
             {data.needsRehash === true ? (
               <Badge variant="destructive" className="font-mono">
                 needs rehash
@@ -240,21 +239,21 @@ export function DiagnosticsMatrix() {
         actionLabel="Refresh"
         run={() => apiJson<unknown>('/diagnostics/hooks')}
         renderResult={(data) => (
-          <p className="text-sm text-muted-foreground">
-            <span className="font-mono text-foreground">{hookCount(data)}</span> recent events
+          <p className="text-sm text-[rgba(255,255,255,0.5)]">
+            <span className="font-mono text-white">{hookCount(data)}</span> recent events
           </p>
         )}
       />
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Token delivery</CardTitle>
-          <CardDescription>How the backend delivers session tokens.</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <div className={PANEL_CLASS}>
+        <h3 className="font-mono text-sm font-semibold text-white">Token delivery</h3>
+        <p className="mt-1 text-xs text-[rgba(255,255,255,0.4)]">
+          How the backend delivers session tokens.
+        </p>
+        <div className="mt-4">
           <DeliveryModeChip mode="Cookie" />
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       <TokenInspectorCard />
     </div>

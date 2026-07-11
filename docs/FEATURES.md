@@ -13,7 +13,9 @@ Conventions used below:
   directly on `:4000`.
 - Error bodies are the canonical envelope `{ "error": { "code", "message", "details? } }` — the
   `details` field is omitted entirely when a variant carries none.
-- `X-Tenant-Id` scopes a request to a tenant; the platform domain is tenant-less.
+- Tenant-scoped auth requests carry the tenant as a **`tenantId` body field** (the DTOs
+  require it); the `X-Tenant-Id` header is only CORS-allowed, not a tenant source. The
+  platform domain is tenant-less.
 - Seeded credentials and the register-first flow are in [getting started](GETTING_STARTED.md).
 
 **Index:** [1](#1-first-verified-login) · [2](#2-login-with-mfa) · [3](#3-wrong-password-then-lockout) ·
@@ -33,8 +35,8 @@ Routes: `AUTH_REGISTER` → `AUTH_VERIFY_EMAIL` → `AUTH_LOGIN`.
 
 ```bash
 curl -X POST http://localhost:4000/auth/register \
-  -H 'Content-Type: application/json' -H 'X-Tenant-Id: acme' \
-  -d '{"email":"new@acme.test","password":"Passw0rd!Passw0rd","name":"New User"}'
+  -H 'Content-Type: application/json' \
+  -d '{"email":"new@acme.test","password":"Passw0rd!Passw0rd","name":"New User","tenantId":"acme"}'
 # 201 Created  ->  { "user": { "id": "…", "email": "new@acme.test", "emailVerified": false, … } }
 ```
 
@@ -42,8 +44,8 @@ Read the code from **[Mailpit](http://localhost:8025)**, then:
 
 ```bash
 curl -X POST http://localhost:4000/auth/verify-email \
-  -H 'Content-Type: application/json' -H 'X-Tenant-Id: acme' \
-  -d '{"email":"new@acme.test","code":"123456"}'          # 204 No Content
+  -H 'Content-Type: application/json' \
+  -d '{"email":"new@acme.test","code":"123456","tenantId":"acme"}'   # 204 No Content
 ```
 
 **Teaching point:** registration issues a session immediately (before verification), so the
@@ -62,8 +64,8 @@ curl -X POST http://localhost:4000/auth/mfa/setup -b cookies.txt
 
 # Later, a login on an MFA-enabled account short-circuits to a challenge:
 curl -X POST http://localhost:4000/auth/login \
-  -H 'Content-Type: application/json' -H 'X-Tenant-Id: acme' \
-  -d '{"email":"new@acme.test","password":"Passw0rd!Passw0rd"}'
+  -H 'Content-Type: application/json' \
+  -d '{"email":"new@acme.test","password":"Passw0rd!Passw0rd","tenantId":"acme"}'
 # 200 OK  ->  MfaChallengeResult { "mfaRequired": true, "mfaTempToken": "<300s JWT>" }
 
 curl -X POST http://localhost:4000/auth/mfa/challenge \
@@ -153,12 +155,12 @@ Routes: `PASSWORD_FORGOT` → `PASSWORD_VERIFY_OTP` → `PASSWORD_RESET` (resend
 
 ```bash
 curl -X POST http://localhost:4000/auth/password/forgot-password \
-  -H 'Content-Type: application/json' -H 'X-Tenant-Id: acme' \
-  -d '{"email":"new@acme.test"}'                          # 200 OK (identical for unknown emails)
+  -H 'Content-Type: application/json' \
+  -d '{"email":"new@acme.test","tenantId":"acme"}'        # 200 OK (identical for unknown emails)
 
 curl -X POST http://localhost:4000/auth/password/verify-otp \
-  -H 'Content-Type: application/json' -H 'X-Tenant-Id: acme' \
-  -d '{"email":"new@acme.test","code":"123456"}'
+  -H 'Content-Type: application/json' \
+  -d '{"email":"new@acme.test","code":"123456","tenantId":"acme"}'
 # 200 OK  ->  { "verifiedToken": "<short-lived token>" }
 
 curl -X POST http://localhost:4000/auth/password/reset-password \
@@ -211,11 +213,11 @@ The Diagnostics panel shows the active provider.
 
 The same email is two different users under two different tenants.
 
-Route: `AUTH_REGISTER` / `AUTH_LOGIN` with `X-Tenant-Id`.
+Route: `AUTH_REGISTER` / `AUTH_LOGIN`, scoped by the `tenantId` body field.
 
 ```bash
-curl -X POST http://localhost:4000/auth/register -H 'X-Tenant-Id: acme'   -d '{…}'   # user A
-curl -X POST http://localhost:4000/auth/register -H 'X-Tenant-Id: globex' -d '{…}'   # user B (isolated)
+curl -X POST http://localhost:4000/auth/register -d '{…,"tenantId":"acme"}'   # user A
+curl -X POST http://localhost:4000/auth/register -d '{…,"tenantId":"globex"}' # user B (isolated)
 ```
 
 **Teaching point:** `UserRepository::find_by_email(email, tenant_id)` returns `Ok(None)` for a

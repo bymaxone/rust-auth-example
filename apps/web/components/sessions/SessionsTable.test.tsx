@@ -58,17 +58,17 @@ describe('SessionsTable', () => {
     expect(screen.getByText('2024-01-02 10:30')).toBeInTheDocument();
   });
 
-  it('glows only the current session row with the primary border tokens', () => {
-    // The pinned current session carries the exact highlight tokens; every other
-    // row stays plain. This pins both the condition (isCurrent) and the class
-    // string so the row cannot silently lose or over-apply the glow.
+  it('glows only the current session row with the orange highlight tint', () => {
+    // The pinned current session carries the exact orange highlight tint; every
+    // other row stays plain. This pins both the condition (isCurrent) and the
+    // class string so the row cannot silently lose or over-apply the glow.
     render(<SessionsTable sessions={SESSIONS} onRevoke={vi.fn()} revokingId={null} />);
     const rows = screen.getAllByRole('row').slice(1); // drop the header row
     const currentRow = rows[0] as HTMLElement;
     const otherRow = rows[1] as HTMLElement;
-    expect(currentRow).toHaveClass('border-primary/40');
-    expect(currentRow).toHaveClass('bg-primary/5');
-    expect(otherRow).not.toHaveClass('border-primary/40');
-    expect(otherRow).not.toHaveClass('bg-primary/5');
+    expect(currentRow).toHaveClass('border-[rgba(255,98,36,0.3)]');
+    expect(currentRow).toHaveClass('bg-[rgba(255,98,36,0.06)]');
+    expect(otherRow).not.toHaveClass('border-[rgba(255,98,36,0.3)]');
+    expect(otherRow).not.toHaveClass('bg-[rgba(255,98,36,0.06)]');
   });
 });

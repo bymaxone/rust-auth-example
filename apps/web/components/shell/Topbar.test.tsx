@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 
 vi.mock('@/components/controls/TenantSelector', () => ({
   TenantSelector: () => <div>tenant-selector</div>,
@@ -26,7 +26,7 @@ import { Topbar } from './Topbar';
 describe('Topbar', () => {
   it('renders the brand, repo link, and every global control', () => {
     // Verifies the topbar composes the brand plus all four controls.
-    render(<Topbar />);
+    render(<Topbar onMenuOpen={vi.fn()} />);
 
     expect(screen.getByRole('link', { name: 'rust-auth-example' })).toHaveAttribute('href', '/');
     expect(screen.getByRole('link', { name: /repository on GitHub/ })).toHaveAttribute(
@@ -37,5 +37,15 @@ describe('Topbar', () => {
     expect(screen.getByText('delivery-chip')).toBeInTheDocument();
     expect(screen.getByText('live-toggle')).toBeInTheDocument();
     expect(screen.getByText('session-badge')).toBeInTheDocument();
+  });
+
+  it('opens the mobile navigation menu when the hamburger is pressed', () => {
+    // The hamburger (mobile-only) invokes the onMenuOpen callback so the shell can
+    // reveal the sidebar overlay.
+    const onMenuOpen = vi.fn();
+    render(<Topbar onMenuOpen={onMenuOpen} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open navigation menu' }));
+    expect(onMenuOpen).toHaveBeenCalledTimes(1);
   });
 });

@@ -3,7 +3,7 @@
  *
  * Renders the `otpauth://` URI as a QR image generated entirely in the browser
  * (so the secret never leaves the client), the copyable base32 `secret` in mono,
- * and the one-time {@link RecoveryCodeGrid}. Composes the design-system `Card`.
+ * and the one-time {@link RecoveryCodeGrid}. Rendered as a dark-glass panel.
  * Nothing here is persisted — the secret and codes live only in the render.
  *
  * @module components/mfa/QrEnrollmentCard
@@ -14,7 +14,6 @@
 import { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
 import { Check, Copy, X } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RecoveryCodeGrid } from './RecoveryCodeGrid';
 import type { MfaSetupResult } from '@/lib/mfa-api';
@@ -83,14 +82,16 @@ export function QrEnrollmentCard({ setup }: QrEnrollmentCardProps) {
   }
 
   return (
-    <Card>
-      <CardHeader accent>
-        <CardTitle className="text-base">Scan to enroll</CardTitle>
-        <CardDescription>
+    <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] p-6">
+      <div className="mb-4">
+        <h2 className="font-mono text-sm font-semibold uppercase tracking-widest text-[rgba(255,255,255,0.4)]">
+          Scan to enroll
+        </h2>
+        <p className="mt-1 text-xs text-[rgba(255,255,255,0.35)]">
           Scan the QR with your authenticator, or enter the secret manually.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
+        </p>
+      </div>
+      <div className="flex flex-col gap-4">
         <div className="flex justify-center">
           {qrDataUrl !== null ? (
             <img
@@ -100,7 +101,7 @@ export function QrEnrollmentCard({ setup }: QrEnrollmentCardProps) {
             />
           ) : (
             <div
-              className="h-44 w-44 animate-pulse rounded-lg bg-muted"
+              className="h-44 w-44 animate-pulse rounded-lg bg-[rgba(255,255,255,0.05)]"
               role="status"
               aria-label="Rendering QR code"
             />
@@ -108,11 +109,11 @@ export function QrEnrollmentCard({ setup }: QrEnrollmentCardProps) {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          <span className="text-xs font-medium uppercase tracking-wide text-[rgba(255,255,255,0.4)]">
             Manual entry secret
           </span>
           <div className="flex items-center gap-2">
-            <code className="bg-(--glass-bg) flex-1 truncate rounded-md px-3 py-2 font-mono text-sm text-foreground">
+            <code className="bg-(--glass-bg) flex-1 truncate rounded-md px-3 py-2 font-mono text-sm text-[rgba(255,255,255,0.85)]">
               {setup.secret}
             </code>
             <Button
@@ -135,7 +136,7 @@ export function QrEnrollmentCard({ setup }: QrEnrollmentCardProps) {
         </div>
 
         <RecoveryCodeGrid codes={setup.recoveryCodes} />
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

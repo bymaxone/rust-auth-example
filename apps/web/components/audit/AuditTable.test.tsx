@@ -204,6 +204,34 @@ describe('AuditTable', () => {
     expect(onFollowChange).toHaveBeenCalledWith(false);
   });
 
+  it('tints a known event slug with its ramp colour and falls back to neutral otherwise', () => {
+    // The event pill picks a colour from the prefix ramp (after_login → emerald) and
+    // degrades to the neutral tint for an unmatched slug, so a new event still renders.
+    const rows: AuditLogRow[] = [
+      {
+        id: 1,
+        actor: 'a',
+        event: 'after_login',
+        tenantId: null,
+        ip: '0',
+        createdAt: '2024-01-01T00:00:00.000Z',
+        details: {},
+      },
+      {
+        id: 2,
+        actor: 'a',
+        event: 'evt-unknown',
+        tenantId: null,
+        ip: '0',
+        createdAt: '2024-01-01T00:00:00.000Z',
+        details: {},
+      },
+    ];
+    render(<AuditTable rows={rows} following={false} pendingCount={0} onFollowChange={vi.fn()} />);
+    expect(screen.getByText('after_login')).toHaveClass('text-emerald-300');
+    expect(screen.getByText('evt-unknown')).toHaveClass('text-[rgba(255,255,255,0.6)]');
+  });
+
   it('renders an invalid timestamp verbatim', () => {
     // A malformed timestamp must degrade gracefully.
     const rows: AuditLogRow[] = [
