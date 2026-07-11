@@ -72,9 +72,10 @@ impl AppState {
 /// example's own domain routes, sharing one `Arc<AuthEngine>`.
 ///
 /// The library router is derived from the engine's resolved `ControllerToggles`, so
-/// only the enabled groups (`auth`, `password_reset`, `sessions`, `mfa`) mount. The
-/// example's own routes are merged onto the same value before the global middleware
-/// stack wraps it.
+/// only the enabled groups mount. The example enables `auth`, `password_reset`,
+/// `sessions`, `mfa`, `invitations`, and `platform` (plus the `platform`-`mfa` combo),
+/// and turns on `oauth` when Google is configured. The example's own routes are merged
+/// onto the same value before the global middleware stack wraps it.
 pub fn build_router(state: AppState) -> Router {
     // The mounted auth surface ships the library's own defaults. Those defaults are the knobs a
     // real deployment tunes on this value: `route_prefix` (the URL prefix, `auth`), `rate_limits`
