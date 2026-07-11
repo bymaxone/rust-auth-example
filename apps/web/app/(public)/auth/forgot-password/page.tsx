@@ -115,10 +115,11 @@ export default function ForgotPasswordPage(): React.ReactElement {
     return (
       <div className="flex flex-col gap-6">
         <div className="text-center">
-          <MailOpen className="mx-auto mb-3 h-10 w-10 text-primary" aria-hidden="true" />
-          <p className="text-sm text-muted-foreground">
-            If an account exists for <span className="font-mono text-foreground">{email}</span>, we
-            sent a 6-digit code. Enter it below.
+          <MailOpen className="mx-auto mb-3 h-10 w-10 text-[#ff6224]" aria-hidden="true" />
+          <p className="text-sm text-[rgba(255,255,255,0.5)]">
+            If an account exists for{' '}
+            <span className="font-mono text-[rgba(255,255,255,0.8)]">{email}</span>, we sent a
+            6-digit code. Enter it below.
           </p>
         </div>
 
@@ -126,10 +127,10 @@ export default function ForgotPasswordPage(): React.ReactElement {
 
         <OtpInput onComplete={(otp) => void onOtpComplete(otp)} />
 
-        <p className="text-center text-sm text-muted-foreground">
+        <p className="text-center text-sm text-[rgba(255,255,255,0.4)]">
           <button
             type="button"
-            className="text-primary transition-opacity hover:opacity-80"
+            className="text-[rgba(255,98,36,0.8)] transition-colors hover:text-[#ff6224]"
             onClick={() => setStep('email')}
           >
             Start over
@@ -141,7 +142,7 @@ export default function ForgotPasswordPage(): React.ReactElement {
 
   return (
     <div className="flex flex-col gap-6">
-      <p className="text-center text-sm text-muted-foreground">
+      <p className="text-center text-sm text-[rgba(255,255,255,0.5)]">
         Enter your email to receive reset instructions.
       </p>
 
@@ -149,7 +150,9 @@ export default function ForgotPasswordPage(): React.ReactElement {
 
       <form onSubmit={(e) => void onEmailSubmit(e)} noValidate className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="fp-email">Email</Label>
+          <Label htmlFor="fp-email" className="text-[rgba(255,255,255,0.7)]">
+            Email
+          </Label>
           <Input
             id="fp-email"
             type="email"
@@ -157,6 +160,7 @@ export default function ForgotPasswordPage(): React.ReactElement {
             placeholder="you@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            className="border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.05)] text-white placeholder:text-[rgba(255,255,255,0.3)] focus-visible:ring-[#ff6224]/50"
             required
           />
         </div>
@@ -166,9 +170,12 @@ export default function ForgotPasswordPage(): React.ReactElement {
         </Button>
       </form>
 
-      <p className="text-center text-sm text-muted-foreground">
+      <p className="text-center text-sm text-[rgba(255,255,255,0.4)]">
         Remember your password?{' '}
-        <Link href="/auth/login" className="text-primary transition-opacity hover:opacity-80">
+        <Link
+          href="/auth/login"
+          className="text-[rgba(255,98,36,0.8)] transition-colors hover:text-[#ff6224]"
+        >
           Sign in
         </Link>
       </p>

@@ -13,12 +13,17 @@ import { AuthClientError } from '@bymax-one/rust-auth/shared';
 
 /* ── Hoisted mocks ────────────────────────────────────────────────────── */
 
-const mockPush = vi.hoisted(() => vi.fn());
+const mockReplace = vi.hoisted(() => vi.fn());
 const mockConsume = vi.hoisted(() => vi.fn());
 const mockMfaChallenge = vi.hoisted(() => vi.fn());
+const mockRefresh = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => ({ replace: mockReplace }),
+}));
+
+vi.mock('@bymax-one/rust-auth/react', () => ({
+  useSession: () => ({ refresh: mockRefresh }),
 }));
 
 vi.mock('@/lib/mfa-challenge-store', () => ({
@@ -65,8 +70,9 @@ describe('MfaChallengePage — with pending token', () => {
     mockConsume.mockReturnValue('tmp.tok.abc');
   });
 
-  it('routes to /dashboard on successful mfaChallenge', async () => {
-    /* A valid TOTP code must complete the challenge and route to the dashboard. */
+  it('refreshes the session then routes to /dashboard on successful mfaChallenge', async () => {
+    /* A valid TOTP code must complete the challenge, revalidate the provider session so
+       the shell renders authenticated, and replace the route with the dashboard. */
     mockMfaChallenge.mockResolvedValueOnce({
       user: { id: '1' },
       accessToken: 'a',
@@ -74,7 +80,8 @@ describe('MfaChallengePage — with pending token', () => {
     });
     render(<MfaChallengePage />);
     fireEvent.click(screen.getByRole('button', { name: /Submit TOTP/i }));
-    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/dashboard'));
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/dashboard'));
+    expect(mockRefresh).toHaveBeenCalledTimes(1);
   });
 
   it('passes the consumed temp token to mfaChallenge', async () => {

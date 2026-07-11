@@ -5,8 +5,9 @@
 > **Source spec:** [`docs/OVERVIEW.md`](./OVERVIEW.md) (the master blueprint — 21 sections, 35-row Feature Coverage Matrix).
 > **Targeted library version:** `bymax-auth-*` `0.0.0` (pre-publish, consumed via `path`) + `@bymax-one/rust-auth`
 > `0.0.0` (pre-publish, consumed via `file:`).
-> **Document version:** `1.0 — authored before implementation`.
-> **Status:** specification only — no `apps/` code yet.
+> **Document version:** `1.1 — implementation complete`.
+> **Status:** built — 14 / 15 phases done (99%); the only open item is the deferred manual release step (first `v*`
+> tag + public-visibility flip), gated on the pre-publish library shipping. See [Progress](#progress) for the live dashboard.
 
 This is **Layer 2** of the `spec → roadmap → phase-tasks` workflow. It does not restate the specification; it
 **sequences the work** into independently shippable phases, each with an observable Definition of Done, and defines the

@@ -304,9 +304,9 @@ rust-auth-example/
 
 Every row maps to a public feature/export of the consumed surface. Each is exercised in this repository **and**
 reachable from the browser (the "Demonstrated in" column names the API surface and the console surface that drives it).
-`Status ✅` here means the export is **contracted and mapped** to a real, browser-reachable journey in this blueprint —
-it is the coverage contract the CI export audit enforces, not an implementation-complete marker (the repo carries no
-`apps/` code yet; build progress lives in [`DEVELOPMENT_PLAN.md`](DEVELOPMENT_PLAN.md)).
+`Status ✅` here means the export is **contracted, mapped, and implemented** — a real, browser-reachable journey backed
+by shipped `apps/` code and enforced by the CI export-usage audit. Build progress lives in
+[`DEVELOPMENT_PLAN.md`](DEVELOPMENT_PLAN.md) (14 / 15 phases done; the sole open item is the deferred manual release step).
 
 | #   | Library feature | Library surface | Demonstrated in | Status |
 | --- | --- | --- | --- | --- |
@@ -850,8 +850,9 @@ rotation-reuse defense"*).
 
 CI gates (`.github/workflows/ci.yml`): `lint` (`cargo clippy -- -D warnings` + ESLint) · `format` (`cargo fmt --check`
 + Prettier) · `typecheck` (`cargo check` + `tsc`) · `unit` (coverage, both workspaces) · `e2e-api` · `e2e-web` ·
-`export-usage-check` (the npm-export audit + the `cargo public-api` snapshot). Mutation runs incrementally per-PR
-(`mutation.yml`) and fully on a weekly schedule (`mutation-nightly.yml`). The npm package is built first so the `file:`
+`export-usage-check` (the npm-export audit + the `cargo public-api` snapshot). Mutation (`mutation.yml`) runs post-merge
+on `main` (`--in-diff`, scoped to the merge's changed API lines) and on manual dispatch (full API surface) — never on PRs
+or a schedule, per the org cost policy. The npm package is built first so the `file:`
 link resolves; a placeholder `DATABASE_URL` lets the build run without a database.
 
 ---

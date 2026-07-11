@@ -38,20 +38,48 @@ function SignInButton() {
   );
 }
 
-/** The authenticated affordance: the email + avatar with a sign-out menu. */
+/** Up-to-two uppercase initials from a display name, or `?` when it is blank. */
+function initialsOf(name: string): string {
+  const parts = name.split(' ').filter((segment) => segment.length > 0);
+  if (parts.length === 0) {
+    return '?';
+  }
+  return parts
+    .slice(0, 2)
+    .map((segment) => segment.charAt(0).toUpperCase())
+    .join('');
+}
+
+/** The authenticated affordance: an orange avatar + name/role with a sign-out menu. */
 function AuthenticatedBadge() {
   const { user } = useSession();
   const { logout } = useAuth();
   const email = user?.email ?? 'Account';
+  const name = user?.name ?? email;
+  const role = user?.role ?? '';
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="gap-2">
-          <Avatar className="h-6 w-6">
-            <AvatarFallback>{email.charAt(0).toUpperCase()}</AvatarFallback>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-auto gap-2 py-1"
+          data-testid="user-menu-trigger"
+        >
+          <Avatar className="h-7 w-7">
+            <AvatarFallback className="bg-[rgba(255,98,36,0.15)] text-[10px] font-semibold text-[#ff6224]">
+              {initialsOf(name)}
+            </AvatarFallback>
           </Avatar>
-          <span className="max-w-[12rem] truncate">{email}</span>
+          <span className="hidden flex-col items-start leading-tight lg:flex">
+            <span className="max-w-[12rem] truncate font-mono text-xs font-medium text-[rgba(255,255,255,0.8)]">
+              {name}
+            </span>
+            {role !== '' && (
+              <span className="font-mono text-[10px] text-[rgba(255,255,255,0.4)]">{role}</span>
+            )}
+          </span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">

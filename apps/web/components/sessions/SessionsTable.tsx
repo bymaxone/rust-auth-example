@@ -1,9 +1,9 @@
 /**
  * @fileoverview The sessions device-manager table.
  *
- * Renders device / IP / last-activity / an `isCurrent` badge / a revoke action.
- * The current session is pinned to the top with a glow border and cannot be
- * revoked from here. Composes the design-system `Table`/`Badge`/`Button`.
+ * Renders device / IP / last-activity / an `isCurrent` pill / a revoke action.
+ * The current session is pinned to the top with an orange glow border and cannot
+ * be revoked from here. Composes the design-system `Table`/`Button`.
  *
  * @module components/sessions/SessionsTable
  */
@@ -19,7 +19,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { SessionInfo } from '@/lib/sessions-api';
@@ -60,8 +59,7 @@ export function SessionsTable({ sessions, onRevoke, revokingId }: SessionsTableP
           <TableRow
             key={session.id}
             className={cn(
-              session.isCurrent &&
-                'border-primary/40 shadow-(--shadow-primary) bg-primary/5 border',
+              session.isCurrent && 'border border-[rgba(255,98,36,0.3)] bg-[rgba(255,98,36,0.06)]',
             )}
           >
             <TableCell>
@@ -69,9 +67,11 @@ export function SessionsTable({ sessions, onRevoke, revokingId }: SessionsTableP
                 <Monitor className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
                 {session.device}
                 {session.isCurrent && (
-                  <Badge variant="outline" className="font-mono">
-                    current
-                  </Badge>
+                  <span className="inline-flex items-center rounded-full border border-[rgba(255,98,36,0.25)] bg-[rgba(255,98,36,0.12)] px-2 py-0.5">
+                    <span className="font-mono text-[10px] font-semibold uppercase tracking-wide text-[#ff6224]">
+                      current
+                    </span>
+                  </span>
                 )}
               </div>
             </TableCell>

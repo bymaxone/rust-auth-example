@@ -1,25 +1,18 @@
-# Mutation testing — pull-request gate. A paths-filter detects which workspace
-# changed, then the matching mutation job runs. The API job runs cargo-mutants
-# (capped --jobs for memory safety) and gates on caught / (caught + missed) >=
-# 0.95; the web job runs Stryker incrementally with break >= 95. The stub run
-# steps validate the pipeline shape and are replaced with the real tools when the
-# corresponding test suites exist.
+# Mutation testing — runs post-merge on `main` and on manual dispatch, never on
+# PRs or a schedule (the org cost policy). On a push to `main` a paths-filter
+# scopes the run to the changed workspace and cargo-mutants runs `--in-diff` on
+# the merged API lines; on `workflow_dispatch` the full API surface is mutated.
+# The API job gates on caught / (caught + missed) >= 0.95; the web job runs
+# Stryker incrementally with break >= 95.
 #
 # Actions are pinned to a commit SHA with the version in a trailing comment.
 
 name: mutation
 
 on:
-  pull_request:
-    paths:
-      - 'apps/api/src/**'
-      - 'apps/web/app/**'
-      - 'apps/web/lib/**'
-      - 'apps/web/components/**'
-      - '**/Cargo.toml'
-      - '**/Cargo.lock'
-      - 'pnpm-lock.yaml'
-      - '.github/workflows/mutation.yml'
+  push:
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -31,11 +24,12 @@ concurrency:
 jobs:
   detect:
     name: detect
+    # Only gates push runs; on manual dispatch the mutation jobs run unconditionally.
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
       contents: read
-      pull-requests: read
     outputs:
       api: ${{ steps.filter.outputs.api }}
       web: ${{ steps.filter.outputs.web }}
@@ -43,7 +37,10 @@ jobs:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           persist-credentials: false
-      - uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3
+          # Full history so paths-filter can diff the push against its `before`
+          # commit locally (a shallow checkout has no base to compare against).
+          fetch-depth: 0
+      - uses: dorny/paths-filter@7b450fff21473bca461d4b92ce414b9d0420d706 # v4.0.2
         id: filter
         with:
           filters: |
@@ -60,7 +57,7 @@ jobs:
   mutation-api:
     name: mutation-api
     needs: detect
-    if: needs.detect.outputs.api == 'true'
+    if: always() && (github.event_name == 'workflow_dispatch' || needs.detect.outputs.api == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 60
     services:
@@ -112,25 +109,32 @@ jobs:
         with:
           toolchain: 1.96.0
       - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
-      - uses: taiki-e/install-action@16b05812d776ae1dfaabc8277e421fb6d2506419 # v2
+      - uses: taiki-e/install-action@c7eb1735f09259a5035e8e5d44b1406b1cddc0fb # v2
         with:
           tool: cargo-mutants,cargo-nextest,sqlx-cli
       - name: Migrate the test database
         run: sqlx migrate run --source apps/api/migrations --database-url "$DATABASE_URL_TEST"
-      # The full mutation sweep (~250 mutants × the DB-integration suite) far exceeds the CI job
-      # cap, so the pull-request gate scopes cargo-mutants to the PR's changed API lines
-      # (`--in-diff`); the full surface runs on the nightly schedule instead.
-      - name: Compute the changed API surface for this PR
-        run: git diff "${{ github.event.pull_request.base.sha }}...HEAD" -- apps/api/src > api.diff
-      - name: Mutation testing (api, --in-diff, floor 0.95)
+      # The full mutation sweep (~250 mutants × the DB-integration suite) is slow, so a
+      # push to main scopes cargo-mutants to the lines that merge changed (`--in-diff`
+      # against the previous main commit); a manual dispatch leaves the diff unset so the
+      # full API surface is mutated on demand.
+      - name: Compute the changed API surface (push only)
+        if: github.event_name == 'push'
+        run: |
+          base="${{ github.event.before }}"
+          if [ -z "$base" ] || ! git cat-file -e "${base}^{commit}" 2>/dev/null; then
+            base="HEAD^"
+          fi
+          git diff "$base...HEAD" -- apps/api/src > api.diff
+      - name: Mutation testing (api, floor 0.95)
         env:
-          MUTANTS_IN_DIFF: api.diff
+          MUTANTS_IN_DIFF: ${{ github.event_name == 'push' && 'api.diff' || '' }}
         run: bash scripts/mutants-gate.sh
 
   mutation-web:
     name: mutation-web
     needs: detect
-    if: needs.detect.outputs.web == 'true'
+    if: always() && (github.event_name == 'workflow_dispatch' || needs.detect.outputs.web == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -143,13 +147,13 @@ jobs:
           toolchain: 1.96.0
           targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
-      - uses: taiki-e/install-action@16b05812d776ae1dfaabc8277e421fb6d2506419 # v2
+      - uses: taiki-e/install-action@c7eb1735f09259a5035e8e5d44b1406b1cddc0fb # v2
         with:
           tool: wasm-pack
-      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
         with:
           version: 10.8.1
-      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: 24
           cache: pnpm

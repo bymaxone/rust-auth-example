@@ -43,12 +43,12 @@ export default function ResetPasswordPage(): React.ReactElement {
   if (verifiedToken === null) {
     return (
       <div className="flex flex-col items-center gap-6 text-center">
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-[rgba(255,255,255,0.5)]">
           Your reset session expired or was already used. Please start over.
         </p>
         <Link
           href="/auth/forgot-password"
-          className="text-primary transition-opacity hover:opacity-80"
+          className="text-sm text-[rgba(255,98,36,0.8)] transition-colors hover:text-[#ff6224]"
         >
           Request a new reset link
         </Link>
@@ -75,7 +75,7 @@ export default function ResetPasswordPage(): React.ReactElement {
 
   return (
     <div className="flex flex-col gap-6">
-      <p className="text-center text-sm text-muted-foreground">
+      <p className="text-center text-sm text-[rgba(255,255,255,0.5)]">
         Choose a new password for your account.
       </p>
 
@@ -83,7 +83,9 @@ export default function ResetPasswordPage(): React.ReactElement {
 
       <form onSubmit={(e) => void onSubmit(e)} noValidate className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="rp-email">Email</Label>
+          <Label htmlFor="rp-email" className="text-[rgba(255,255,255,0.7)]">
+            Email
+          </Label>
           <Input
             id="rp-email"
             type="email"
@@ -91,12 +93,15 @@ export default function ResetPasswordPage(): React.ReactElement {
             placeholder="you@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            className="border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.05)] text-white placeholder:text-[rgba(255,255,255,0.3)] focus-visible:ring-[#ff6224]/50"
             required
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="rp-password">New password</Label>
+          <Label htmlFor="rp-password" className="text-[rgba(255,255,255,0.7)]">
+            New password
+          </Label>
           <Input
             id="rp-password"
             type="password"
@@ -104,6 +109,7 @@ export default function ResetPasswordPage(): React.ReactElement {
             placeholder="••••••••"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
+            className="border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.05)] text-white placeholder:text-[rgba(255,255,255,0.3)] focus-visible:ring-[#ff6224]/50"
             required
           />
         </div>

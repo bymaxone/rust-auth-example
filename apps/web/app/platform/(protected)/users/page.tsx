@@ -14,6 +14,7 @@
 import 'server-only';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertTitle } from '@/components/ui/alert';
@@ -75,11 +76,17 @@ export default async function PlatformUsersPage(): Promise<React.ReactElement> {
 
   return (
     <section className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="font-mono text-2xl font-bold">Users</h1>
-        <p className="text-sm text-muted-foreground">
-          Platform administrator accounts. Read-only — provisioning is out-of-band.
-        </p>
+      {/* ── Red platform header ── */}
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[rgba(239,68,68,0.3)] bg-[rgba(239,68,68,0.1)]">
+          <Users className="h-5 w-5 text-red-400" aria-hidden="true" />
+        </div>
+        <div>
+          <h1 className="font-mono text-xl font-semibold text-red-100">Users</h1>
+          <p className="text-sm text-red-400/60">
+            Platform administrator accounts. Read-only — provisioning is out-of-band.
+          </p>
+        </div>
       </div>
 
       {/* Domain-isolation banner */}
@@ -113,7 +120,7 @@ export default async function PlatformUsersPage(): Promise<React.ReactElement> {
               <tbody>
                 {users.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                    <td colSpan={5} className="px-4 py-8 text-center text-[rgba(255,200,200,0.5)]">
                       No platform admin accounts found.
                     </td>
                   </tr>

@@ -3,8 +3,9 @@
  *
  * After a successful register/verify or sign-in the public flows route to
  * `/dashboard`, which the console forwards to the Overview root (`/`). A journey
- * has "landed" when the topbar session badge shows the signed-in email — a real,
- * end-to-end signal that the session cookie is honoured, not merely a URL check.
+ * has "landed" when the topbar user menu — which only renders for an authenticated
+ * session — reveals the signed-in email, a real end-to-end signal that the session
+ * cookie is honoured, not merely a URL check.
  *
  * @module e2e/live/helpers/console
  */
@@ -21,10 +22,12 @@ const ATTEMPT_TIMEOUT_MS = 8_000;
 const SIGN_IN_ATTEMPTS = 3;
 
 /**
- * Assert the browser has landed on the authenticated console for `email`.
+ * Assert the browser has landed on the authenticated console for `email`. The
+ * topbar shows the display name (not the email), so the signed-in email is
+ * confirmed by opening the user menu, whose label carries the address.
  *
  * @param page - The page under test.
- * @param email - The signed-in account's email, shown in the topbar badge.
+ * @param email - The signed-in account's email, shown in the user-menu label.
  * @param timeout - How long to wait for the landing (ms).
  */
 export async function expectSignedIn(
@@ -33,7 +36,14 @@ export async function expectSignedIn(
   timeout: number = LANDING_TIMEOUT_MS,
 ): Promise<void> {
   await expect(page).toHaveURL(/\/$/, { timeout });
+  // The user-menu trigger only renders for an authenticated session; opening it
+  // reveals the email in the menu label.
+  const menu = page.getByTestId('user-menu-trigger');
+  await expect(menu).toBeVisible({ timeout });
+  await menu.click();
   await expect(page.getByText(email)).toBeVisible({ timeout });
+  // Close the menu so it never overlays the next step in a journey.
+  await page.keyboard.press('Escape');
 }
 
 /**

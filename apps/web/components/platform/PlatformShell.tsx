@@ -1,12 +1,14 @@
 /**
  * @fileoverview The tenant-less platform admin shell.
  *
- * Renders a minimal fixed topbar and a 250px sidebar scoped to the platform
- * navigation (Security · Sessions · Users). The `data-domain="platform"` marker
- * on the root element distinguishes the platform shell from the tenant-scoped
- * dashboard shell (`AppShell`) and allows automated cross-domain assertions in
- * the e2e suite. There is intentionally no tenant selector, no delivery-mode
- * chip, and no SSE live-toggle — those belong to the dashboard domain.
+ * Renders a red-tinted fixed topbar and a 250px sidebar scoped to the platform
+ * navigation (Security · Sessions · Users). The deep-red colour scheme makes the
+ * platform admin area visually impossible to confuse with the tenant dashboard.
+ * The `data-domain="platform"` marker on the root element distinguishes the
+ * platform shell from the tenant-scoped dashboard shell (`AppShell`) and allows
+ * automated cross-domain assertions in the e2e suite. There is intentionally no
+ * tenant selector, no delivery-mode chip, and no SSE live-toggle — those belong
+ * to the dashboard domain.
  *
  * @module components/platform/PlatformShell
  */
@@ -16,7 +18,9 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { MonitorSmartphone, ShieldCheck, Users, type LucideIcon } from 'lucide-react';
+import { LogOut, MonitorSmartphone, ShieldCheck, Users, type LucideIcon } from 'lucide-react';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { platformClient } from '@/lib/platform-client';
 
@@ -37,7 +41,12 @@ const PLATFORM_NAV: readonly PlatformNavItem[] = [
   { href: '/platform/users', label: 'Users', icon: Users },
 ];
 
-/** A single nav link that highlights when it matches the active route. */
+/**
+ * A single nav link that highlights when it matches the active route.
+ *
+ * The active link carries a left-border indicator and a red fill; inactive links
+ * stay muted red until hovered. Both branches keep the shared layout tokens.
+ */
 function PlatformNavLink({
   item,
   active,
@@ -51,22 +60,24 @@ function PlatformNavLink({
       href={item.href}
       aria-current={active ? 'page' : undefined}
       className={cn(
-        'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
+        'flex items-center gap-3 rounded-lg border-l-2 px-3 py-[10px] text-sm transition-all duration-150',
         active
-          ? 'bg-primary/10 text-primary shadow-(--shadow-primary)'
-          : 'text-muted-foreground hover:text-foreground',
+          ? 'border-l-red-500 bg-[rgba(239,68,68,0.15)] font-semibold text-red-300'
+          : 'border-l-transparent font-normal text-[rgba(255,200,200,0.55)] hover:bg-[rgba(239,68,68,0.08)] hover:text-red-200',
       )}
     >
-      <Icon className="h-4 w-4" />
+      <Icon
+        className={cn('h-4 w-4 shrink-0', active ? 'text-red-400' : 'text-[rgba(255,200,200,0.4)]')}
+      />
       {item.label}
     </Link>
   );
 }
 
 /**
- * The platform console shell: fixed topbar + 250px sidebar + main content area.
- * The `data-domain="platform"` attribute distinguishes this shell from the
- * dashboard `AppShell` in automated tests.
+ * The platform console shell: red-tinted fixed topbar + 250px sidebar + main
+ * content area. The `data-domain="platform"` attribute distinguishes this shell
+ * from the dashboard `AppShell` in automated tests.
  *
  * @param children - The active platform page content.
  */
@@ -90,42 +101,87 @@ export function PlatformShell({ children }: { readonly children: ReactNode }): R
 
   return (
     <div className="min-h-screen bg-background" data-domain="platform">
-      {/* Topbar — platform brand; no tenant selector */}
-      <header className="fixed inset-x-0 top-0 z-40 flex h-16 items-center justify-between border-b border-(--glass-border) bg-background/80 px-4 backdrop-blur">
+      {/* Topbar — deep-red platform brand; no tenant selector */}
+      <header
+        className="fixed inset-x-0 top-0 z-40 flex h-16 items-center justify-between border-b border-[rgba(239,68,68,0.3)] bg-red-950 px-4 text-red-50 lg:px-6"
+        role="banner"
+      >
+        {/* ── Left: PLATFORM ADMIN brand ── */}
         <div className="flex items-center gap-3">
-          <Link
-            href="/platform/security"
-            className="font-mono text-sm font-semibold text-foreground"
+          <div
+            aria-hidden="true"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[rgba(239,68,68,0.5)] bg-[rgba(239,68,68,0.25)]"
           >
-            rust-auth / platform
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M12 2L2 7l10 5 10-5-10-5ZM2 17l10 5 10-5M2 12l10 5 10-5"
+                stroke="#fca5a5"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+
+          <Link href="/platform/security" className="flex flex-col">
+            <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-red-400">
+              PLATFORM ADMIN
+            </span>
+            <span className="font-mono text-sm font-semibold text-red-100">rust-auth-example</span>
           </Link>
-          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-            Admin
-          </span>
         </div>
-        <button
-          type="button"
-          onClick={() => void handleSignOut()}
-          className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-        >
-          Sign out
-        </button>
+
+        {/* ── Right: admin identity + sign out ── */}
+        <div className="flex items-center gap-3">
+          <div className="hidden items-center gap-2 lg:flex">
+            <Avatar className="h-7 w-7">
+              <AvatarFallback className="bg-[rgba(239,68,68,0.25)] text-[10px] font-semibold text-red-300">
+                PA
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col">
+              <span className="font-mono text-xs font-medium text-red-100">Platform Admin</span>
+              <span className="font-mono text-[10px] text-red-400">Administrator</span>
+            </div>
+          </div>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-red-300 hover:bg-[rgba(239,68,68,0.15)] hover:text-red-100"
+            onClick={() => void handleSignOut()}
+          >
+            <LogOut className="mr-1 h-4 w-4" />
+            Sign out
+          </Button>
+        </div>
       </header>
 
       <div className="flex pt-16">
-        {/* Sidebar — platform navigation only */}
-        <aside className="hidden w-[250px] shrink-0 border-r border-(--glass-border) p-4 lg:block">
-          <nav aria-label="Platform navigation" className="flex flex-col gap-1">
-            <p className="px-3 py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Platform
-            </p>
-            {PLATFORM_NAV.map((item) => (
-              <PlatformNavLink key={item.href} item={item} active={pathname === item.href} />
-            ))}
-          </nav>
-        </aside>
+        {/* Sidebar — platform navigation only, deep-red scheme */}
+        <nav
+          aria-label="Platform navigation"
+          className="sticky top-16 hidden h-[calc(100vh-64px)] w-[250px] shrink-0 flex-col overflow-y-auto border-r border-[rgba(239,68,68,0.2)] bg-[rgba(10,0,0,0.98)] lg:flex"
+        >
+          <div className="flex h-full flex-col px-4 py-6">
+            <div className="flex flex-1 flex-col gap-1">
+              {PLATFORM_NAV.map((item) => (
+                <PlatformNavLink key={item.href} item={item} active={pathname === item.href} />
+              ))}
+            </div>
 
-        <main className="flex-1 p-6">{children}</main>
+            {/* Bottom label — reinforces the platform context */}
+            <div className="mt-4 border-t border-[rgba(239,68,68,0.15)] pt-4">
+              <p className="px-2 font-mono text-[10px] uppercase tracking-widest text-red-800">
+                Platform Admin Area
+              </p>
+            </div>
+          </div>
+        </nav>
+
+        <main className="min-w-0 flex-1 px-6 py-8">
+          <div className="mx-auto max-w-5xl">{children}</div>
+        </main>
       </div>
     </div>
   );

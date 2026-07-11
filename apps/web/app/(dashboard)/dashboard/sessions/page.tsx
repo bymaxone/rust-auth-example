@@ -13,7 +13,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -99,11 +99,13 @@ export default function SessionsPage(): React.ReactElement {
   }
 
   return (
-    <section className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <h1 className="font-mono text-2xl font-bold">Sessions</h1>
-          <p className="text-sm text-muted-foreground">Active devices signed in to this account.</p>
+    <section className="flex flex-col gap-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-mono text-2xl font-bold text-white">Sessions</h1>
+          <p className="mt-1 text-sm text-[rgba(255,255,255,0.5)]">
+            Active devices signed in to this account.
+          </p>
         </div>
 
         <AlertDialog>
@@ -112,7 +114,9 @@ export default function SessionsPage(): React.ReactElement {
               variant="outline"
               size="sm"
               disabled={signingOutOthers || state.kind !== 'ready'}
+              className="border-red-500/30 text-red-400 hover:border-red-500/60 hover:bg-red-500/10 hover:text-red-300"
             >
+              <LogOut className="h-3.5 w-3.5" />
               Log out everywhere else
             </Button>
           </AlertDialogTrigger>
@@ -135,52 +139,48 @@ export default function SessionsPage(): React.ReactElement {
 
       {state.kind === 'loading' && (
         <div
-          className="h-40 w-full animate-pulse rounded-2xl bg-muted"
+          className="h-40 w-full animate-pulse rounded-xl bg-[rgba(255,255,255,0.03)]"
           role="status"
           aria-label="Loading"
         />
       )}
 
       {state.kind === 'error' && (
-        <Card>
-          <CardContent className="flex flex-col items-start gap-3 p-6">
-            <p className="text-sm text-muted-foreground">Your sessions could not be loaded.</p>
-            <Button variant="outline" onClick={() => void load()}>
-              Retry
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="flex flex-col items-start gap-3 rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] p-6">
+          <p className="text-sm text-[rgba(255,255,255,0.5)]">Your sessions could not be loaded.</p>
+          <Button variant="outline" onClick={() => void load()}>
+            Retry
+          </Button>
+        </div>
       )}
 
       {state.kind === 'ready' &&
         (state.sessions.length <= 1 ? (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Only this device</CardTitle>
-              <CardDescription>
+          <div className="flex flex-col gap-4 rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] p-6">
+            <div>
+              <h2 className="font-mono text-sm font-semibold uppercase tracking-widest text-[rgba(255,255,255,0.4)]">
+                Only this device
+              </h2>
+              <p className="mt-1 text-sm text-[rgba(255,255,255,0.5)]">
                 No other sessions yet — sign in from another device to see one here.
-              </CardDescription>
-            </CardHeader>
+              </p>
+            </div>
             {state.sessions.length === 1 && (
-              <CardContent>
-                <SessionsTable
-                  sessions={state.sessions}
-                  onRevoke={(id) => void handleRevoke(id)}
-                  revokingId={revokingId}
-                />
-              </CardContent>
-            )}
-          </Card>
-        ) : (
-          <Card>
-            <CardContent className="p-0">
               <SessionsTable
                 sessions={state.sessions}
                 onRevoke={(id) => void handleRevoke(id)}
                 revokingId={revokingId}
               />
-            </CardContent>
-          </Card>
+            )}
+          </div>
+        ) : (
+          <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] p-6">
+            <SessionsTable
+              sessions={state.sessions}
+              onRevoke={(id) => void handleRevoke(id)}
+              revokingId={revokingId}
+            />
+          </div>
         ))}
     </section>
   );
