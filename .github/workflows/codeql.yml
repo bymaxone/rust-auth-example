@@ -1,49 +1,30 @@
-# CodeQL static analysis for the TypeScript/JavaScript surface (the browser
-# package consumer and tooling). `security-extended` is appropriate for an app
-# handling tokens and sessions. Runs on PR, push to main, and a weekly schedule.
+# CodeQL — thin caller of the org-wide reusable analysis (bymaxone/.github).
 #
-# SARIF upload to code scanning needs a public repository (or GitHub Advanced
-# Security). While the repository is private the analyze job is skipped so it
-# never blocks a PR; it becomes an active gate once the repository is public.
-#
-# Actions are pinned to a commit SHA with the version in a trailing comment.
-
-name: codeql
+# The whole definition, including the public-repository gate that decides
+# whether scanning may run at all, lives in bymaxone/.github so the licensing
+# rule exists once rather than in every repository that copies it.
+name: CodeQL
 
 on:
-  pull_request:
   push:
     branches: [main]
+  pull_request:
   schedule:
     - cron: '17 6 * * 1'
 
-permissions:
-  contents: read
-
-concurrency:
-  group: codeql-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  analyze:
-    name: analyze
-    if: github.event.repository.visibility == 'public'
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
+  # Job id is the convention across the org: it prefixes the reported check,
+  # so every repo shows `codeql / Analyze (<language>)` under the same name.
+  codeql:
+    # Declared on the calling job, which is the only place that reaches the
+    # called workflow: a job that sets its own permissions replaces the
+    # workflow-level set rather than intersecting with it, and a called
+    # workflow cannot be granted more than its caller holds. Leaving this
+    # block out and relying on a workflow-level `contents: read` is what
+    # made the first attempt fail to start: security-events: write, which
+    # uploading SARIF requires, was above the ceiling the job had inherited.
     permissions:
       contents: read
       security-events: write
       actions: read
-    steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
-        with:
-          persist-credentials: false
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@99df26d4f13ea111d4ec1a7dddef6063f76b97e9 # v4
-        with:
-          languages: javascript-typescript
-          queries: security-extended
-      - name: Analyze
-        uses: github/codeql-action/analyze@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4
-        with:
-          category: '/language:javascript-typescript'
+    uses: bymaxone/.github/.github/workflows/codeql.yml@v1
