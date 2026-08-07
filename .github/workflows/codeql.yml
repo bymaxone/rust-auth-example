@@ -18,6 +18,12 @@ concurrency:
   group: codeql-${{ github.ref }}
   cancel-in-progress: true
 
+# Workflow-level floor, matching every other workflow here. The calling job
+# below declares its own set, which replaces this one rather than being capped
+# by it.
+permissions:
+  contents: read
+
 jobs:
   # Job id is the convention across the org: it prefixes the reported check,
   # so every repo shows `codeql / Analyze (<language>)` under the same name.
